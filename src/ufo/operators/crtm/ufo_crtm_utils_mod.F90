@@ -596,6 +596,7 @@ subroutine ufo_crtm_skip_profiles(n_Profiles,n_Channels,channels,obss,atm,sfc,  
 ! would require those ObsSpace values to be initialized before calls to
 ! this subroutine within ufo_radiancecrtm_simobs+ufo_radiancecrtm_tlad_settraj.
 use missing_values_mod
+use ufo_constants_mod, only: one
 
 implicit none
 integer,              intent(in)    :: n_Profiles, n_Channels
@@ -616,6 +617,7 @@ real(kind_real)  :: ObsVal(n_Profiles,n_Channels)
 real(c_double)  :: missing_d
 real(kind_real) :: missing_r
 real(kind_real), parameter  :: lowest_albedo = 0.001
+real(kind_real), allocatable :: alon(:),alat(:)
 
  ! Set missing values
  missing_d = missing_value(missing_d)
@@ -639,6 +641,10 @@ real(kind_real), parameter  :: lowest_albedo = 0.001
    call obsspace_get_db(obss, trim(obsGroupName), varname, ObsVal(:,jchannel))
  enddo
 
+ allocate(alon(n_Profiles),alat(n_Profiles))
+ if (obsspace_has(obss, "MetaData", "latitude")) call obsspace_get_db(obss, "MetaData", "latitude", alat)
+ if (obsspace_has(obss, "MetaData", "longitude")) call obsspace_get_db(obss, "MetaData", "longitude", alon)
+
  !Loop over all n_Profiles, i.e. number of locations
  profile_loop: do jprofile = 1, n_Profiles
    ! check whether observations for all channels are missing in the input file
@@ -651,6 +657,16 @@ real(kind_real), parameter  :: lowest_albedo = 0.001
        cycle profile_loop
      end if
    end do
+
+   ! Sum of the coverage types can be found less than 1 near the boundary of regional configurations. Skip those data points for CRTM.
+   if ( abs(sfc(jprofile)%Water_Coverage+sfc(jprofile)%Land_Coverage+sfc(jprofile)%Snow_Coverage+sfc(jprofile)%Ice_Coverage - one ) > 1.0e-6_kind_real) then
+     write(message,*) &
+       'Abort! Surface coverage fractions do not sum to 1 for CRTM. Please check ob at Lon:' &
+       ,alon(jprofile),'Lat:',alat(jprofile),'. Water covers:',sfc(jprofile)%Water_Coverage,', land covers:' &
+       ,sfc(jprofile)%Land_Coverage,', snow covers:',sfc(jprofile)%Snow_Coverage &
+       ,', ice covers:',sfc(jprofile)%Ice_Coverage
+     call abor1_ftn(message)
+   endif
 
    ! check for missing values in water surface temperature when the mask
    ! indicates there is water.
