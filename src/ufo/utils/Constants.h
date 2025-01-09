@@ -24,12 +24,14 @@ struct Constants {
   static constexpr double speedOfLight   = 299792458;     // m / s
   static constexpr double t0c            = 2.7315e+2;    // temperature at zero celsius (K)
   static constexpr double ttp            = 2.7316e+2;    // temperature at h2o triple point (K)
-  static constexpr double rd             = 2.8705e2;
-  static constexpr double rv             = 4.6150e2;
+  static constexpr double rd             = 2.8705e2;     // specific gas constant for dry air
+                                                         // (J K^-1 kg^-1)
+  static constexpr double rv             = 4.6150e2;     // specific gas constant for water vapor
+                                                         // (J K^-1 kg^-1)
   static constexpr double cp             = 1.0046e3;     // heat capacity at constant pressure
-                                                         //      for air
+                                                         // for dry air (J K^-1 kg^-1)
   static constexpr double cv             = 7.1760e2;     // heat capacity at constant volume
-                                                         //      for air
+                                                         // for dry air (J K^-1 kg^-1)
   static constexpr double rspec          = cp - cv;      // specific gas constant for dry air
   static constexpr double rspec_over_cp  = rspec/cp;
   static constexpr double pref           = 1.0e5;        // Reference pressure for calculating
@@ -50,7 +52,10 @@ struct Constants {
   static constexpr double five           = 5.0;
   static constexpr double ten            = 10.0;
   static constexpr double k_t            = 0.65;         // Thermal conductivity of water
-  static constexpr double L_e            = 2.26e+06;     // Latent heat of vaporization
+  static constexpr double L_e            = 2.26e+06;     // Latent heat of vaporization at 373.15K
+                                                         // (J kg^-1)
+  static constexpr double L_c            = 2.5e+06;      // Latent heat of condensation at 273.15K
+                                                         // (J kg^-1)
   static constexpr double eps            = 0.1;          // Albedo of sea water
   static constexpr double sig            = 5.67e-6;      // Stefan-Boltzmann constant
   static constexpr double alpha          = 2.7e-4;       // Water thermal expansion coefficient
@@ -64,7 +69,7 @@ struct Constants {
   static constexpr double t2tv           = 0.608;        // constant lapse rate
   static constexpr double von_karman     = 0.41;         // Von Karman Constant
   static constexpr double es_w_0         = 611.2;        // saturation vapor pressure of water at
-                                                         //    0degC
+                                                         // 0degC (Pa)
   static constexpr double euzc_0         = 34.0;         // constant for estimating euphotic layer
   static constexpr double euzc_1         = -0.39;        // constant for estimating euphotic layer
   static constexpr double epsilon        = 0.62198;      // Ratio of molecular weight of

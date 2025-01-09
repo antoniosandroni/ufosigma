@@ -327,6 +327,8 @@ set ( filters_files
       obsfunctions/SymmCldImpactIR.h
       obsfunctions/SolarZenith.cc
       obsfunctions/SolarZenith.h
+      obsfunctions/StableLayersCloudTopPressure.cc
+      obsfunctions/StableLayersCloudTopPressure.h
       obsfunctions/SunGlintAngle.cc
       obsfunctions/SunGlintAngle.h
       obsfunctions/SurfTypeCheckRad.cc
