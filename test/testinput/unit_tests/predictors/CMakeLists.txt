@@ -164,7 +164,7 @@ ufo_add_test( NAME    test_ufo_aircraft_bc_mpi
               TIER    1
               ECBUILD
               COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsFilters.x
-              ARGS    "${CMAKE_CURRENT_SOURCE_DIR}/aircraft_bc.yaml"
+              ARGS    "${CMAKE_CURRENT_SOURCE_DIR}/aircraft_bc_mpi.yaml"
               MPI     2
               LIBS    ufo
               LABELS  unit_tests predictors
