@@ -5,14 +5,21 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef UFO_OPERATORS_GNSSRO_QC_ACTIONS_ROOBSERRINFLATION_H_
-#define UFO_OPERATORS_GNSSRO_QC_ACTIONS_ROOBSERRINFLATION_H_
+#ifndef UFO_FILTERS_ACTIONS_ROOBSERRINFLATION_H_
+#define UFO_FILTERS_ACTIONS_ROOBSERRINFLATION_H_
 
 #include <string>
 #include <vector>
 
+#include "oops/util/parameters/OptionalParameter.h"
 #include "ufo/filters/actions/FilterActionBase.h"
+#include "ufo/filters/Variable.h"
 #include "ufo/filters/Variables.h"
+#include "ufo/utils/parameters/ParameterTraitsVariable.h"
+
+namespace ioda {
+template <typename DATATYPE> class ObsDataVector;
+}
 
 namespace ufo {
 
@@ -45,10 +52,11 @@ class ROobserrInflation : public FilterActionBase {
 
  private:
   Variables allvars_;
+  Parameters_ parameters_;
 };
 
 // -----------------------------------------------------------------------------
 
 }  // namespace ufo
 
-#endif  // UFO_OPERATORS_GNSSRO_QC_ACTIONS_ROOBSERRINFLATION_H_
+#endif  // UFO_FILTERS_ACTIONS_ROOBSERRINFLATION_H_

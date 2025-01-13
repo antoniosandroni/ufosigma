@@ -179,6 +179,8 @@ set ( filters_files
       actions/ReduceObsSpace.h
       actions/RejectObs.cc
       actions/RejectObs.h
+      actions/ROobserrInflation.cc
+      actions/ROobserrInflation.h
       actions/SetFlag.cc
       actions/SetFlag.h
       actions/SetFlagBit.cc

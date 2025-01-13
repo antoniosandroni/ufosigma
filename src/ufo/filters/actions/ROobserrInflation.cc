@@ -5,7 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "ufo/operators/gnssro/QC/actions/ROobserrInflation.h"
+#include "ufo/filters/actions/ROobserrInflation.h"
 #include <algorithm>
 #include <set>
 
@@ -13,6 +13,7 @@
 #include "oops/util/IntSetParser.h"
 #include "oops/util/missingValues.h"
 #include "ufo/filters/ObsFilterData.h"
+#include "ufo/filters/QCflags.h"
 #include "ufo/utils/StringUtils.h"
 
 namespace ufo {
@@ -23,8 +24,8 @@ static FilterActionMaker<ROobserrInflation> makerInflateErr_("RONBAMErrInflate")
 
 // -----------------------------------------------------------------------------
 
-ROobserrInflation::ROobserrInflation(const Parameters_ &)
-  : allvars_() {
+ROobserrInflation::ROobserrInflation(const Parameters_ & parameters)
+  : allvars_(), parameters_(parameters) {
 }
 // -----------------------------------------------------------------------------
 
@@ -53,21 +54,27 @@ void ROobserrInflation::apply(const Variables & vars,
   }
   int irec = 1;
   for (size_t jobs = 0; jobs < nlocs; ++jobs) {
-      if (jobs > 0 && recordNumbers[jobs] != recordNumbers[jobs-1]) irec = irec +1;
-      rec_idx[jobs] = recordidx[0][jobs] - 1;
-      layer_idx[jobs] = layeridx[0][jobs];
-
-      if (flags[0][jobs] == 0)  super_obs_inlayer[layer_idx[jobs]][rec_idx[jobs]]++;
+    if (jobs > 0 && recordNumbers[jobs] != recordNumbers[jobs-1]) irec = irec +1;
+    rec_idx[jobs] = recordidx[0][jobs] - 1;
+    layer_idx[jobs] = layeridx[0][jobs];
+    for (size_t ifiltervar = 0; ifiltervar < vars.nvars(); ++ifiltervar) {
+      size_t iallvar = obserr.varnames().find(vars.variable(ifiltervar).variable());
+      if (flags[iallvar][jobs] == QCflags::pass) {
+        super_obs_inlayer[layer_idx[jobs]][rec_idx[jobs]]++;
+      }
+    }
   }
-  for (size_t jobs = 0; jobs < nlocs; ++jobs) {
+  for (size_t ifiltervar = 0; ifiltervar < vars.nvars(); ++ifiltervar) {
+    size_t iallvar = obserr.varnames().find(vars.variable(ifiltervar).variable());
+    for (size_t jobs = 0; jobs < obserr.nlocs(); ++jobs) {
       factor[jobs] = 1.0;
       if (super_obs_inlayer[layer_idx[jobs]][rec_idx[jobs]] > 0) {
-         factor[jobs] = super_obs_inlayer[layer_idx[jobs]][rec_idx[jobs]];
-         factor[jobs] = sqrt(factor[jobs]);
+        factor[jobs] = super_obs_inlayer[layer_idx[jobs]][rec_idx[jobs]];
+        factor[jobs] = sqrt(factor[jobs]);
       }
-      if (obserr[0][jobs] != missing) obserr[0][jobs] *= factor[jobs];
+      if (obserr[iallvar][jobs] != missing) obserr[iallvar][jobs] *= factor[jobs];
+    }
   }
 }
 // -----------------------------------------------------------------------------
-
 }  // namespace ufo
