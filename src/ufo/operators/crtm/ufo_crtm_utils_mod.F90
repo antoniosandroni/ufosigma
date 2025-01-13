@@ -661,10 +661,12 @@ real(kind_real), allocatable :: alon(:),alat(:)
    ! Sum of the coverage types can be found less than 1 near the boundary of regional configurations. Skip those data points for CRTM.
    if ( abs(sfc(jprofile)%Water_Coverage+sfc(jprofile)%Land_Coverage+sfc(jprofile)%Snow_Coverage+sfc(jprofile)%Ice_Coverage - one ) > 1.0e-6_kind_real) then
      write(message,*) &
-       'Abort! Surface coverage fractions do not sum to 1 for CRTM. Please check ob at Lon:' &
-       ,alon(jprofile),'Lat:',alat(jprofile),'. Water covers:',sfc(jprofile)%Water_Coverage,', land covers:' &
-       ,sfc(jprofile)%Land_Coverage,', snow covers:',sfc(jprofile)%Snow_Coverage &
-       ,', ice covers:',sfc(jprofile)%Ice_Coverage
+       'Abort! Surface coverage fractions do not sum to 1 for CRTM. Please check ob at ', &
+       'Lon:', alon(jprofile), ', Lat:', alat(jprofile), &
+       ', Water cover:', sfc(jprofile)%Water_Coverage, &
+       ', Land cover:', sfc(jprofile)%Land_Coverage, &
+       ', Snow cover:', sfc(jprofile)%Snow_Coverage, &
+       ', Ice cover:', sfc(jprofile)%Ice_Coverage
      call abor1_ftn(message)
    endif
 
