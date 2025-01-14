@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "eckit/utils/StringTools.h"
 #include "ioda/distribution/Accumulator.h"
 #include "ioda/ObsDataVector.h"
 #include "ioda/ObsSpace.h"
@@ -162,7 +163,10 @@ void QCmanager::print(std::ostream & os) const {
 
   const oops::ObsVariables &allObservedVars = obsdb_.obsvariables();
 
+  const std::vector<std::string> obsSpaceVarList = obsdb_.listVariables();
+
   for (size_t jvar = 0; jvar < allObservedVars.size(); ++jvar) {
+    const std::string varName = allObservedVars[jvar];
     std::unique_ptr<ioda::Accumulator<std::vector<size_t>>> accumulator =
         obsdb_.distribution()->createAccumulator<size_t>(cases.size());
 
@@ -174,8 +178,59 @@ void QCmanager::print(std::ostream & os) const {
     }
     const std::vector<std::size_t> counts = accumulator->computeResult();
 
+    // Get list of diagnostic flags for this variable.
+    // The first slash is guaranteed to appear at position 15 in the full variable name.
+    const std::size_t slashFirst = 15;
+    std::vector<std::string> diagFlagNames;
+    for (const std::string & obsSpaceVarName : obsSpaceVarList) {
+      const std::size_t slashLast = obsSpaceVarName.find_last_of("/");
+      if (slashLast == std::string::npos) {
+        continue;
+      }
+      // Check whether the full variable name starts with DiagnosticFlags and ends
+      // with the name of the ObsSpace variable (potentially including a channel number).
+      if (eckit::StringTools::startsWith(obsSpaceVarName, "DiagnosticFlags") &&
+          varName.find(obsSpaceVarName.substr(slashLast + 1)) != std::string::npos) {
+        // There must be at least two slashes in the full variable name.
+        if (slashFirst == slashLast) {
+          continue;
+        }
+        const std::string diagFlagName =
+          obsSpaceVarName.substr(slashFirst + 1, slashLast - slashFirst - 1);
+        // Ensure this flag is in the ObsSpace.
+        if (obsdb_.has("DiagnosticFlags/" + diagFlagName, varName)) {
+          diagFlagNames.push_back(diagFlagName);
+        }
+      }
+    }
+
+    // Create an accumulator to count the number of locations at which
+    // the diagnostic flags have been set to true.
+    std::unique_ptr<ioda::Accumulator<std::vector<size_t>>> accumulatorDiags =
+        obsdb_.distribution()->createAccumulator<size_t>(diagFlagNames.size());
+
+    // Retrieve all of the relevant diagnostic flags from the ObsSpace.
+    std::vector<std::vector<bool>> diagFlagValues;
+    for (const std::string & diagFlagName : diagFlagNames) {
+      std::vector<bool> diagFlagBool(nlocs);
+      obsdb_.get_db("DiagnosticFlags/" + diagFlagName, varName, diagFlagBool);
+      diagFlagValues.push_back(diagFlagBool);
+    }
+
+    // Increment the accumulator for each diagnostic flag.
+    for (size_t jdiag = 0; jdiag < diagFlagValues.size(); ++jdiag) {
+      for (size_t jobs = 0; jobs < nlocs; ++jobs) {
+        if (diagFlagValues[jdiag][jobs]) {
+          accumulatorDiags->addTerm(jobs, jdiag, 1);
+        }
+      }
+    }
+
+    // Produce totals for each diagnostic flag.
+    const std::vector<std::size_t> countDiags = accumulatorDiags->computeResult();
+
     if (obsdb_.comm().rank() == 0) {
-      const std::string info = "QC " + flags_->obstype() + " " + allObservedVars[jvar] + ": ";
+      const std::string info = "QC " + flags_->obstype() + " " + varName + ": ";
 
       // Normal cases
       for (size_t i = numSpecialCases; i < counts.size(); ++i)
@@ -190,6 +245,12 @@ void QCmanager::print(std::ostream & os) const {
       // ... the number of passed observations and the total number of observations.
       const size_t npass = counts[0];
       os << info << npass << " passed out of " << gnlocs << " observations." << std::endl;
+
+      // Print diagnostic flags.
+      for (size_t jdiag = 0; jdiag < diagFlagValues.size(); ++jdiag) {
+        os << info << countDiags[jdiag] << " assigned the "
+           << diagFlagNames[jdiag] << " diagnostic flag." << std::endl;
+      }
     }
     const size_t numRecognizedFlags = std::accumulate(counts.begin(), counts.end(), 0);
     ASSERT(numRecognizedFlags == gnlocs);
