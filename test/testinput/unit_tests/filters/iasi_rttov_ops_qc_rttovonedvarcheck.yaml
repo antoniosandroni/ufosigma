@@ -407,6 +407,7 @@ observations:
         Instrument_Name: *instrument_id
         CoefficientPath: *coefpath
         RTTOV_clw_data: false
+        UseEmissivityAtlas: false
     BMatrix: ../resources/bmatrix/rttov/iasi_bmatrix_70_test.dat
     RMatrix: ../resources/rmatrix/rttov/iasi_metopb_rmatrix_test.nc4
     filter variables:
@@ -436,3 +437,68 @@ observations:
       EmisEigVecPath: ../resources/auxillary/IASI_EmisEigenVec.dat
     RecalculateBT: true
   expectExceptionWithMessage: You have requested the initial skin temperature from the ObsSpace but the array MetaData/skinTemperature is not present => aborting.
+# Test the hyperspectral IR with surface emissivity read from the CAMEL atlas
+- obs operator:
+    name: RTTOV
+    Absorbers: *rttov_absorbers
+    obs options:
+      <<: *rttov_options
+      UseEmissivityAtlas: true
+      EmissivityAtlasName: CAMELClim
+      EmissivityAtlasPath: &emisatlaspath Data/
+  obs space:
+    <<: *ObsSpace
+    name: Test surface emissivity from CAMEL atlas
+#   obsdataout:
+#     engine:
+#       type: H5File
+#       obsfile: Data/iasi_metopb_obs_2021011500_qc_rttovonedvarcheck_camelatlas_out.nc4
+  geovals:
+    <<: *GeoVaLs
+  obs bias:
+    <<: *ObsBias
+  obs filters:
+### 1D-Var check ###
+  - filter: RTTOV OneDVar Check
+    ModOptions:
+      Absorbers: *rttov_absorbers
+      obs options:
+        RTTOV_default_opts: UKMO_PS45
+        SatRad_compatibility: false # done in filter
+        RTTOV_GasUnitConv: *gasunitconv
+        UseRHwaterForQC: false
+        UseColdSurfaceCheck: false
+        RTTOV_ScaleRefOzone: *RTTOV_ScaleRefOzone
+        WMO_ID: *wmo_id
+        Sat_ID: *sat_id
+        Instrument_Name: *instrument_id
+        CoefficientPath: *coefpath
+        RTTOV_clw_data: false
+    BMatrix: ../resources/bmatrix/rttov/iasi_bmatrix_70_test.dat
+    RMatrix: ../resources/rmatrix/rttov/iasi_metopb_rmatrix_test.nc4
+    filter variables:
+    - name: brightnessTemperature
+      channels: *1dvarchannels
+    retrieval variables from geovals:
+    - air_temperature # 1
+    - water_vapor_mixing_ratio_wrt_moist_air  # 2
+    - air_temperature_at_2m # 3
+    - water_vapor_mixing_ratio_wrt_moist_air_at_2m # 4
+    - skin_temperature_at_surface # 5
+    - air_pressure_at_surface # 6
+    retrieval variables not from geovals:
+    - cloud_top_pressure # 16
+    - cloud_fraction # 17
+    - emissivity_pc # 18
+    nlevels: 70
+    UseMLMinimization: true
+    DoCloudyChannelRejection: true
+    defer to post: true
+    Max1DVarIterations: 10
+    MaxMLIterations: 10
+    SkinTempErrorLand: 5.0
+    surface emissivity:
+      type: principalcomponent
+      EmisEigVecPath: ../resources/auxillary/IASI_EmisEigenVec.dat
+    RecalculateBT: true
+  passedBenchmark: 1311

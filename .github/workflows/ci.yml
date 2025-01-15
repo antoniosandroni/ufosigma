@@ -174,11 +174,13 @@ jobs:
         run: |
           az acr login --name ngmssboxjediacr
           ln -sf /testdata/mobb-data -t ${{ github.workspace }}
+          ln -sf /testdata/emis_data -t ${{ github.workspace }}
 
           docker run --rm \
             --name ${REPO}_${PR}_${GITHUB_SHA::7} \
             --volume ${{ github.workspace }}/${PR}:${WORKDIR} \
             --volume ${{ github.workspace }}/mobb-data:${MOBB_DATA} \
+            --volume ${{ github.workspace }}/emis_data:/usr/local/etc/emis_data \
             --env OMPI_ALLOW_RUN_AS_ROOT=1 \
             --env OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 \
             --env MOBB_DATA=${MOBB_DATA} \

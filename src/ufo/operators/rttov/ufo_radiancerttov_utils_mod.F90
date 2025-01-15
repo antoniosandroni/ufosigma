@@ -35,6 +35,13 @@ module ufo_radiancerttov_utils_mod
     gas_unit_ppmvdry, gas_unit_specconc, &
     rttov_inst_name => inst_name, rttov_platform_name => platform_name
 
+  use mod_rttov_emis_atlas, only: &
+    rttov_emis_atlas_data
+
+  use mod_rttov_emis_atlas, only: &
+       atlas_type_ir, atlas_type_mw,              &
+       uwiremis_atlas_id, camel_atlas_id, camel_clim_atlas_id, telsem2_atlas_id, cnrm_mw_atlas_id
+  
   use ufo_geovals_mod, only : ufo_geovals, ufo_geoval, ufo_geovals_get_var
   use ufo_utils_mod, only : Ops_SatRad_Qsplit, Ops_Qsat, Ops_QsatWat, cmp_strings, getindex, upper2lower
   use ufo_constants_mod, only : zero, half, one, deg2rad, min_q, min_clw, min_ciw, m_to_km, &
@@ -214,6 +221,12 @@ module ufo_radiancerttov_utils_mod
 
     real(kind_real)                       :: MWScattZeroJacPress ! zero cloud jacobian above threshold pressure level
     real(kind_real), allocatable          :: inspectlatlonbox(:)
+   
+    logical                               :: use_emissivity_atlas
+    character(len=255)                    :: emissivity_atlas_path
+    character(len=255)                    :: emissivity_atlas_name
+    type(rttov_emis_atlas_data)           :: rttov_emissivity_atlas ! emissivity atlases
+    integer                               :: month
 
   contains
 
@@ -412,6 +425,19 @@ contains
     call f_confOpts % get_or_die("CoefficientPath",str)
     conf % COEFFICIENT_PATH = str
 
+    ! Set up the RTTOV emissivity atlas options
+    conf % use_emissivity_atlas = .false.
+    if (f_confOpts % has("UseEmissivityAtlas")) then
+       call f_confOpts % get_or_die("UseEmissivityAtlas", conf % use_emissivity_atlas)
+    end if
+
+    if (conf % use_emissivity_atlas) then
+       call f_confOpts % get_or_die("EmissivityAtlasPath", str)
+       conf % emissivity_atlas_path = trim(str)
+       call f_confOpts % get_or_die("EmissivityAtlasName", str)
+       conf % emissivity_atlas_name = trim(str)
+    end if
+
     ! Set interface options - SatRad_compatibility dependent variables
     call f_confOpts % get_or_die("SatRad_compatibility",conf % SatRad_compatibility) ! default = true
     call f_confOpts % get_or_die("UseColdSurfaceCheck",conf % UseColdSurfaceCheck) ! default = false
@@ -526,6 +552,7 @@ contains
     integer                         :: i, rttov_errorstatus
 
     include 'rttov_dealloc_coefs.interface'
+    include 'rttov_deallocate_emis_atlas.interface'
 
     if (allocated(conf % rttov_coef_array)) then
       do i = 1, size(conf % rttov_coef_array)
@@ -538,6 +565,11 @@ contains
     if (allocated(conf%Absorber_Id)) deallocate (conf%Absorber_Id)
     if (allocated(conf%Absorbers))   deallocate (conf%Absorbers)
 
+    !deallocate emissivity atlas here 
+    if (conf % rttov_emissivity_atlas % init) then
+        call rttov_deallocate_emis_atlas(conf % rttov_emissivity_atlas)
+    end if
+    
     ! Reset to defaults
     conf % rttov_is_setup = .false.
     conf % SplitQtotal = .false.
@@ -870,7 +902,7 @@ contains
                               self % rttov_coef_array(i_inst), & !inout
                               self % rttov_opts, &           !in
                               instrument = self % instrument_triplet(1:3,i_inst), &
-                              path = self % COEFFICIENT_PATH)
+                              path = trim(self % COEFFICIENT_PATH))
 
         if (rttov_errorstatus /= errorstatus_success) then
           message = 'fatal error reading coefficients: ' // trim(self % coeffname(i_inst))
@@ -889,7 +921,7 @@ contains
                                      self % mw_scatt % opts,    & ! in
                                      self % rttov_coef_array(1), & ! in
                                      self % mw_scatt % coef,          & ! inout
-                                     path = self % COEFFICIENT_PATH)
+                                     path = trim(self % COEFFICIENT_PATH))
 
         if (rttov_errorstatus /= errorstatus_success) then
           message = 'fatal error reading compatible MWscatt coefficients for: ' // trim(self % coeffname(1))
@@ -899,7 +931,7 @@ contains
           call fckit_log%info(message)
         end if
       end if
-      
+
       self % rttov_is_setup =.true.
     end if
       
@@ -916,7 +948,7 @@ contains
     class(ufo_rttov_io), target,  intent(inout)             :: self
     type(ufo_geovals),            intent(in)                :: geovals
     type(c_ptr), value,           intent(in)                :: obss
-    type(rttov_conf),             intent(in)                :: conf
+    type(rttov_conf),             intent(inout)             :: conf
     type(ufo_rttovonedvarcheck_ob), optional, intent(inout) :: ob_info
 
     ! Local variables
@@ -928,6 +960,7 @@ contains
     integer                            :: jspec, isensor, ivar, iprof, ilev
     integer                            :: nlevels
     integer                            :: nprofiles
+    integer                            :: rttov_errorstatus
     character(MAXVARLEN)               :: ilevString
     character(MAXVARLEN)               :: varname
     character(len=max_string)          :: message
@@ -953,6 +986,9 @@ contains
     integer                            :: year, month, day, hour, minute, second
 
     integer, allocatable               :: sat_id(:)
+    integer                            :: atlas_id, atlas_type
+
+    include 'rttov_setup_emis_atlas.interface'
 
     missing = missing_value(missing)
 
@@ -1035,6 +1071,43 @@ contains
         message = 'Warning: Optional input Date/Time not in database'
         call fckit_log%info(message)
       end if
+    end if
+
+    if (conf % use_emissivity_atlas) then
+      if (.not. conf % rttov_emissivity_atlas % init) then
+        select case (trim(conf % emissivity_atlas_name))
+        case ("CAMEL")
+          atlas_id = camel_atlas_id
+          atlas_type = atlas_type_ir
+       case ("CAMELClim")
+          atlas_id = camel_clim_atlas_id
+          atlas_type = atlas_type_ir
+       case ("UWIREMIS")
+          atlas_id = uwiremis_atlas_id
+          atlas_type = atlas_type_ir
+       case ("TELSEM2")
+          atlas_id = telsem2_atlas_id
+          atlas_type = atlas_type_mw
+       case ("CNRM")
+          atlas_id = cnrm_mw_atlas_id
+          atlas_type = atlas_type_mw
+       case default
+          write(message,*) 'Unsupported atlas type. Aborting...'
+          call abor1_ftn(message)
+       end select
+
+       write(message,*) 'Setting up ', trim(conf % emissivity_atlas_name), ' emissivity atlas for month ', profiles(1) % date(2)
+       call fckit_log%info(message)
+       call rttov_setup_emis_atlas (               &
+            rttov_errorstatus,                   & ! in
+            conf % rttov_opts,                   & ! in
+            profiles(1) % date(2),               & ! in
+            atlas_type,                          & ! in
+            conf % rttov_emissivity_atlas,       & ! inout
+            atlas_id = atlas_id,                 & ! in
+            path = trim(conf % emissivity_atlas_path), & ! in
+            coefs = conf % rttov_coef_array(1))    ! in
+       end if
     end if
 
     nlevels = size(profiles(1)%p)
@@ -1833,12 +1906,12 @@ contains
       if (conf % do_mw_scatt) then
         if (associated(self % mw_scatt % freq_indices)) deallocate(self % mw_scatt % freq_indices)
       end if
-      if (allocated(self % ciw))                        deallocate(self % ciw)
-      if (allocated(self % tc_ozone))                   deallocate(self % tc_ozone)
-      if (allocated(self % q_profile_reset))            deallocate(self % q_profile_reset)
-      if (allocated(self % clw_profile_reset))          deallocate(self % clw_profile_reset)
-      if (allocated(self % ciw_profile_reset))          deallocate(self % ciw_profile_reset)
-      if (allocated(self % print_profile))              deallocate(self % print_profile)
+      if (allocated(self % ciw))                      deallocate(self % ciw)
+      if (allocated(self % tc_ozone))                 deallocate(self % tc_ozone)
+      if (allocated(self % q_profile_reset))          deallocate(self % q_profile_reset)
+      if (allocated(self % clw_profile_reset))        deallocate(self % clw_profile_reset)
+      if (allocated(self % ciw_profile_reset))        deallocate(self % ciw_profile_reset)
+      if (allocated(self % print_profile))            deallocate(self % print_profile)
     end if
 
   end subroutine ufo_rttov_alloc_direct
@@ -2096,15 +2169,43 @@ contains
 
   end subroutine ufo_rttov_zero_k
 
-  subroutine ufo_rttov_init_default_emissivity(self, conf, prof_list)
+  subroutine ufo_rttov_init_default_emissivity(self, conf, prof_list, channels, obss)
+
     implicit none
 
     class(ufo_rttov_io), intent(inout) :: self
     type(rttov_conf),    intent(in)    :: conf
     integer,             intent(in)    :: prof_list(:,:)
+    integer,             intent(in)    :: channels(:)
+    type(c_ptr), value,  intent(in)    :: obss
 
-    integer                            :: prof, all_prof_index, iprof
+    integer                            :: prof, all_prof_index, iprof, jvar
     integer                            :: start_chan, end_chan
+    integer                            :: errorstatus
+    real(kind_real), allocatable       :: RTTOV_Atlas_Emissivity(:), tmp(:,:) ! RTTOV atlas emissivity
+    character(len=max_string)          :: var
+
+    include 'rttov_get_emis.interface'
+
+    if (conf % use_emissivity_atlas) then
+      allocate (RTTOV_Atlas_Emissivity(size(self % chanprof)))
+
+      call rttov_get_emis (errorstatus,      & ! out
+        conf % rttov_opts,                   & ! in
+        self % chanprof(:),                  & ! in
+        self % profiles(:),                  & ! in
+        conf % rttov_coef_array(1),          & ! in
+        conf % rttov_emissivity_atlas,       & ! in
+        RTTOV_Atlas_Emissivity(:))             ! out
+
+      allocate (tmp(self % nchan_inst, size(self % profiles)))
+      tmp(:, :) = reshape(RTTOV_Atlas_Emissivity(:), (/self % nchan_inst, size(self % profiles)/))
+      do jvar = 1, self % nchan_inst
+        write(var,"(A11,I0)") "emissivity_", channels(jvar)
+        call obsspace_put_db(obss, "AtlasEmiss", var, tmp(jvar,:))
+      end do
+      deallocate(tmp)
+    end if
 
 !Emissivity and calcemis are only set for used channels.
 !emissivity is already initialised to zero (so RTTOV doesn't complain)
@@ -2131,18 +2232,21 @@ contains
 
       else
 
-        if (conf % rttov_coef_array(1) % coef % id_sensor == sensor_id_mw) then
+        if (conf % use_emissivity_atlas) then
+           self % emissivity(start_chan:end_chan) % emis_in = RTTOV_Atlas_Emissivity(start_chan:end_chan)
+        else
+           
+           if (conf % rttov_coef_array(1) % coef % id_sensor == sensor_id_mw) then
+             if (self % profiles(all_prof_index) % skin % surftype == surftype_land) then
+                 self % emissivity(start_chan:end_chan) % emis_in = 0.95_kind_real
+             elseif (self % profiles(all_prof_index) % skin % surftype == surftype_seaice) then
+                 self % emissivity(start_chan:end_chan) % emis_in = 0.92_kind_real
+             end if
 
-          if (self % profiles(all_prof_index) % skin % surftype == surftype_land) then
-            self % emissivity(start_chan:end_chan) % emis_in = 0.95_kind_real
-          elseif (self % profiles(all_prof_index) % skin % surftype == surftype_seaice) then
-            self % emissivity(start_chan:end_chan) % emis_in = 0.92_kind_real
-          end if
-
-        elseif ( conf % rttov_coef_array(1) % coef % id_sensor == sensor_id_ir .or. &
-                 conf % rttov_coef_array(1) % coef % id_sensor == sensor_id_hi) then
-          self % emissivity(start_chan:end_chan) % emis_in = 0.98_kind_real
-
+           elseif (conf % rttov_coef_array(1) % coef % id_sensor == sensor_id_ir .or. &
+                   conf % rttov_coef_array(1) % coef % id_sensor == sensor_id_hi) then
+              self % emissivity(start_chan:end_chan) % emis_in = 0.98_kind_real
+           end if
         end if
 
         self % calcemis(start_chan:end_chan) = .false.
@@ -2150,6 +2254,8 @@ contains
       end if
     enddo
 
+   if (allocated(RTTOV_Atlas_Emissivity)) deallocate (RTTOV_Atlas_Emissivity)
+   
   end subroutine ufo_rttov_init_default_emissivity
 
   subroutine ufo_rttov_set_defaults(self, default_opts_set)

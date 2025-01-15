@@ -40,8 +40,8 @@ ObsRadianceRTTOV::ObsRadianceRTTOV(const ioda::ObsSpace & odb,
 
   // call Fortran setup routine
   ufo_radiancerttov_setup_f90(keyOperRadianceRTTOV_, parameters.toConfiguration(),
-                             channels_list.size(), channels_list[0], varin_,
-                             qc_passed.size(), qc_passed[0]);
+                              channels_list.size(), channels_list[0], varin_,
+                              qc_passed.size(), qc_passed[0]);
 
   // Remove ozone from varin_ if calculate from ref is switched on
   if (parameters.obsOptions.value().RTTOVScaleRefOzone.value())

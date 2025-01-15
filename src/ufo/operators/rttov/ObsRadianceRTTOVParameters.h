@@ -122,6 +122,15 @@ class RTTOVObsOptionsParameters : public oops::Parameters {
   oops::Parameter<bool> UseQCFlagsToSkipHofX{"UseQCFlagsToSkipHofX",
      "skip profiles if no channels are passed or passivated in the qc flag", false, this};
 
+  /// if true, initialise and read emissivity atlas
+  oops::OptionalParameter<bool> UseEmissivityAtlas{"UseEmissivityAtlas", this};
+
+  /// Emissivity atlas name, valid options are: UWIREmis, CAMEL, CAMELClim, TELSEM2, CNRM
+  oops::OptionalParameter<std::string> EmissivityAtlasName{"EmissivityAtlasName", this};
+
+  /// Emissivity atlas path
+  oops::OptionalParameter<std::string> EmissivityAtlasPath{"EmissivityAtlasPath", this};
+
   /// Specify the profiles where further diagnostics are needed
   /// for debugging e.g. [1, 2, 3]
   /// Note this is numbering from 1 as it is Fortran that will provide output.
@@ -151,7 +160,7 @@ class RTTOVObsOptionsParameters : public oops::Parameters {
 
   /// Determines input perturbation for AD/K routines: if true
   /// radiance_ad/k % bt is used for channels with wavelengths >
-  /// 3µm, otherwise radiance_ad/k % total is used.
+  /// 3 micron, otherwise radiance_ad/k % total is used.
   /// default is false
   oops::OptionalParameter<bool> RTTOVSwitchRad{"RTTOV_switchrad", this};
 

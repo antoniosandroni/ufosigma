@@ -637,7 +637,7 @@ endif()
 # Files for RTTOV tests
 #####################################################################
 if( ${rttov_FOUND} )
-  list( APPEND rttov_test_input
+  list( APPEND rttov_coef_data
     rttov7pred54L/rtcoef_dmsp_17_ssmis.dat
     rttov7pred54L/rtcoef_gcom-w_1_amsr2.dat
     rttov7pred54L/rtcoef_gpm_1_gmi.dat
@@ -652,7 +652,20 @@ if( ${rttov_FOUND} )
     rttov7pred54L/rtcoef_jpss_0_atms.dat
     rttov7pred54L/rtcoef_noaa_20_atms.dat
     )
+  list( APPEND rttov_emis_atlas_data
+    CAMEL_coef_climatology_01Month_V002.H5
+    pchsr_v10.2.H5
+    pchsr_v10.3.H5
+    pchsr_v11.3.H5
+    pchsr_v12.2.H5
+    pchsr_v12.3.H5
+    pchsr_v8.2.H5
+    pchsr_v8.3.H5
+    pchsr_v9.3.H5
+    )
 
+    
+  # Set RTTOV coefficient directory
   if(DEFINED ENV{RTTOV_LOCAL_COEF_DIR} AND EXISTS $ENV{RTTOV_LOCAL_COEF_DIR})
     set(RTTOV_COEF_DIR "$ENV{RTTOV_LOCAL_COEF_DIR}")
   elseif(DEFINED rttov_SOURCE_DIR AND EXISTS "${rttov_SOURCE_DIR}")
@@ -662,6 +675,15 @@ if( ${rttov_FOUND} )
   endif()
   message("RTTOV coefficient directory: ${RTTOV_COEF_DIR}")
 
+  if(DEFINED ENV{RTTOV_LOCAL_EMIS_ATLAS_DIR} AND EXISTS $ENV{RTTOV_LOCAL_EMIS_ATLAS_DIR})
+    set(RTTOV_EMIS_ATLAS_DIR "$ENV{RTTOV_LOCAL_EMIS_ATLAS_DIR}")
+  elseif(DEFINED rttov_SOURCE_DIR AND EXISTS "${rttov_SOURCE_DIR}")
+    set(RTTOV_EMIS_ATLAS_DIR "${rttov_SOURCE_DIR}/emis_data")
+  elseif(DEFINED rttov_BASE_DIR AND EXISTS "${rttov_BASE_DIR}/etc")
+    set(RTTOV_EMIS_ATLAS_DIR "${rttov_BASE_DIR}/etc/emis_data")
+  endif()
+  message("RTTOV emissivity atlas directory: ${RTTOV_EMIS_ATLAS_DIR}")
+  
   # Extract mietable to binDir/Data
   if(EXISTS "${RTTOV_COEF_DIR}/mietable/mietable_metop_amsuamhs.tar.zst")
     set(archive "${RTTOV_COEF_DIR}/mietable/mietable_metop_amsuamhs.tar.zst")
@@ -680,14 +702,19 @@ if( ${rttov_FOUND} )
       endif()
     endif()
   elseif(EXISTS "${RTTOV_COEF_DIR}/mietable/mietable_metop_amsuamhs.bin")
-    list(APPEND rttov_test_input "mietable/mietable_metop_amsuamhs.bin")
+    list(APPEND rttov_coef_data "mietable/mietable_metop_amsuamhs.bin")
   endif()
     
   # Symlink RTcoef files
   create_symlink_filename( ${RTTOV_COEF_DIR}
                            ${CMAKE_CURRENT_BINARY_DIR}/Data
-                           ${rttov_test_input} )
-                         
+                           ${rttov_coef_data} )
+
+  # Symlink Emissivity atlas files
+  create_symlink_filename( ${RTTOV_EMIS_ATLAS_DIR}
+                           ${CMAKE_CURRENT_BINARY_DIR}/Data
+                           ${rttov_emis_atlas_data} )
+
 endif()
 
 ######

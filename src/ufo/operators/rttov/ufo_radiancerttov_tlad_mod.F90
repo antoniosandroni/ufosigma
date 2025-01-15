@@ -339,7 +339,7 @@ contains
           end do
         end do outerloop
       else
-        call self % RTProf_K % init_default_emissivity(self % conf, prof_list)
+        call self % RTProf_K % init_default_emissivity(self % conf, prof_list, self % channels, obss)
       end if
 
       ! Write out emissivity if checking profile

@@ -56,6 +56,7 @@ contains
     integer                                 :: ind, j, jspec, ii, jj, jnew
     integer                                 :: nvars_in
     character(len=800)                      :: message
+    integer                                 :: atlas_id, atlas_type
 
     call f_confOper % get_or_die("obs options",f_confOpts)
 
@@ -408,7 +409,7 @@ contains
             end do
           end do outerloop
         else
-          call self % RTProf % init_default_emissivity(self % conf, prof_list)
+          call self % RTProf % init_default_emissivity(self % conf, prof_list, self % channels, obss)
         end if
       end if
 
