@@ -103,7 +103,7 @@ if (QCflags(i) .eq. 0) then
    if( (ObsSaid(i)==41).or.(ObsSaid(i)==722).or.(ObsSaid(i)==723).or.   &
        (ObsSaid(i)>=3.and.ObsSaid(i)<=5).or.(ObsSaid(i)==42).or.        &
        (ObsSaid(i)==821).or.(ObsSaid(i)==421).or.    &
-       (ObsSaid(i)==440).or.(ObsSaid(i)==43) ) then
+       (ObsSaid(i)==440).or.(ObsSaid(i)==43).or.(ObsSaid(i)==66) ) then
        if( abs(obsLat(i)) > 40.0 ) then
          if(H_km > 12.0) then
            obsErr(i)=0.19032 +0.287535 *H_km-0.00260813*H_km**2
