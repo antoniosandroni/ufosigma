@@ -68,7 +68,8 @@ class VariableTransformParametersBase : public FilterParametersBase {
                                                        false, this};
 
   /// Skip the variable transform calculation when there are no observations
-  oops::Parameter<bool> SkipWhenNoObs{"SkipWhenNoObs", true, this};
+  /// set to false to avoid issues with zero observations on a MPI thread
+  oops::Parameter<bool> SkipWhenNoObs{"SkipWhenNoObs", false, this};
 };
 
 /// \brief Concrete class containing the options specified by the VariableTransformParametersBase.

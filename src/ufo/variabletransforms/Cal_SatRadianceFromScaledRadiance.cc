@@ -54,6 +54,15 @@ void Cal_SatRadianceFromScaledRadiance::runTransform(const std::vector<bool> &ap
   ioda::ObsDataVector<float> radiance(obsdb_, radianceVar);
   data_.get(parameters_.transformVariable.value(), radiance);
 
+  // If no locations to process, add to obs space and return
+  if (radiance.nlocs() == 0) {
+    for (size_t ichan =0; ichan < radiance.nvars(); ++ichan) {
+      putObservation("radiance_" + std::to_string(channels_[ichan]),
+                     radiance[ichan]);
+    }
+    return;
+  }
+
   // Read in scaling factors
   std::vector<int> channelScaleFactor(numScaleFactors, missingValueInt);
   std::vector<int> startChannelScale(numScaleFactors, missingValueInt);

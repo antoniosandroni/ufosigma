@@ -34,29 +34,32 @@ void Cal_HeightFromPressure::runTransform(const std::vector<bool> &apply) {
 
   std::vector<float> geopotentialHeight;
   std::vector<float> airPressure;
-  bool hasBeenUpdated = false;
 
   const size_t nlocs_ = obsdb_.nlocs();
 
   ioda::ObsSpace::RecIdxIter irec;
 
-  // 1. Obtain air pressure from the ObsSpace.
-
-  getObservation(pressureGroup_, pressureCoord_, airPressure);
-
-  if (airPressure.empty()) {
-    oops::Log::warning() << "Air pressure vector is empty. "
-                         << "Check will not be performed." << std::endl;
-    throw eckit::BadValue("Air pressure vector is empty ", Here());
-  }
-
-  // 2. Initialise the output array
+  // 1. Initialise the output array and check for zero locations
   // -------------------------------------------------------------------------------
   getObservation(heightGroup_, heightCoord_, geopotentialHeight);
 
   if (geopotentialHeight.empty()) {
     geopotentialHeight = std::vector<float>(nlocs_);
     std::fill(geopotentialHeight.begin(), geopotentialHeight.end(), missingValueFloat);
+  }
+
+  if (nlocs_ == 0) {
+    obsdb_.put_db(getDerivedGroup(heightGroup_), heightCoord_, geopotentialHeight);
+    return;
+  }
+
+  // 2. Obtain air pressure from the ObsSpace.
+  getObservation(pressureGroup_, pressureCoord_, airPressure);
+
+  if (airPressure.empty()) {
+    oops::Log::warning() << "Air pressure vector is empty. "
+                         << "Check will not be performed." << std::endl;
+    throw eckit::BadValue("Air pressure vector is empty ", Here());
   }
 
   // 3. Loop over each record
@@ -84,15 +87,11 @@ void Cal_HeightFromPressure::runTransform(const std::vector<bool> &apply) {
       }
       geopotentialHeight[rSort[ilocs]] = formulas::Pressure_To_Height(
           airPressure[rSort[ilocs]], formulation);
-
-      hasBeenUpdated = true;
     }
   }
 
-  if (hasBeenUpdated) {
-    // If the geopotential height was updated, save it as a DerivedValue.
-    obsdb_.put_db(getDerivedGroup(heightGroup_), heightCoord_, geopotentialHeight);
-  }
+  // If the geopotential height was updated, save it as a DerivedValue.
+  obsdb_.put_db(getDerivedGroup(heightGroup_), heightCoord_, geopotentialHeight);
 }
 }  // namespace ufo
 

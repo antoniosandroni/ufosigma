@@ -65,8 +65,6 @@ void Cal_PressureFromHeightForProfile::methodDEFAULT(
   float Zprev = missingValueFloat;     // Previous height value [m]
   float Tprev = missingValueFloat;     // Previous temperature value [k]
 
-  bool hasBeenUpdated = false;
-
   const size_t nlocs_ = obsdb_.nlocs();
   ioda::ObsSpace::RecIdxIter irec;
 
@@ -223,16 +221,10 @@ void Cal_PressureFromHeightForProfile::methodDEFAULT(
       Pprev = airPressure[rSort[ilocs]];
       Zprev = Zcurrent;
       Tprev = Tcurrent;
-      hasBeenUpdated = true;
     }
   }
-
-  if (hasBeenUpdated) {
-    // if updated the airPressure
-    // assign the derived air pressure as DerivedObsValue
-    putObservation(pressureCoord_, airPressure,
-                   getDerivedGroup(pressureGroup_));
-  }
+  putObservation(pressureCoord_, airPressure,
+                 getDerivedGroup(pressureGroup_));
 }
 
 
@@ -273,7 +265,6 @@ void Cal_PressureFromHeightForICAO::methodDEFAULT(const std::vector<bool> &apply
   std::vector<float> geopotentialHeight;
   std::vector<float> airPressure;
   std::vector<float> airPressure_ref;
-  bool hasBeenUpdated = false;
 
   const size_t nlocs_ = obsdb_.nlocs();
 
@@ -317,17 +308,10 @@ void Cal_PressureFromHeightForICAO::methodDEFAULT(const std::vector<bool> &apply
 
       airPressure[rSort[ilocs]] = formulas::Height_To_Pressure_ICAO_atmos(
           geopotentialHeight[rSort[ilocs]], formulas::Formulation::ICAO);
-
-      hasBeenUpdated = true;
     }
   }
-
-  if (hasBeenUpdated) {
-    // if updated the airPressure
-    // assign the derived air pressure as DerivedObsValue
-    putObservation(pressureCoord_, airPressure,
-                   getDerivedGroup(pressureGroup_));
-  }
+  putObservation(pressureCoord_, airPressure,
+                 getDerivedGroup(pressureGroup_));
 }
 }  // namespace ufo
 

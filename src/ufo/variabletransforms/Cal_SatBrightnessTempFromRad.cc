@@ -53,6 +53,19 @@ void Cal_SatBrightnessTempFromRad::runTransform(const std::vector<bool> &apply) 
   float minval = parameters_.minvalue.value().value_or(missingValueFloat);
   float maxval = parameters_.maxvalue.value().value_or(missingValueFloat);
 
+  // Create output array
+  std::vector<std::vector<float>> brightnessTemperature(
+                         nvars, std::vector<float>(nlocs, missingValueFloat));
+
+  // If no locations to process, add to obs space and return
+  if (nlocs == 0) {
+    for (size_t ichan = 0; ichan < nvars; ++ichan) {
+      putObservation("brightnessTemperature_" + std::to_string(channels_[ichan]),
+                     brightnessTemperature[ichan]);
+    }
+    return;
+  }
+
   // Read in the spectral variable
   const ufo::Variable & var = parameters_.spectralVariable.value();
   std::vector<float> spectralVariable(nvars, missingValueFloat);
@@ -82,10 +95,6 @@ void Cal_SatBrightnessTempFromRad::runTransform(const std::vector<bool> &apply) 
       }  // ivar
     }  // ichan
   }
-
-  // Create output array
-  std::vector<std::vector<float>> brightnessTemperature(
-                         nvars, std::vector<float>(nlocs, missingValueFloat));
 
   // Sanity check
   ASSERT(radiance.nlocs() == nlocs);

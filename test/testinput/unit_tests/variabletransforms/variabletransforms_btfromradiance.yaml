@@ -236,3 +236,66 @@ observations:
     test:
       name: DerivedObsValue/brightnessTemperature
     absTol: 1.0e-4
+
+- obs space:
+    name: Test scaled radiance to bt with one observation
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/ufo/testinput_tier_1/RadToBT_obs_2021071200_1ob.nc4
+    observed variables: [scaledRadiance]
+    simulated variables: [brightnessTemperature]
+    derived variables: [brightnessTemperature]
+    channels: *all_channels
+  obs pre filters:
+### Assign channel wavenumbers in m-1
+  - filter: Variable Assignment
+    assignments:
+    - name: MetaData/wavenumber
+      type: float
+      channels: *all_channels
+      function:
+        name: ObsFunction/LinearCombination
+        options:
+          variables:
+          - name: ObsValue/scaledRadiance
+            channels: *all_channels
+          coefs: [25.0]
+          intercept: 64475.0
+          use channel numbers: true
+### Scaled radiance to spectral radiance
+### creates a spectral radiance in (W / (m^2.sr.m^-1))
+  - filter: Variable Transforms
+    Transform: SatRadianceFromScaledRadiance
+    transform from:
+      name: ObsValue/scaledRadiance
+      channels: *all_channels
+    number of scale factors: 10
+    scale factor variable: MetaData/channel_scale_factor
+    scale factor start: MetaData/start_channel_scale
+    scale factor end: MetaData/end_channel_scale
+    get scaling factors from multiple arrays: true
+### Radiance to BT
+  - filter: Variable Transforms
+    Transform: SatBrightnessTempFromRad
+    transform from:
+      name: ObsValue/radiance
+      channels: *all_channels
+    spectral variable:
+      name: MetaData/wavenumber
+      channels: *all_channels
+    radiance units: wavenumber
+    planck1: 1.191042953e-16
+    planck2: 1.4387774e-2
+### Compare variables output
+  compareVariables:
+  - reference:
+      name: TestReference/radianceWavenumber
+    test:
+      name: DerivedObsValue/radiance
+    absTol: 1.0e-5
+  - reference:
+      name: TestReference/brightnessTemperature
+    test:
+      name: DerivedObsValue/brightnessTemperature
+    absTol: 1.0e-4
