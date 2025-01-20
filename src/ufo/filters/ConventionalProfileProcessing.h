@@ -23,7 +23,7 @@
 #include "ufo/profile/ProfileChecker.h"
 #include "ufo/profile/ProfileCheckValidator.h"
 #include "ufo/profile/ProfileDataHandler.h"
-#include "ufo/profile/VariableNames.h"
+#include "ufo/profile/ProfileVariableNames.h"
 
 #include "ufo/utils/Constants.h"
 

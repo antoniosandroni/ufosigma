@@ -20,11 +20,13 @@ namespace ufo {
   void ProfileDataHolder::fill(const std::vector <std::string> &variableNamesInt,
                                const std::vector <std::string> &variableNamesFloat,
                                const std::vector <std::string> &variableNamesString,
+                               const std::vector <std::string> &variableNamesBool,
                                const oops::Variables &variableNamesGeoVaLs)
   {
     variableNamesInt_ = variableNamesInt;
     variableNamesFloat_ = variableNamesFloat;
     variableNamesString_ = variableNamesString;
+    variableNamesBool_ = variableNamesBool;
     variableNamesGeoVaLs_ = variableNamesGeoVaLs;
 
     for (const auto& variable : variableNamesInt_)
@@ -33,6 +35,8 @@ namespace ufo {
       profileData_.emplace(variable, profileDataHandler_.get<float>(variable));
     for (const auto& variable : variableNamesString_)
       profileData_.emplace(variable, profileDataHandler_.get<std::string>(variable));
+    for (const auto& variable : variableNamesBool_)
+      profileData_.emplace(variable, profileDataHandler_.get<bool>(variable));
     for (const auto& variable : variableNamesGeoVaLs_)
       profileGeoVaLs_.emplace(variable, profileDataHandler_.getGeoVaLVector(variable));
   }
@@ -64,6 +68,10 @@ namespace ufo {
       oops::Log::debug() << "   " << variable << std::endl;
       profileDataHandler_.set<std::string>(variable, std::move(this->get<std::string>(variable)));
     }
+    for (const auto& variable : variableNamesBool_) {
+      oops::Log::debug() << "   " << variable << std::endl;
+      profileDataHandler_.set<bool>(variable, std::move(this->get<bool>(variable)));
+    }
     oops::Log::debug() << std::endl;
     profileData_.clear();
   }
@@ -71,7 +79,7 @@ namespace ufo {
   void ProfileDataHolder::checkObsSpaceSection(ufo::ObsSpaceSection section)
   {
     // If extended_obs_space is not present this will throw an exception.
-    const auto &extended_obs_space = this->get<int>(ufo::VariableNames::extended_obs_space);
+    const auto &extended_obs_space = this->get<int>(ufo::ProfileVariableNames::extended_obs_space);
     if (section == ufo::ObsSpaceSection::Original &&
         std::find(extended_obs_space.begin(),
                   extended_obs_space.end(), 1) != extended_obs_space.end())

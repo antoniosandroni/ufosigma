@@ -6,7 +6,7 @@
  */
 
 #include "ufo/profile/ProfileCheckUInterpAlternative.h"
-#include "ufo/profile/VariableNames.h"
+#include "ufo/profile/ProfileVariableNames.h"
 
 #include "ufo/profile/ProfileDataHandler.h"
 #include "ufo/profile/ProfileDataHolder.h"
@@ -28,26 +28,25 @@ namespace ufo {
 
     // Produce vector of profiles containing data for the alternative U interpolation check.
     std::vector <std::string> variableNamesInt =
-      {ufo::VariableNames::qcflags_eastward_wind,
-       ufo::VariableNames::counter_NumSamePErrObs,
-       ufo::VariableNames::counter_NumInterpErrObs,
-       ufo::VariableNames::extended_obs_space};
+      {ufo::ProfileVariableNames::counter_NumSamePErrObs,
+       ufo::ProfileVariableNames::counter_NumInterpErrObs,
+       ufo::ProfileVariableNames::extended_obs_space};
     std::vector <std::string> variableNamesFloat =
-      {ufo::VariableNames::obs_air_pressure,
-       ufo::VariableNames::obs_eastward_wind,
-       ufo::VariableNames::obs_northward_wind};
+      {ufo::ProfileVariableNames::obs_air_pressure,
+       ufo::ProfileVariableNames::obs_eastward_wind,
+       ufo::ProfileVariableNames::obs_northward_wind};
     if (options_.compareWithOPS.value()) {
       variableNamesInt.insert(variableNamesInt.end(),
-                              {ufo::VariableNames::StdLev,
-                                  ufo::VariableNames::SigAbove,
-                                  ufo::VariableNames::SigBelow,
-                                  ufo::VariableNames::LevErrors,
-                                  ufo::VariableNames::NumStd,
-                                  ufo::VariableNames::NumSig});
+                              {ufo::ProfileVariableNames::StdLev,
+                                  ufo::ProfileVariableNames::SigAbove,
+                                  ufo::ProfileVariableNames::SigBelow,
+                                  ufo::ProfileVariableNames::LevErrors,
+                                  ufo::ProfileVariableNames::NumStd,
+                                  ufo::ProfileVariableNames::NumSig});
       variableNamesFloat.insert(variableNamesFloat.end(),
-                                {ufo::VariableNames::uInterp,
-                                    ufo::VariableNames::vInterp,
-                                    ufo::VariableNames::LogP});
+                                {ufo::ProfileVariableNames::uInterp,
+                                    ufo::ProfileVariableNames::vInterp,
+                                    ufo::ProfileVariableNames::LogP});
     }
 
     std::vector <ProfileDataHolder> profiles =
@@ -55,6 +54,8 @@ namespace ufo {
       (variableNamesInt,
        variableNamesFloat,
        {},
+       {ufo::ProfileVariableNames::diagflags_interpolation_u,
+        ufo::ProfileVariableNames::diagflags_standard_level_u},
        {});
 
     // Run alternative U interpolation check on each original profile.
@@ -66,7 +67,8 @@ namespace ufo {
       // onto model levels. If the former, proceed with the check.
       // If the ObsSpace has not been extended then all profiles are by default in
       // the original ObsSpace.
-      const auto &extended_obs_space = profile.get<int>(ufo::VariableNames::extended_obs_space);
+      const auto &extended_obs_space =
+        profile.get<int>(ufo::ProfileVariableNames::extended_obs_space);
       if (extended_obs_space.empty() ||
           std::find(extended_obs_space.begin(), extended_obs_space.end(), 0) !=
           extended_obs_space.end())
@@ -85,17 +87,19 @@ namespace ufo {
   {
     const int numProfileLevels = profile.getNumProfileLevels();
     const std::vector <float> &pressures =
-      profile.get<float>(ufo::VariableNames::obs_air_pressure);
+      profile.get<float>(ufo::ProfileVariableNames::obs_air_pressure);
     const std::vector <float> &uObs =
-      profile.get<float>(ufo::VariableNames::obs_eastward_wind);
+      profile.get<float>(ufo::ProfileVariableNames::obs_eastward_wind);
     const std::vector <float> &vObs =
-      profile.get<float>(ufo::VariableNames::obs_northward_wind);
-    std::vector <int> &uFlags =
-      profile.get<int>(ufo::VariableNames::qcflags_eastward_wind);
+      profile.get<float>(ufo::ProfileVariableNames::obs_northward_wind);
+    std::vector <bool> &diagFlagsUInterp =
+      profile.get<bool>(ufo::ProfileVariableNames::diagflags_interpolation_u);
+    const std::vector <bool> &diagFlagsUStdLev =
+      profile.get<bool>(ufo::ProfileVariableNames::diagflags_standard_level_u);
     std::vector <int> &NumSamePErrObs =
-      profile.get<int>(ufo::VariableNames::counter_NumSamePErrObs);
+      profile.get<int>(ufo::ProfileVariableNames::counter_NumSamePErrObs);
     std::vector <int> &NumInterpErrObs =
-      profile.get<int>(ufo::VariableNames::counter_NumInterpErrObs);
+      profile.get<int>(ufo::ProfileVariableNames::counter_NumInterpErrObs);
 
     if (pressures.empty() ||
         pressures.front() > options_.BChecks_maxValidP.value() ||
@@ -103,23 +107,21 @@ namespace ufo {
       return;
     }
 
-    if (!oops::allVectorsSameNonZeroSize(pressures, uObs, vObs, uFlags)) {
+    if (!oops::allVectorsSameNonZeroSize(pressures, uObs, vObs,
+                                         diagFlagsUInterp,
+                                         diagFlagsUStdLev)) {
       oops::Log::debug() << "At least one vector is the wrong size. "
                          << "Check will not be performed." << std::endl;
       oops::Log::debug() << "Vector sizes: "
-                         << oops::listOfVectorSizes(pressures, uObs, vObs, uFlags)
+                         << oops::listOfVectorSizes(pressures, uObs, vObs,
+                                                    diagFlagsUInterp,
+                                                    diagFlagsUStdLev)
                          << std::endl;
       return;
     }
 
-    // Populate the standard level diagnostic flags from the OPS-style QC flags.
-    // todo(ctgh): modify this when the ProfileDataHolder class can accept a vector of bools.
-    std::vector <bool> uDiagFlagsProfileStdLev;
-    std::transform(uFlags.begin(), uFlags.end(),
-                   std::back_inserter(uDiagFlagsProfileStdLev),
-                   [](int flag){return flag & ufo::MetOfficeQCFlags::Profile::StandardLevelFlag;});
-
-    calcStdLevelsUV(numProfileLevels, pressures, uObs, vObs, uDiagFlagsProfileStdLev);
+    calcStdLevelsUV(numProfileLevels, pressures, uObs, vObs,
+                    diagFlagsUStdLev);
 
     LevErrors_.assign(numProfileLevels, -1);
     uInterp_.assign(numProfileLevels, 0.0);
@@ -138,8 +140,8 @@ namespace ufo {
               std::pow(vObs[jlev] - vObs[jlevprev], 2);
             if (VectDiffSq > options_.UICheck_TInterpIdenticalPTolSq.value()) {
               NumErrors++;
-              uFlags[jlevprev] |= ufo::MetOfficeQCFlags::Profile::InterpolationFlag;
-              uFlags[jlev]     |= ufo::MetOfficeQCFlags::Profile::InterpolationFlag;
+              diagFlagsUInterp[jlevprev] = true;
+              diagFlagsUInterp[jlev] = true;
               oops::Log::debug() << " -> Wind speed interpolation check: identical P "
                                  << "and significantly different wind speed magnitude for "
                                  << "levels " << jlevprev << " and " << jlev << std::endl;
@@ -204,9 +206,9 @@ namespace ufo {
         LevErrors_[SigB]++;
         LevErrors_[SigA]++;
         // Simplest form of flagging
-        uFlags[jlev] |= ufo::MetOfficeQCFlags::Profile::InterpolationFlag;
-        uFlags[SigB] |= ufo::MetOfficeQCFlags::Profile::InterpolationFlag;
-        uFlags[SigA] |= ufo::MetOfficeQCFlags::Profile::InterpolationFlag;
+        diagFlagsUInterp[jlev] = true;
+        diagFlagsUInterp[SigB] = true;
+        diagFlagsUInterp[SigA] = true;
 
         oops::Log::debug() << " -> Failed wind speed interpolation check for levels " << jlev
                            << " (central), " << SigB << " (lower) and "
@@ -225,16 +227,16 @@ namespace ufo {
 
   void ProfileCheckUInterpAlternative::fillValidationData(ProfileDataHolder &profile)
   {
-    profile.set(ufo::VariableNames::StdLev, std::move(StdLev_));
-    profile.set(ufo::VariableNames::SigAbove, std::move(SigAbove_));
-    profile.set(ufo::VariableNames::SigBelow, std::move(SigBelow_));
-    profile.set(ufo::VariableNames::LevErrors, std::move(LevErrors_));
-    profile.set(ufo::VariableNames::uInterp, std::move(uInterp_));
-    profile.set(ufo::VariableNames::vInterp, std::move(vInterp_));
-    profile.set(ufo::VariableNames::LogP, std::move(LogP_));
+    profile.set(ufo::ProfileVariableNames::StdLev, std::move(StdLev_));
+    profile.set(ufo::ProfileVariableNames::SigAbove, std::move(SigAbove_));
+    profile.set(ufo::ProfileVariableNames::SigBelow, std::move(SigBelow_));
+    profile.set(ufo::ProfileVariableNames::LevErrors, std::move(LevErrors_));
+    profile.set(ufo::ProfileVariableNames::uInterp, std::move(uInterp_));
+    profile.set(ufo::ProfileVariableNames::vInterp, std::move(vInterp_));
+    profile.set(ufo::ProfileVariableNames::LogP, std::move(LogP_));
     std::vector <int> NumStd(profile.getNumProfileLevels(), std::move(NumStd_));
     std::vector <int> NumSig(profile.getNumProfileLevels(), std::move(NumSig_));
-    profile.set(ufo::VariableNames::NumStd, std::move(NumStd));
-    profile.set(ufo::VariableNames::NumSig, std::move(NumSig));
+    profile.set(ufo::ProfileVariableNames::NumStd, std::move(NumStd));
+    profile.set(ufo::ProfileVariableNames::NumSig, std::move(NumSig));
   }
 }  // namespace ufo

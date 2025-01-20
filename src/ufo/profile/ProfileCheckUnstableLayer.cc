@@ -6,7 +6,7 @@
  */
 
 #include "ufo/profile/ProfileCheckUnstableLayer.h"
-#include "ufo/profile/VariableNames.h"
+#include "ufo/profile/ProfileVariableNames.h"
 
 namespace ufo {
 
@@ -25,25 +25,33 @@ namespace ufo {
     const int numProfileLevels = profileDataHandler.getNumProfileLevels();
 
     const std::vector <float> &pressures =
-       profileDataHandler.get<float>(ufo::VariableNames::obs_air_pressure);
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_air_pressure);
     const std::vector <float> &tObs =
-       profileDataHandler.get<float>(ufo::VariableNames::obs_air_temperature);
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_air_temperature);
     const std::vector <float> &tBkg =
-       profileDataHandler.get<float>(ufo::VariableNames::hofx_air_temperature);
-    std::vector <int> &tFlags =
-       profileDataHandler.get<int>(ufo::VariableNames::qcflags_air_temperature);
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::hofx_air_temperature);
+    std::vector <bool> &diagFlagsTFinalReject =
+       profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_final_reject_t);
+    std::vector <bool> &diagFlagsTSuperadiabat =
+       profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_superadiabat_t);
     std::vector <int> &NumAnyErrors =
-       profileDataHandler.get<int>(ufo::VariableNames::counter_NumAnyErrors);
+       profileDataHandler.get<int>(ufo::ProfileVariableNames::counter_NumAnyErrors);
     std::vector <int> &NumSuperadiabat =
-       profileDataHandler.get<int>(ufo::VariableNames::counter_NumSuperadiabat);
+       profileDataHandler.get<int>(ufo::ProfileVariableNames::counter_NumSuperadiabat);
     const std::vector <float> &tObsCorrection =
-       profileDataHandler.get<float>(ufo::VariableNames::obscorrection_air_temperature);
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::obscorrection_air_temperature);
 
-    if (!oops::allVectorsSameNonZeroSize(pressures, tObs, tBkg, tFlags, tObsCorrection)) {
+    if (!oops::allVectorsSameNonZeroSize(pressures, tObs, tBkg,
+                                         diagFlagsTFinalReject,
+                                         diagFlagsTSuperadiabat,
+                                         tObsCorrection)) {
       oops::Log::debug() << "At least one vector is the wrong size. "
                          << "Check will not be performed." << std::endl;
       oops::Log::debug() << "Vector sizes: "
-                         << oops::listOfVectorSizes(pressures, tObs, tBkg, tFlags, tObsCorrection)
+                         << oops::listOfVectorSizes(pressures, tObs, tBkg,
+                                                    diagFlagsTFinalReject,
+                                                    diagFlagsTSuperadiabat,
+                                                    tObsCorrection)
                          << std::endl;
       return;
     }
@@ -56,7 +64,7 @@ namespace ufo {
     int jlevprev = 0;
     for (int jlev = 0; jlev < numProfileLevels; ++jlev) {
       // Ignore this level if it has been flagged as rejected.
-      if (tFlags[jlev] & ufo::MetOfficeQCFlags::Elem::FinalRejectFlag) continue;
+      if (diagFlagsTFinalReject[jlev]) continue;
       if (tObsFinal[jlev] != missingValueFloat &&
           pressures[jlev] > options_.ULCheck_MinP.value()) {
         if (PBottom_ == 0.0) {
@@ -69,8 +77,8 @@ namespace ufo {
               pressures[jlevprev] <= PBottom_ - options_.ULCheck_PBThresh.value()) {
             NumAnyErrors[0]++;
             NumSuperadiabat[0]++;
-            tFlags[jlevprev] |= ufo::MetOfficeQCFlags::Profile::SuperadiabatFlag;
-            tFlags[jlev]     |= ufo::MetOfficeQCFlags::Profile::SuperadiabatFlag;
+            diagFlagsTSuperadiabat[jlevprev] = true;
+            diagFlagsTSuperadiabat[jlev] = true;
 
             oops::Log::debug() << " -> Failed unstable layer/superadiabat check for levels "
                                << jlevprev << " and " << jlev << std::endl;
@@ -96,6 +104,6 @@ namespace ufo {
   void ProfileCheckUnstableLayer::fillValidationData(ProfileDataHandler &profileDataHandler)
   {
     std::vector <float> PBottom(profileDataHandler.getNumProfileLevels(), PBottom_);
-    profileDataHandler.set(ufo::VariableNames::PBottom, std::move(PBottom));
+    profileDataHandler.set(ufo::ProfileVariableNames::PBottom, std::move(PBottom));
   }
 }  // namespace ufo

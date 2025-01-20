@@ -26,9 +26,9 @@ observations:
       - name: waterTemperature
       - name: salinity
     flags:
-    - name: spike
+    - name: ProfileSpike
       initial value: false
-    - name: step
+    - name: ProfileStep
       initial value: false
   - filter: Spike and Step Check
     filter variables:
@@ -69,11 +69,11 @@ observations:
   - filter: Perform Action  # where T spikes, reject both S and T
     where:
     - variable:
-        name: DiagnosticFlags/spike/waterTemperature
+        name: DiagnosticFlags/ProfileSpike/waterTemperature
       value: is_true
     actions:
     - name: set
-      flag: spike
+      flag: ProfileSpike
     - name: reject
   - filter: Variable Assignment  # create derived obs value containing only T spikes
     assignments:
@@ -84,7 +84,7 @@ observations:
         options:
           where:
             - variable:
-                name: DiagnosticFlags/spike/waterTemperature
+                name: DiagnosticFlags/ProfileSpike/waterTemperature
               value: is_true
   - filter: Variable Assignment  # create derived obs value containing only T steps
     assignments:
@@ -95,7 +95,7 @@ observations:
         options:
           where:
             - variable:
-                name: DiagnosticFlags/step/waterTemperature
+                name: DiagnosticFlags/ProfileStep/waterTemperature
               value: is_true
   - filter: Variable Assignment  # compute sum 2*spikes+steps
     assignments:
@@ -122,7 +122,7 @@ observations:
         options:
           where:
             - variable:
-                name: DiagnosticFlags/spike/salinity
+                name: DiagnosticFlags/ProfileSpike/salinity
               value: is_true
   - filter: Variable Assignment  # create derived obs value containing only S steps
     assignments:
@@ -133,7 +133,7 @@ observations:
         options:
           where:
             - variable:
-                name: DiagnosticFlags/step/salinity
+                name: DiagnosticFlags/ProfileStep/salinity
               value: is_true
   - filter: Variable Assignment  # compute sum 2*spikes+steps
     assignments:
@@ -189,9 +189,9 @@ observations:
     filter variables:
       - name: waterTemperature
     flags:
-    - name: spike
+    - name: ProfileSpike
       initial value: false
-    - name: step
+    - name: ProfileStep
       initial value: false
   - filter: Spike and Step Check
     where:
@@ -248,9 +248,9 @@ observations:
       - name: waterTemperature
       - name: salinity
     flags:
-    - name: spike
+    - name: ProfileSpike
       initial value: false
-    - name: step
+    - name: ProfileStep
       initial value: false
   - filter: Spike and Step Check
     filter variables:
@@ -307,9 +307,9 @@ observations:
     filter variables:
       - name: waterTemperature
     flags:
-    - name: spike
+    - name: ProfileSpike
       initial value: false
-    - name: step
+    - name: ProfileStep
       initial value: false
   - filter: Spike and Step Check
     filter variables:
@@ -338,9 +338,9 @@ observations:
     filter variables:
       - name: waterTemperature
     flags:
-    - name: spike
+    - name: ProfileSpike
       initial value: false
-    - name: step
+    - name: ProfileStep
       initial value: false
   - filter: Spike and Step Check
     filter variables:
@@ -368,9 +368,9 @@ observations:
     filter variables:
       - name: waterTemperature
     flags:
-    - name: spike
+    - name: ProfileSpike
       initial value: false
-    - name: step
+    - name: ProfileStep
       initial value: false
   - filter: Spike and Step Check
     filter variables:
@@ -399,9 +399,9 @@ observations:
     filter variables:
       - name: waterTemperature
     flags:
-    - name: spike
+    - name: ProfileSpike
       initial value: false
-    - name: step
+    - name: ProfileStep
       initial value: false
   - filter: Spike and Step Check
     filter variables:
@@ -428,9 +428,9 @@ observations:
     filter variables:
       - name: waterTemperature
     flags:
-    - name: spike
+    - name: ProfileSpike
       initial value: false
-    - name: step
+    - name: ProfileStep
       initial value: false
   - filter: Spike and Step Check
     filter variables:
@@ -457,9 +457,9 @@ observations:
     filter variables:
       - name: waterTemperature
     flags:
-    - name: spike
+    - name: ProfileSpike
       initial value: false
-    - name: step
+    - name: ProfileStep
       initial value: false
   - filter: Spike and Step Check
     filter variables:

@@ -44,15 +44,15 @@ namespace ufo {
 
     /// List of names of required GeoVaLs.
     oops::Variables getGeoVaLNames() override {
-      return oops::Variables({oops::Variable{ufo::VariableNames::geovals_pressure},
-            oops::Variable{ufo::VariableNames::geovals_pressure_rho_minus_one}});}
+      return oops::Variables({oops::Variable{ufo::ProfileVariableNames::geovals_pressure},
+            oops::Variable{ufo::ProfileVariableNames::geovals_pressure_rho_minus_one}});}
 
     /// List of names of GeoVaLs used in check validation.
     oops::Variables getValidationGeoVaLNames() override {
-      return oops::Variables({ufo::VariableNames::geovals_testreference_logP,
-            ufo::VariableNames::geovals_testreference_ExnerP,
-            ufo::VariableNames::geovals_testreference_logP_rho,
-            ufo::VariableNames::geovals_testreference_ExnerP_rho});}
+      return oops::Variables({ufo::ProfileVariableNames::geovals_testreference_logP,
+            ufo::ProfileVariableNames::geovals_testreference_ExnerP,
+            ufo::ProfileVariableNames::geovals_testreference_logP_rho,
+            ufo::ProfileVariableNames::geovals_testreference_ExnerP_rho});}
 
    private:  // functions
     /// Calculate log(pressure).

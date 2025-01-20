@@ -119,17 +119,19 @@ void SpikeAndStepCheck::applyFilter(const std::vector<bool> & apply,
   std::vector<bool> stepFlag(totalNumObs, false);
   // get diagnostic flags from ObsSpace (can't create them in the code, must do in YAML...
   //  ...must be there when ObsSpace constructed)
-  if (obsdb_.has("DiagnosticFlags/spike", yVarName)) {
-    obsdb_.get_db("DiagnosticFlags/spike", yVarName, spikeFlag);
+  if (obsdb_.has("DiagnosticFlags/ProfileSpike", yVarName)) {
+    obsdb_.get_db("DiagnosticFlags/ProfileSpike", yVarName, spikeFlag);
   } else {
-    throw eckit::UserError("Variable 'DiagnosticFlags/spike/" + yVarName + "' does not exist yet. "
+    throw eckit::UserError("Variable 'DiagnosticFlags/ProfileSpike/" + yVarName +
+                           "' does not exist yet. "
                            "It needs to be set up with the 'Create Diagnostic Flags' filter "
                            "prior to using the 'set' or 'unset' action.");
   }
-  if (obsdb_.has("DiagnosticFlags/step", yVarName)) {
-    obsdb_.get_db("DiagnosticFlags/step", yVarName, stepFlag);
+  if (obsdb_.has("DiagnosticFlags/ProfileStep", yVarName)) {
+    obsdb_.get_db("DiagnosticFlags/ProfileStep", yVarName, stepFlag);
   } else {
-    throw eckit::UserError("Variable 'DiagnosticFlags/step/" + yVarName + "' does not exist yet. "
+    throw eckit::UserError("Variable 'DiagnosticFlags/ProfileStep/" + yVarName +
+                           "' does not exist yet. "
                            "It needs to be set up with the 'Create Diagnostic Flags' filter "
                            "prior to using the 'set' or 'unset' action.");
   }
@@ -170,8 +172,8 @@ void SpikeAndStepCheck::applyFilter(const std::vector<bool> & apply,
                                 parameters_);
   }  // for each record
   obsAccessor.flagRejectedObservations(isThinned, flagged);
-  obsdb_.put_db("DiagnosticFlags/spike", yVarName, spikeFlag);
-  obsdb_.put_db("DiagnosticFlags/step", yVarName, stepFlag);
+  obsdb_.put_db("DiagnosticFlags/ProfileSpike", yVarName, spikeFlag);
+  obsdb_.put_db("DiagnosticFlags/ProfileStep", yVarName, stepFlag);
 }
 
 // -----------------------------------------------------------------------------

@@ -7,7 +7,6 @@
 
 #include "ufo/variabletransforms/Cal_RadarBeamGeometry.h"
 #include "ufo/utils/Constants.h"
-#include "ufo/utils/metoffice/MetOfficeQCFlags.h"
 
 
 namespace ufo {

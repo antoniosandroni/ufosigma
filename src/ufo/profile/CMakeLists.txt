@@ -75,14 +75,14 @@ set ( profile_files
       ProfileSondeFlags.h
       ProfileStandardLevels.cc
       ProfileStandardLevels.h
+      ProfileVariableNames.cc
+      ProfileVariableNames.h
       ProfileVerticalAveraging.cc
       ProfileVerticalAveraging.h
       ProfileWindProfilerFlags.cc
       ProfileWindProfilerFlags.h
       SlantPathLocations.cc
       SlantPathLocations.h
-      VariableNames.cc
-      VariableNames.h
 )
 
 PREPEND( _p_profile_files       "profile"       ${profile_files} )

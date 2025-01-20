@@ -28,7 +28,7 @@ namespace ufo {
 *  - P: Pressure at mean sea level, Z = 0m
 *  - P: Pressure on standard pressure surface, Z: height of pressure surface.
 *  Note that pressures above are listed in order of precedence for which is used to
-*  calculate P*, assuming that PstnPrefFlag is true.
+*  calculate P*, assuming that the PreferredForSurfacePressureCalculation diagnostic flag is true.
 *  The calculation of P* is performed in two stages:
 *  - Determine the background pressure at the model location.
 *  - Calculate the observed pressure at the model surface.

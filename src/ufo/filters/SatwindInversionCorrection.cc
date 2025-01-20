@@ -16,7 +16,6 @@
 #include "oops/util/Logger.h"
 
 #include "ufo/GeoVaLs.h"
-#include "ufo/utils/metoffice/MetOfficeQCFlags.h"
 
 namespace ufo {
 
@@ -110,15 +109,20 @@ void SatwindInversionCorrection::applyFilter(const std::vector<bool> & apply,
 // Get wind computation method
   std::vector<int> comp_method(obsdb_.nlocs());
   obsdb_.get_db("MetaData", "windComputationMethod", comp_method);
-// Get flags
-  std::vector<int> u_flags(obsdb_.nlocs());
-  std::vector<int> v_flags(obsdb_.nlocs());
-  if (obsdb_.has("QCFlags", "windEastward") && obsdb_.has("QCFlags", "windNorthward")) {
-    obsdb_.get_db("QCFlags", "windEastward", u_flags);
-    obsdb_.get_db("QCFlags", "windNorthward", v_flags);
+// Get diagnostic flags
+  std::vector<bool> diagFlagsUSatwindInversion(obsdb_.nlocs());
+  std::vector<bool> diagFlagsVSatwindInversion(obsdb_.nlocs());
+  if (obsdb_.has("DiagnosticFlags/InversionCorrectionPerformed", "windEastward") &&
+      obsdb_.has("DiagnosticFlags/InversionCorrectionPerformed", "windNorthward")) {
+    obsdb_.get_db("DiagnosticFlags/InversionCorrectionPerformed", "windEastward",
+                  diagFlagsUSatwindInversion);
+    obsdb_.get_db("DiagnosticFlags/InversionCorrectionPerformed", "windNorthward",
+                  diagFlagsVSatwindInversion);
   } else {
-    throw eckit::Exception("QCFlags/windEastward or QCFlags/windNorthward not initialised",
-                           Here());
+    throw eckit::Exception
+      ("DiagnosticFlags/InversionCorrectionPerformed/windEastward or "
+       "DiagnosticFlags/InversionCorrectionPerformed/windNorthward not initialised",
+       Here());
   }
 // Get GeoVaLs
   const ufo::GeoVaLs * gvals = data_.getGeoVaLs();
@@ -208,8 +212,8 @@ void SatwindInversionCorrection::applyFilter(const std::vector<bool> & apply,
           pdiffAccumulator->addTerm(iloc, inversion_base - obs_pressure[iloc]);
           obs_pressure[iloc] = inversion_base;
           // set flag
-          u_flags[iloc] |= ufo::MetOfficeQCFlags::SatWind::SatwindInversionFlag;
-          v_flags[iloc] |= ufo::MetOfficeQCFlags::SatWind::SatwindInversionFlag;
+          diagFlagsUSatwindInversion[iloc] = true;
+          diagFlagsVSatwindInversion[iloc] = true;
         }
       }
     }  // apply
@@ -217,8 +221,10 @@ void SatwindInversionCorrection::applyFilter(const std::vector<bool> & apply,
   //  write back corrected pressure, updated flags and original pressure
   obsdb_.put_db(parameters_.obs_pressure.value().group(),
                 parameters_.obs_pressure.value().variable(), obs_pressure);
-  obsdb_.put_db("QCFlags", "windEastward", u_flags);
-  obsdb_.put_db("QCFlags", "windNorthward", v_flags);
+  obsdb_.put_db("DiagnosticFlags/InversionCorrectionPerformed", "windEastward",
+                diagFlagsUSatwindInversion);
+  obsdb_.put_db("DiagnosticFlags/InversionCorrectionPerformed", "windNorthward",
+                diagFlagsVSatwindInversion);
   obsdb_.put_db(parameters_.obs_pressure.value().group(),
                 parameters_.obs_pressure.value().variable() + std::string("_original"),
                 original_pressure);
@@ -228,9 +234,9 @@ void SatwindInversionCorrection::applyFilter(const std::vector<bool> & apply,
   const double pdiff = pdiffAccumulator->computeResult();
   if (count) {
     oops::Log::info() << "Satwind Inversion: "<< count
-                                       << " observations with modified pressure" << std::endl;
+                      << " observations with modified pressure" << std::endl;
     oops::Log::info() << "Satwind Inversion: "<< pdiff / count
-                                       << " Pa mean pressure difference" << std::endl;
+                      << " Pa mean pressure difference" << std::endl;
   }
 }
 

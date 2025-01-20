@@ -9,6 +9,7 @@
 #define TEST_UFO_CONVENTIONALPROFILEPROCESSING_H_
 
 #include <iomanip>
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
@@ -46,10 +47,8 @@
 #include "ufo/profile/ProfileCheckValidator.h"
 #include "ufo/profile/ProfileDataHandler.h"
 #include "ufo/profile/ProfileDataHolder.h"
+#include "ufo/profile/ProfileVariableNames.h"
 #include "ufo/profile/ProfileVerticalAveraging.h"
-#include "ufo/profile/VariableNames.h"
-
-#include "ufo/utils/metoffice/MetOfficeQCFlags.h"
 
 namespace ufo {
 namespace test {
@@ -156,9 +155,9 @@ void testConventionalProfileProcessing(const eckit::LocalConfiguration &conf) {
     EntireSampleDataHandler entireSampleDataHandler(filterdata,
                                                     options.DHParameters);
     // Load data from obsspace
-    entireSampleDataHandler.get<float>(ufo::VariableNames::obs_air_pressure);
+    entireSampleDataHandler.get<float>(ufo::ProfileVariableNames::obs_air_pressure);
     // Attempt to access data with incorrect type
-    EXPECT_THROWS(entireSampleDataHandler.get<int>(ufo::VariableNames::obs_air_pressure));
+    EXPECT_THROWS(entireSampleDataHandler.get<int>(ufo::ProfileVariableNames::obs_air_pressure));
     std::vector<bool> apply(obsspace.nlocs(), true);
     std::vector<std::vector<bool>> flagged;
     ProfileDataHandler profileDataHandler(filterdata,
@@ -168,9 +167,9 @@ void testConventionalProfileProcessing(const eckit::LocalConfiguration &conf) {
                                           filtervars,
                                           flagged);
     // Obtain profile data
-    profileDataHandler.get<float>(ufo::VariableNames::obs_air_pressure);
+    profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_air_pressure);
     // Attempt to access data with incorrect type
-    EXPECT_THROWS(profileDataHandler.get<int>(ufo::VariableNames::obs_air_pressure));
+    EXPECT_THROWS(profileDataHandler.get<int>(ufo::ProfileVariableNames::obs_air_pressure));
   }
 
   // Manually modify Processing flags in order to cover rare code paths.
@@ -181,8 +180,7 @@ void testConventionalProfileProcessing(const eckit::LocalConfiguration &conf) {
     EntireSampleDataHandler entireSampleDataHandler(filterdata,
                                                     options.DHParameters);
     // Load data from obsspace
-    entireSampleDataHandler.get<float>(ufo::VariableNames::obs_air_pressure);
-    entireSampleDataHandler.get<int>(ufo::VariableNames::qcflags_air_temperature);
+    entireSampleDataHandler.get<float>(ufo::ProfileVariableNames::obs_air_pressure);
     std::vector<bool> apply(obsspace.nlocs(), true);
     std::vector<std::vector<bool>> flagged;
     ProfileDataHandler profileDataHandler(filterdata,
@@ -196,28 +194,34 @@ void testConventionalProfileProcessing(const eckit::LocalConfiguration &conf) {
     profileDataHandler.initialiseNextProfile();
 
     // Obtain profile data
-    profileDataHandler.get<float>(ufo::VariableNames::obs_air_pressure);
+    profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_air_pressure);
 
     // Modify flags
-    std::vector <int> &ReportFlags =
-      profileDataHandler.get<int>(ufo::VariableNames::qcflags_observation_report);
-    std::vector <int> &tFlags =
-      profileDataHandler.get<int>(ufo::VariableNames::qcflags_air_temperature);
-    std::vector <int> &rhFlags =
-      profileDataHandler.get<int>(ufo::VariableNames::qcflags_relative_humidity);
-    std::vector <int> &uFlags =
-      profileDataHandler.get<int>(ufo::VariableNames::qcflags_eastward_wind);
-    std::vector <int> &zFlags =
-      profileDataHandler.get<int>(ufo::VariableNames::qcflags_geopotential_height);
+    std::vector <bool> &diagFlagsReportPermReject =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_perm_reject_report);
+    std::vector <bool> &diagFlagsTSuperadiabat =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_superadiabat_t);
+    std::vector <bool> &diagFlagsTInterpolation =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_interpolation_t);
+    std::vector <bool> &diagFlagsTHydrostatic =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_hydro_t);
+    std::vector <bool> &diagFlagsRHPermReject =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_perm_reject_rh);
+    std::vector <bool> &diagFlagsUInterpolation =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_interpolation_u);
+    std::vector <bool> &diagFlagsZInterpolation =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_interpolation_z);
+    std::vector <bool> &diagFlagsZHydrostatic =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_hydro_z);
 
-    ReportFlags[0] |= ufo::MetOfficeQCFlags::WholeObReport::PermRejectReport;
-    tFlags[0] |= ufo::MetOfficeQCFlags::Profile::SuperadiabatFlag;
-    tFlags[0] |= ufo::MetOfficeQCFlags::Profile::InterpolationFlag;
-    tFlags[0] |= ufo::MetOfficeQCFlags::Profile::HydrostaticFlag;
-    rhFlags[0] |= ufo::MetOfficeQCFlags::Elem::PermRejectFlag;
-    uFlags[0] |= ufo::MetOfficeQCFlags::Profile::InterpolationFlag;
-    zFlags[0] |= ufo::MetOfficeQCFlags::Profile::InterpolationFlag;
-    zFlags[0] |= ufo::MetOfficeQCFlags::Profile::HydrostaticFlag;
+    diagFlagsReportPermReject[0] = true;
+    diagFlagsTSuperadiabat[0] = true;
+    diagFlagsTInterpolation[0] = true;
+    diagFlagsTHydrostatic[0] = true;
+    diagFlagsRHPermReject[0] = true;
+    diagFlagsUInterpolation[0] = true;
+    diagFlagsZInterpolation[0] = true;
+    diagFlagsZHydrostatic[0] = true;
 
     // Create checks
     ProfileCheckTime profileCheckTime(options);
@@ -255,8 +259,19 @@ void testConventionalProfileProcessing(const eckit::LocalConfiguration &conf) {
     for (size_t jprof = 0; jprof < obsspace.nrecs(); ++jprof) {
       profileDataHandler.initialiseNextProfile();
 
-      const auto &flagsIn = profileDataHandler.get<int>(ufo::VariableNames::qcflags_eastward_wind);
-      const auto &valuesIn = profileDataHandler.get<float>(ufo::VariableNames::obs_eastward_wind);
+      const std::vector<std::string> diagFlagNames {
+        ufo::ProfileVariableNames::diagflags_final_reject_u,
+        ufo::ProfileVariableNames::diagflags_perm_reject_u,
+        ufo::ProfileVariableNames::diagflags_back_reject_u};
+
+      std::map<std::string, std::vector<bool> > diagFlagVectorsIn;
+      for (const auto & diagFlagName : diagFlagNames) {
+        const std::vector <bool> diagFlagVector =
+          profileDataHandler.get<bool>(diagFlagName);
+        diagFlagVectorsIn[diagFlagName] = diagFlagVector;
+      }
+      const auto &valuesIn = profileDataHandler.get<float>
+        (ufo::ProfileVariableNames::obs_eastward_wind);
       const auto &coordIn = profileDataHandler.get<float>("logP@DerivedValue");
       const auto &bigGap = profileDataHandler.get<float>("bigPgaps@DerivedValue");
       const auto &coordOut = profileDataHandler.get<float>
@@ -264,34 +279,53 @@ void testConventionalProfileProcessing(const eckit::LocalConfiguration &conf) {
       const float DZFrac = 0.5;
       const ProfileAveraging::Method method =
         ProfileAveraging::Method::Averaging;
-
-
-      std::vector <int> flagsOut;
+      std::map<std::string, std::vector<bool> > diagFlagVectorsOut;
+      for (const auto & diagFlagName : diagFlagNames) {
+        diagFlagVectorsOut[diagFlagName] = {};
+      }
+      std::vector<bool> diagFlagsPartialLayerOut;
       std::vector <float> valuesOut;
       int numGaps = 0;
       std::vector<float> ZMax;
       std::vector<float> ZMin;
-      ufo::calculateVerticalAverage(flagsIn,
-                                    valuesIn,
+
+      ufo::calculateVerticalAverage(valuesIn,
                                     coordIn,
                                     bigGap,
                                     coordOut,
+                                    diagFlagVectorsIn,
                                     DZFrac,
                                     method,
-                                    flagsOut,
                                     valuesOut,
+                                    diagFlagVectorsOut,
+                                    diagFlagsPartialLayerOut,
                                     numGaps,
                                     &ZMax,
                                     &ZMin);
 
       // Compare output values with OPS equivalents.
-      const auto &expected_flagsOut =
-        profileDataHandler.get<int>("ModelLevelsQCFlags/OPS_windEastward");
-      for (size_t jlev = 0; jlev < flagsOut.size(); ++jlev)
-        EXPECT(flagsOut[jlev] == expected_flagsOut[jlev]);
+      const auto &diagFlagsFinalRejectOut =
+        diagFlagVectorsOut[ufo::ProfileVariableNames::diagflags_final_reject_u];
+      const auto &expected_diagFlagsFinalRejectOut =
+        profileDataHandler.get<bool>
+        ("ModelLevelsDiagnosticFlags/FinalQCRejection/OPS_windEastward");
+      for (size_t jlev = 0; jlev < diagFlagsFinalRejectOut.size(); ++jlev)
+        EXPECT(diagFlagsFinalRejectOut[jlev] == expected_diagFlagsFinalRejectOut[jlev]);
+      const auto &diagFlagsPermRejectOut =
+        diagFlagVectorsOut[ufo::ProfileVariableNames::diagflags_perm_reject_u];
+      const auto &expected_diagFlagsPermRejectOut =
+        profileDataHandler.get<bool>
+        ("ModelLevelsDiagnosticFlags/PermanentStationRejection/OPS_windEastward");
+      for (size_t jlev = 0; jlev < diagFlagsPermRejectOut.size(); ++jlev)
+        EXPECT(diagFlagsPermRejectOut[jlev] == expected_diagFlagsPermRejectOut[jlev]);
+      const auto &expected_diagFlagsPartialLayerOut =
+        profileDataHandler.get<bool>
+        ("ModelLevelsDiagnosticFlags/PartialLayerUsedInAveraging/OPS_windEastward");
+      for (size_t jlev = 0; jlev < diagFlagsPartialLayerOut.size(); ++jlev)
+        EXPECT(diagFlagsPartialLayerOut[jlev] == expected_diagFlagsPartialLayerOut[jlev]);
       const auto &expected_valuesOut =
         profileDataHandler.get<float>("ModelLevelsDerivedValue/OPS_windEastward");
-      for (size_t jlev = 0; jlev < flagsOut.size(); ++jlev)
+      for (size_t jlev = 0; jlev < valuesOut.size(); ++jlev)
         EXPECT(oops::is_close_relative(valuesOut[jlev], expected_valuesOut[jlev], 1e-4f));
       const auto &expected_ZMin =
         profileDataHandler.get<float>("ModelLevelsDerivedValue/OPS_LogP_u_Min");
@@ -324,16 +358,18 @@ void testConventionalProfileProcessing(const eckit::LocalConfiguration &conf) {
 
     // Create a ProfileDataHolder and request some variables.
     ProfileDataHolder profileDataHolder(profileDataHandler);
-    profileDataHolder.fill({ufo::VariableNames::extended_obs_space},
-                           {ufo::VariableNames::obs_air_pressure},
-                           {ufo::VariableNames::station_ID},
-                           oops::Variables{{oops::Variable{ufo::VariableNames::geovals_pressure}}});
+    profileDataHolder.fill({ufo::ProfileVariableNames::extended_obs_space},
+                           {ufo::ProfileVariableNames::obs_air_pressure},
+                           {ufo::ProfileVariableNames::station_ID},
+                           {},
+                           oops::Variables{{oops::Variable
+                                 {ufo::ProfileVariableNames::geovals_pressure}}});
 
     // Get GeoVaLs
-    profileDataHolder.getGeoVaLVector(oops::Variable{ufo::VariableNames::geovals_pressure});
+    profileDataHolder.getGeoVaLVector(oops::Variable{ufo::ProfileVariableNames::geovals_pressure});
 
     // Attempt to access data with incorrect type.
-    EXPECT_THROWS(profileDataHolder.get<int>(ufo::VariableNames::obs_air_pressure));
+    EXPECT_THROWS(profileDataHolder.get<int>(ufo::ProfileVariableNames::obs_air_pressure));
 
     // Attempt to access nonexistent data.
     EXPECT_THROWS(profileDataHolder.get<int>("wrong@MetaData"));
@@ -346,7 +382,7 @@ void testConventionalProfileProcessing(const eckit::LocalConfiguration &conf) {
     // Advance to the profile in the extended section and perform the same check.
     profileDataHandler.initialiseNextProfile();
     ProfileDataHolder profileDataHolderExt(profileDataHandler);
-    profileDataHolderExt.fill({ufo::VariableNames::extended_obs_space}, {}, {}, {});
+    profileDataHolderExt.fill({ufo::ProfileVariableNames::extended_obs_space}, {}, {}, {}, {});
     EXPECT_THROWS(profileDataHolderExt.checkObsSpaceSection(ufo::ObsSpaceSection::Original));
     profileDataHolderExt.checkObsSpaceSection(ufo::ObsSpaceSection::Extended);
 

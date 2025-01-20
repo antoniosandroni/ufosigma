@@ -7,7 +7,6 @@
 
 #include "ufo/variabletransforms/Cal_QNHtoQFEpressure.h"
 #include "ufo/utils/Constants.h"
-#include "ufo/utils/metoffice/MetOfficeQCFlags.h"
 
 
 namespace ufo {
@@ -63,26 +62,31 @@ void Cal_QNHtoQFEpressure::runTransform(const std::vector<bool> &apply) {
   std::vector<bool> QNHhPa_flag;
 
   // get diagnostic flags from ObsSpace (warn if they have not yet been created)
-  if (obsdb_.has("DiagnosticFlags/notRounded", "stationPressure")) {
-    obsdb_.get_db("DiagnosticFlags/notRounded", "stationPressure", notRounded_flag);
+  if (obsdb_.has("DiagnosticFlags/MetarQNHNotRoundedToNearestHPa", "stationPressure")) {
+    obsdb_.get_db("DiagnosticFlags/MetarQNHNotRoundedToNearestHPa", "stationPressure",
+                  notRounded_flag);
   } else {
-    throw eckit::UserError("Variable 'DiagnosticFlags/notRounded/stationPressure' does not "
-                           "exist yet. It needs to be set up with the 'Create Diagnostic "
-                           "Flags' filter prior to using the 'set' or 'unset' action.");
+    throw eckit::UserError
+      ("Variable 'DiagnosticFlags/MetarQNHNotRoundedToNearestHPa/stationPressure' does not "
+       "exist yet. It needs to be set up with the 'Create Diagnostic "
+       "Flags' filter prior to using the 'set' or 'unset' action.");
   }
-  if (obsdb_.has("DiagnosticFlags/QNHinHg", "stationPressure")) {
-    obsdb_.get_db("DiagnosticFlags/QNHinHg", "stationPressure", QNHinHg_flag);
+  if (obsdb_.has("DiagnosticFlags/MetarQNHUnitsInchesOfMercury", "stationPressure")) {
+    obsdb_.get_db("DiagnosticFlags/MetarQNHUnitsInchesOfMercury", "stationPressure", QNHinHg_flag);
   } else {
-    throw eckit::UserError("Variable 'DiagnosticFlags/QNHinHg/stationPressure' does not exist yet. "
-                           "It needs to be set up with the 'Create Diagnostic Flags' filter "
-                           "prior to using the 'set' or 'unset' action.");
+    throw eckit::UserError
+      ("Variable 'DiagnosticFlags/MetarQNHUnitsInchesOfMercury/stationPressure' "
+       "does not exist yet. "
+       "It needs to be set up with the 'Create Diagnostic Flags' filter "
+       "prior to using the 'set' or 'unset' action.");
   }
-  if (obsdb_.has("DiagnosticFlags/QNHhPa", "stationPressure")) {
-    obsdb_.get_db("DiagnosticFlags/QNHhPa", "stationPressure", QNHhPa_flag);
+  if (obsdb_.has("DiagnosticFlags/MetarQNHUnitsHPa", "stationPressure")) {
+    obsdb_.get_db("DiagnosticFlags/MetarQNHUnitsHPa", "stationPressure", QNHhPa_flag);
   } else {
-    throw eckit::UserError("Variable 'DiagnosticFlags/QNHhPa/stationPressure' does not exist yet. "
-                           "It needs to be set up with the 'Create Diagnostic Flags' filter "
-                           "prior to using the 'set' or 'unset' action.");
+    throw eckit::UserError
+      ("Variable 'DiagnosticFlags/MetarQNHUnitsHPa/stationPressure' does not exist yet. "
+       "It needs to be set up with the 'Create Diagnostic Flags' filter "
+       "prior to using the 'set' or 'unset' action.");
   }
 
   if (!oops::allVectorsSameSize(Pmsl, PStn)) {
@@ -120,8 +124,8 @@ void Cal_QNHtoQFEpressure::runTransform(const std::vector<bool> &apply) {
   }
 
   putObservation("stationPressure", PStn);
-  obsdb_.put_db("DiagnosticFlags/QNHhPa", "stationPressure", QNHhPa_flag);
-  obsdb_.put_db("DiagnosticFlags/QNHinHg", "stationPressure", QNHinHg_flag);
+  obsdb_.put_db("DiagnosticFlags/MetarQNHUnitsHPa", "stationPressure", QNHhPa_flag);
+  obsdb_.put_db("DiagnosticFlags/MetarQNHUnitsInchesOfMercury", "stationPressure", QNHinHg_flag);
   obsdb_.put_db("DerivedObsError", "stationPressure", PStn_error);
   const size_t iv = obserr_.varnames().find("stationPressure");
   for (size_t jobs = 0; jobs < obsdb_.nlocs(); ++jobs) {

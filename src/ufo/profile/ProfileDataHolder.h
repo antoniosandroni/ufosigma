@@ -19,7 +19,7 @@
 #include "oops/util/missingValues.h"
 
 #include "ufo/profile/ProfileDataHandler.h"
-#include "ufo/profile/VariableNames.h"
+#include "ufo/profile/ProfileVariableNames.h"
 
 namespace ufo {
 
@@ -43,6 +43,7 @@ namespace ufo {
     void fill(const std::vector <std::string> &variableNamesInt,
               const std::vector <std::string> &variableNamesFloat,
               const std::vector <std::string> &variableNamesString,
+              const std::vector <std::string> &variableNamesBool,
               const oops::Variables &variableNamesGeoVaLs);
 
     /// Retrieve a vector if it is present. If not, throw an exception.
@@ -122,6 +123,9 @@ namespace ufo {
 
     /// Names of string variables
     std::vector <std::string> variableNamesString_;
+
+    /// Names of bool variables
+    std::vector <std::string> variableNamesBool_;
 
     /// Names of GeoVaLs
     oops::Variables variableNamesGeoVaLs_;

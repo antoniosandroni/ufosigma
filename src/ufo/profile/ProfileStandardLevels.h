@@ -19,8 +19,6 @@
 
 #include "ufo/filters/ConventionalProfileProcessingParameters.h"
 
-#include "ufo/utils/metoffice/MetOfficeQCFlags.h"
-
 namespace ioda {
   class ObsSpace;
 }
@@ -38,7 +36,9 @@ namespace ufo {
     void calcStdLevels(const int numProfileLevels,
                        const std::vector <float> &pressures,
                        const std::vector <float> &tObs,
-                       const std::vector <int> &tFlags);
+                       const std::vector <bool> &diagFlagsTFinalReject,
+                       const std::vector <bool> &diagFlagsTSurfaceLevel,
+                       const std::vector <bool> &diagFlagsTStandardLevel);
 
     /// Compute indices of particular standard levels for the hydrostatic check
     void findHCheckStdLevs();

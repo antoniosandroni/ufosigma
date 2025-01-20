@@ -43,7 +43,6 @@ BayesianBackgroundCheck::BayesianBackgroundCheck(
 {
   oops::Log::trace() << "BayesianBackgroundCheck constructor" << std::endl;
   allvars_ += Variables(filtervars_, "HofX");
-  allvars_ += Variables(filtervars_, "QCFlags");
   for (size_t i = 0; i < filtervars_.size(); ++i) {
       allvars_ += backgrErrVariable(filtervars_[i]);
   }
@@ -106,7 +105,10 @@ void BayesianBackgroundCheck::applyFilter(const std::vector<bool> & apply,
   ioda::ObsDataVector<float> obs(obsdb_, filtervars.toOopsObsVariables(), "ObsValue");
 
   Variables varhofx(filtervars_, "HofX");
-  Variables varflags(filtervars_, "QCFlags");
+  Variables vardiagflagsbackperf(filtervars_, "DiagnosticFlags/BackgroundCheckPerformed");
+  Variables vardiagflagsbackreject(filtervars_, "DiagnosticFlags/BackgroundCheckRejection");
+  Variables vardiagflagspermreject(filtervars_, "DiagnosticFlags/PermanentStationRejection");
+  Variables vardiagflagsfinalreject(filtervars_, "DiagnosticFlags/FinalQCRejection");
   const float missingValueFloat = util::missingValue<float>();
 
   // User input checks on filter variables Pdbad and pdBadObsVectorName
@@ -182,8 +184,11 @@ void BayesianBackgroundCheck::applyFilter(const std::vector<bool> & apply,
       std::vector<float> PGE1(obsdb_.nlocs());
       // Total (combined) probability distribution
       std::vector<float> TotalPd(obsdb_.nlocs(), missingValueFloat);
-      // QC flags:
-      std::vector<int> qcflags1(obsdb_.nlocs());
+      // Diagnostic flags:
+      std::vector<bool> diagFlagsBackPerf(obsdb_.nlocs());
+      std::vector<bool> diagFlagsBackReject(obsdb_.nlocs());
+      std::vector<bool> diagFlagsPermReject(obsdb_.nlocs());
+      std::vector<bool> diagFlagsFinalReject(obsdb_.nlocs());
       std::vector<float> firstComponentObVal, secondComponentObVal;
       // make note of conditions on apply and flags_:
       std::vector<bool> applycondition(obsdb_.nlocs(), false);
@@ -201,10 +206,26 @@ void BayesianBackgroundCheck::applyFilter(const std::vector<bool> & apply,
         // observation values:
         firstComponentObVal = obs[filterVarIndex-1];
         secondComponentObVal = obs[filterVarIndex];
-        // QC flags (all zeros, or read from file if possible):
-        if (obsdb_.has("QCFlags", varname1)) {
-          data_.get(varflags.variable(filterVarIndex-1), qcflags1);
-          oops::Log::debug() << "Got qcflags1 from file: " << qcflags1 << std::endl;
+        // Diagnostic flags
+        if (obsdb_.has("DiagnosticFlags/BackgroundCheckPerformed", varname1)) {
+          data_.get(vardiagflagsbackperf.variable(filterVarIndex-1), diagFlagsBackPerf);
+          oops::Log::debug() << "Got diagFlagsBackPerf from obsspace: "
+                             << diagFlagsBackPerf << std::endl;
+        }
+        if (obsdb_.has("DiagnosticFlags/BackgroundCheckRejection", varname1)) {
+          data_.get(vardiagflagsbackreject.variable(filterVarIndex-1), diagFlagsBackReject);
+          oops::Log::debug() << "Got diagFlagsBackReject from obsspace: "
+                             << diagFlagsBackReject << std::endl;
+        }
+        if (obsdb_.has("DiagnosticFlags/PermanentStationRejection", varname1)) {
+          data_.get(vardiagflagspermreject.variable(filterVarIndex-1), diagFlagsPermReject);
+          oops::Log::debug() << "Got diagFlagsPermReject from obsspace: "
+                             << diagFlagsPermReject << std::endl;
+        }
+        if (obsdb_.has("DiagnosticFlags/FinalQCRejection", varname1)) {
+          data_.get(vardiagflagsfinalreject.variable(filterVarIndex-1), diagFlagsFinalReject);
+          oops::Log::debug() << "Got diagFlagsFinalReject from obsspace: "
+                             << diagFlagsFinalReject << std::endl;
         }
         // PGE:
         obsdb_.get_db("GrossErrorProbability", varname1, PGE1);
@@ -225,10 +246,26 @@ void BayesianBackgroundCheck::applyFilter(const std::vector<bool> & apply,
         data_.get(varhofx.variable(filterVarIndex), hofx1);
         // observation values:
         firstComponentObVal = obs[filterVarIndex];
-        // QC flags (all zeros, or read from file if possible):
-        if (obsdb_.has("QCFlags", varname1)) {
-          data_.get(varflags.variable(filterVarIndex), qcflags1);
-          oops::Log::debug() << "Got qcflags1 from file: " << qcflags1 << std::endl;
+        // Diagnostic flags
+        if (obsdb_.has("DiagnosticFlags/BackgroundCheckPerformed", varname1)) {
+          data_.get(vardiagflagsbackperf.variable(filterVarIndex), diagFlagsBackPerf);
+          oops::Log::debug() << "Got diagFlagsBackPerf from obsspace: "
+                             << diagFlagsBackPerf << std::endl;
+        }
+        if (obsdb_.has("DiagnosticFlags/BackgroundCheckRejection", varname1)) {
+          data_.get(vardiagflagsbackreject.variable(filterVarIndex), diagFlagsBackReject);
+          oops::Log::debug() << "Got diagFlagsBackReject from obsspace: "
+                             << diagFlagsBackReject << std::endl;
+        }
+        if (obsdb_.has("DiagnosticFlags/PermanentStationRejection", varname1)) {
+          data_.get(vardiagflagspermreject.variable(filterVarIndex), diagFlagsPermReject);
+          oops::Log::debug() << "Got diagFlagsPermReject from obsspace: "
+                             << diagFlagsPermReject << std::endl;
+        }
+        if (obsdb_.has("DiagnosticFlags/FinalQCRejection", varname1)) {
+          data_.get(vardiagflagsfinalreject.variable(filterVarIndex), diagFlagsFinalReject);
+          oops::Log::debug() << "Got diagFlagsFinalReject from obsspace: "
+                             << diagFlagsFinalReject << std::endl;
         }
         // PGE:
         obsdb_.get_db("GrossErrorProbability", varname1, PGE1);
@@ -251,7 +288,14 @@ void BayesianBackgroundCheck::applyFilter(const std::vector<bool> & apply,
       std::vector<float> hofx1_reduced = reduceVector(hofx1, j_reduced);
       std::vector<float> hofxerr_reduced = reduceVector(hofxerr, j_reduced);
       std::vector<float> PdBad_reduced = reduceVector(PdBad, j_reduced);
-      std::vector<int> qcflags1_reduced = reduceVector(qcflags1, j_reduced);
+      std::vector<bool> diagFlagsBackPerf_reduced =
+        reduceVector(diagFlagsBackPerf, j_reduced);
+      std::vector<bool> diagFlagsBackReject_reduced =
+        reduceVector(diagFlagsBackReject, j_reduced);
+      std::vector<bool> diagFlagsPermReject_reduced =
+        reduceVector(diagFlagsPermReject, j_reduced);
+      std::vector<bool> diagFlagsFinalReject_reduced =
+        reduceVector(diagFlagsFinalReject, j_reduced);
       std::vector<float> PGE1_reduced = reduceVector(PGE1, j_reduced);
       std::vector<float> secondComponentObVal_reduced;
       std::vector<float> hofx2_reduced;
@@ -271,7 +315,10 @@ void BayesianBackgroundCheck::applyFilter(const std::vector<bool> & apply,
                              hofxerr_reduced,
                              PdBad_reduced,
                              parameters_.PerformSDiffCheck.value(),
-                             qcflags1_reduced,
+                             diagFlagsBackPerf_reduced,
+                             diagFlagsBackReject_reduced,
+                             diagFlagsPermReject_reduced,
+                             diagFlagsFinalReject_reduced,
                              PGE1_reduced,
                              parameters_.ErrVarMax,
                              previousVariableWasFirstComponentOfTwo?
@@ -281,8 +328,12 @@ void BayesianBackgroundCheck::applyFilter(const std::vector<bool> & apply,
                              parameters_.SaveTotalPd?
                              &TotalPd_reduced : nullptr);
 
+
       // write PGE-updated values from reduced vectors back into full ones:
-      unreduceVector(qcflags1_reduced, qcflags1, j_reduced);
+      unreduceVector(diagFlagsBackPerf_reduced, diagFlagsBackPerf, j_reduced);
+      unreduceVector(diagFlagsBackReject_reduced, diagFlagsBackReject, j_reduced);
+      unreduceVector(diagFlagsPermReject_reduced, diagFlagsPermReject, j_reduced);
+      unreduceVector(diagFlagsFinalReject_reduced, diagFlagsFinalReject, j_reduced);
       unreduceVector(PGE1_reduced, PGE1, j_reduced);
       unreduceVector(TotalPd_reduced, TotalPd, j_reduced);
 
@@ -292,8 +343,11 @@ void BayesianBackgroundCheck::applyFilter(const std::vector<bool> & apply,
           obsdb_.put_db("GrossErrorProbabilityTotal", varname1, TotalPd);
       }
 
-      // Save QC flags to obsdb
-      obsdb_.put_db("QCFlags", varname1, qcflags1);  // Met Office QC flags, not flagged or *flags_
+      // Save diagnostic flags to obsdb
+      obsdb_.put_db("DiagnosticFlags/BackgroundCheckPerformed", varname1, diagFlagsBackPerf);
+      obsdb_.put_db("DiagnosticFlags/BackgroundCheckRejection", varname1, diagFlagsBackReject);
+      obsdb_.put_db("DiagnosticFlags/PermanentStationRejection", varname1, diagFlagsPermReject);
+      obsdb_.put_db("DiagnosticFlags/FinalQCRejection", varname1, diagFlagsFinalReject);
 
       if (previousVariableWasFirstComponentOfTwo) {
         // Save PGE to obsdb
@@ -302,15 +356,15 @@ void BayesianBackgroundCheck::applyFilter(const std::vector<bool> & apply,
         if (parameters_.SaveTotalPd) {
             obsdb_.put_db("GrossErrorProbabilityTotal", varname2, TotalPd);
         }
-        // Save QC flags to obsdb
-        std::vector<int> &qcflags2 = qcflags1;  // in old OPS, flags same for both components
-        obsdb_.put_db("QCFlags", varname2, qcflags2);
+        // Save diagnostic flags to obsdb
+        obsdb_.put_db("DiagnosticFlags/BackgroundCheckPerformed", varname2, diagFlagsBackPerf);
+        obsdb_.put_db("DiagnosticFlags/BackgroundCheckRejection", varname2, diagFlagsBackReject);
+        obsdb_.put_db("DiagnosticFlags/PermanentStationRejection", varname2, diagFlagsPermReject);
+        obsdb_.put_db("DiagnosticFlags/FinalQCRejection", varname2, diagFlagsFinalReject);
         // Set flagged, for 2nd component:
         for (size_t jobs=0; jobs < obsdb_.nlocs(); ++jobs) {
-          if (qcflags1[jobs] & ufo::MetOfficeQCFlags::Elem::BackRejectFlag) {
+          if (diagFlagsBackReject[jobs]) {
             flagged[filterVarIndex-1][jobs] = true;
-          }
-          if (qcflags2[jobs] & ufo::MetOfficeQCFlags::Elem::BackRejectFlag) {
             flagged[filterVarIndex][jobs] = true;
           }
           oops::Log::debug() << "flagged(1)[" << jobs << "]: "
@@ -321,8 +375,8 @@ void BayesianBackgroundCheck::applyFilter(const std::vector<bool> & apply,
       } else {
         // Set flagged, for scalar:
         for (size_t jobs=0; jobs < obsdb_.nlocs(); ++jobs) {
-          if (qcflags1[jobs] & ufo::MetOfficeQCFlags::Elem::BackRejectFlag ||
-              qcflags1[jobs] & ufo::MetOfficeQCFlags::Elem::FinalRejectFlag) {
+          if (diagFlagsBackReject[jobs] ||
+              diagFlagsFinalReject[jobs]) {
             flagged[filterVarIndex][jobs] = true;
           }
           oops::Log::debug() << "flagged[" << jobs << "]: "

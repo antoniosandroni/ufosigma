@@ -32,7 +32,7 @@ namespace ufo {
 
     /// List of names of required GeoVaLs.
     oops::Variables getGeoVaLNames() override {
-      return oops::Variables({ufo::VariableNames::geovals_pressure});}
+      return oops::Variables({ufo::ProfileVariableNames::geovals_pressure});}
   };
 }  // namespace ufo
 

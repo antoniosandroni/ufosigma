@@ -26,23 +26,33 @@ namespace ufo {
 
     const size_t numProfileLevels = profileDataHandler.getNumProfileLevels();
     const std::vector <int> &ObsType =
-      profileDataHandler.get<int>(ufo::VariableNames::ObsType);
+      profileDataHandler.get<int>(ufo::ProfileVariableNames::ObsType);
     const std::vector <float> &pressures =
-       profileDataHandler.get<float>(ufo::VariableNames::obs_air_pressure);
-    std::vector <int> &uFlags =
-      profileDataHandler.get<int>(ufo::VariableNames::qcflags_eastward_wind);
-    std::vector <int> &vFlags =
-      profileDataHandler.get<int>(ufo::VariableNames::qcflags_northward_wind);
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_air_pressure);
+    std::vector <bool> &diagFlagsUSurfaceLevel =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_surface_level_u);
+    std::vector <bool> &diagFlagsUPermReject =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_perm_reject_u);
+    std::vector <bool> &diagFlagsVPermReject =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_perm_reject_v);
     const std::vector <int> &extended_obs_space =
-      profileDataHandler.get<int>(ufo::VariableNames::extended_obs_space);
+      profileDataHandler.get<int>(ufo::ProfileVariableNames::extended_obs_space);
     const bool ModelLevels = std::find(extended_obs_space.begin(), extended_obs_space.end(), 1)
       != extended_obs_space.end();
 
-    if (!oops::allVectorsSameNonZeroSize(ObsType, pressures, uFlags, vFlags)) {
+    if (!oops::allVectorsSameNonZeroSize(ObsType,
+                                         pressures,
+                                         diagFlagsUSurfaceLevel,
+                                         diagFlagsUPermReject,
+                                         diagFlagsVPermReject)) {
       oops::Log::debug() << "At least one vector is the wrong size. "
                          << "Time checks will not be performed." << std::endl;
       oops::Log::debug() << "Vector sizes: "
-                         << oops::listOfVectorSizes(ObsType, pressures, uFlags, vFlags)
+                         << oops::listOfVectorSizes(ObsType,
+                                                    pressures,
+                                                    diagFlagsUSurfaceLevel,
+                                                    diagFlagsUPermReject,
+                                                    diagFlagsVPermReject)
                          << std::endl;
       return;
     }
@@ -51,14 +61,14 @@ namespace ufo {
     const float SondeLaunchWindRej = options_.TimeCheck_SondeLaunchWindRej.value();
     // Firstly determine surface pressure.
     float PSurf = 0.0;
-    if (!uFlags.empty() && SondeLaunchWindRej > 0.0 &&
+    if (!diagFlagsUSurfaceLevel.empty() && SondeLaunchWindRej > 0.0 &&
         !ModelLevels &&
         (ObsType[0] != ufo::MetOfficeObsIDs::AtmosphericProfile::WindProf)) {
       PSurf = pressures[0];
       for (size_t jlev = 0;
            jlev < std::min(static_cast<int>(numProfileLevels), 10);
            ++jlev) {
-        if (uFlags[jlev] & ufo::MetOfficeQCFlags::Profile::SurfaceLevelFlag) {
+        if (diagFlagsUSurfaceLevel[jlev]) {
           PSurf = pressures[jlev];
           break;
         }
@@ -71,8 +81,8 @@ namespace ufo {
       const float PLimit = PSurf - SondeLaunchWindRej * 100.0;  // Convert from hPa to Pa
       for (size_t jlev = 0; jlev < numProfileLevels; ++jlev) {
         if (pressures[jlev] > 0.0 && pressures[jlev] < PLimit) break;
-        if (!uFlags.empty()) uFlags[jlev] |= ufo::MetOfficeQCFlags::Elem::PermRejectFlag;
-        if (!vFlags.empty()) vFlags[jlev] |= ufo::MetOfficeQCFlags::Elem::PermRejectFlag;
+        if (!diagFlagsUPermReject.empty()) diagFlagsUPermReject[jlev] = true;
+        if (!diagFlagsVPermReject.empty()) diagFlagsVPermReject[jlev] = true;
         NWindRej++;
       }
       oops::Log::debug() << "Wind rejection: "

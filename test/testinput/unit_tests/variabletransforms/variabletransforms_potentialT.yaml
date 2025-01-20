@@ -40,3 +40,7 @@ observations:
       test:
         name: ObsErrorForComparison/potentialTemperature
       relTol: 1.0e-3
+    - reference:
+        name: DiagnosticFlags/FlagA/potentialTemperature
+      test:
+        name: DiagnosticFlags/TestFlagA/potentialTemperature

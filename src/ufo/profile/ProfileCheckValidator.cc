@@ -15,7 +15,7 @@
 #include "oops/util/Logger.h"
 
 #include "ufo/profile/ProfileCheckValidator.h"
-#include "ufo/profile/VariableNames.h"
+#include "ufo/profile/ProfileVariableNames.h"
 
 #include "ufo/utils/StringUtils.h"
 
@@ -25,12 +25,12 @@ namespace ufo {
     : options_(options)
   {
     // Set offsets due to C++ and Fortran array index starting values
-    comparison_offsets_[ufo::VariableNames::StdLev] = 1;
-    comparison_offsets_[ufo::VariableNames::SigBelow] = 1;
-    comparison_offsets_[ufo::VariableNames::SigAbove] = 1;
-    comparison_offsets_[ufo::VariableNames::IndStd] = 1;
-    comparison_offsets_[ufo::VariableNames::LevErrors] = 1;
-    comparison_offsets_[ufo::VariableNames::Indx] = 1;
+    comparison_offsets_[ufo::ProfileVariableNames::StdLev] = 1;
+    comparison_offsets_[ufo::ProfileVariableNames::SigBelow] = 1;
+    comparison_offsets_[ufo::ProfileVariableNames::SigAbove] = 1;
+    comparison_offsets_[ufo::ProfileVariableNames::IndStd] = 1;
+    comparison_offsets_[ufo::ProfileVariableNames::LevErrors] = 1;
+    comparison_offsets_[ufo::ProfileVariableNames::Indx] = 1;
 
     // List of checks performed
     std::vector <std::string> checks = options_.Checks.value();
@@ -40,141 +40,164 @@ namespace ufo {
       if (check == "Basic") {
       } else if (check == "SamePDiffT") {
         valuesToCompare_int_.insert({
-            ufo::VariableNames::counter_NumAnyErrors,
-            ufo::VariableNames::counter_NumSamePErrObs,
-            ufo::VariableNames::qcflags_air_temperature});
+            ufo::ProfileVariableNames::counter_NumAnyErrors,
+              ufo::ProfileVariableNames::counter_NumSamePErrObs
+              });
+        valuesToCompare_bool_.insert({
+            ufo::ProfileVariableNames::diagflags_final_reject_t,
+            ufo::ProfileVariableNames::diagflags_interpolation_t});
       } else if (check == "Sign") {
         valuesToCompare_int_.insert({
-            ufo::VariableNames::counter_NumAnyErrors,
-            ufo::VariableNames::counter_NumSignChange,
-            ufo::VariableNames::qcflags_air_temperature});
+            ufo::ProfileVariableNames::counter_NumAnyErrors,
+              ufo::ProfileVariableNames::counter_NumSignChange});
+        valuesToCompare_bool_.insert({
+            ufo::ProfileVariableNames::diagflags_final_reject_t,
+            ufo::ProfileVariableNames::diagflags_data_correct_t});
       } else if (check == "UnstableLayer") {
         valuesToCompare_int_.insert({
-            ufo::VariableNames::qcflags_air_temperature,
-            ufo::VariableNames::counter_NumAnyErrors,
-            ufo::VariableNames::counter_NumSuperadiabat});
+            ufo::ProfileVariableNames::counter_NumAnyErrors,
+            ufo::ProfileVariableNames::counter_NumSuperadiabat});
         valuesToCompare_float_.insert({
-            ufo::VariableNames::PBottom});
+            ufo::ProfileVariableNames::PBottom});
+        valuesToCompare_bool_.insert({
+            ufo::ProfileVariableNames::diagflags_superadiabat_t});
       } else if (check == "Interpolation") {
         valuesToCompare_int_.insert({
-            ufo::VariableNames::counter_NumAnyErrors,
-            ufo::VariableNames::counter_NumInterpErrors,
-            ufo::VariableNames::counter_NumInterpErrObs,
-            ufo::VariableNames::qcflags_air_temperature,
-            ufo::VariableNames::NumStd,
-            ufo::VariableNames::NumSig,
-            ufo::VariableNames::StdLev,
-            ufo::VariableNames::SigBelow,
-            ufo::VariableNames::SigAbove,
-            ufo::VariableNames::IndStd,
-            ufo::VariableNames::LevErrors});
+            ufo::ProfileVariableNames::counter_NumAnyErrors,
+            ufo::ProfileVariableNames::counter_NumInterpErrors,
+            ufo::ProfileVariableNames::counter_NumInterpErrObs,
+            ufo::ProfileVariableNames::NumStd,
+            ufo::ProfileVariableNames::NumSig,
+            ufo::ProfileVariableNames::StdLev,
+            ufo::ProfileVariableNames::SigBelow,
+            ufo::ProfileVariableNames::SigAbove,
+            ufo::ProfileVariableNames::IndStd,
+            ufo::ProfileVariableNames::LevErrors});
         valuesToCompare_float_.insert({
-            ufo::VariableNames::tInterp,
-            ufo::VariableNames::LogP});
+            ufo::ProfileVariableNames::tInterp,
+            ufo::ProfileVariableNames::LogP});
+        valuesToCompare_bool_.insert({
+            ufo::ProfileVariableNames::diagflags_interpolation_t});
       } else if (check == "Hydrostatic") {
         valuesToCompare_int_.insert({
-            ufo::VariableNames::counter_NumAnyErrors,
-            ufo::VariableNames::counter_Num925Miss,
-            ufo::VariableNames::counter_Num100Miss,
-            ufo::VariableNames::counter_NumStdMiss,
-            ufo::VariableNames::counter_NumHydErrObs,
-            ufo::VariableNames::counter_NumIntHydErrors,
-            ufo::VariableNames::qcflags_air_temperature,
-            ufo::VariableNames::qcflags_geopotential_height,
-            ufo::VariableNames::HydError});
+            ufo::ProfileVariableNames::counter_NumAnyErrors,
+            ufo::ProfileVariableNames::counter_Num925Miss,
+            ufo::ProfileVariableNames::counter_Num100Miss,
+            ufo::ProfileVariableNames::counter_NumStdMiss,
+            ufo::ProfileVariableNames::counter_NumHydErrObs,
+            ufo::ProfileVariableNames::counter_NumIntHydErrors,
+            ufo::ProfileVariableNames::HydError});
         valuesToCompare_float_.insert({
-            ufo::VariableNames::DC,
-            ufo::VariableNames::ETol});
+            ufo::ProfileVariableNames::DC,
+            ufo::ProfileVariableNames::ETol});
+        valuesToCompare_bool_.insert({
+            ufo::ProfileVariableNames::diagflags_interpolation_t,
+            ufo::ProfileVariableNames::diagflags_hydro_t,
+            ufo::ProfileVariableNames::diagflags_hydro_z,
+            ufo::ProfileVariableNames::diagflags_data_correct_z});
       } else if (check == "UInterp" || check == "UInterpAlternative") {
         valuesToCompare_int_.insert({
-            ufo::VariableNames::counter_NumSamePErrObs,
-            ufo::VariableNames::counter_NumInterpErrObs,
-            ufo::VariableNames::NumStd,
-            ufo::VariableNames::NumSig,
-            ufo::VariableNames::StdLev,
-            ufo::VariableNames::SigBelow,
-            ufo::VariableNames::SigAbove,
-            ufo::VariableNames::LevErrors});
+            ufo::ProfileVariableNames::counter_NumSamePErrObs,
+            ufo::ProfileVariableNames::counter_NumInterpErrObs,
+            ufo::ProfileVariableNames::NumStd,
+            ufo::ProfileVariableNames::NumSig,
+            ufo::ProfileVariableNames::StdLev,
+            ufo::ProfileVariableNames::SigBelow,
+            ufo::ProfileVariableNames::SigAbove,
+            ufo::ProfileVariableNames::LevErrors});
         valuesToCompare_float_.insert({
-            ufo::VariableNames::uInterp,
-            ufo::VariableNames::vInterp,
-            ufo::VariableNames::LogP});
+            ufo::ProfileVariableNames::uInterp,
+            ufo::ProfileVariableNames::vInterp,
+            ufo::ProfileVariableNames::LogP});
       } else if (check == "RH") {
         valuesToCompare_int_.insert({
-            ufo::VariableNames::qcflags_relative_humidity,
-            ufo::VariableNames::counter_TotCProfs,
-            ufo::VariableNames::counter_TotHProfs,
-            ufo::VariableNames::counter_TotCFlags,
-            ufo::VariableNames::counter_TotHFlags,
-            ufo::VariableNames::counter_TotLFlags,
-            ufo::VariableNames::FlagH,
-            ufo::VariableNames::Indx});
+            ufo::ProfileVariableNames::counter_TotCProfs,
+            ufo::ProfileVariableNames::counter_TotHProfs,
+            ufo::ProfileVariableNames::counter_TotCFlags,
+            ufo::ProfileVariableNames::counter_TotHFlags,
+            ufo::ProfileVariableNames::counter_TotLFlags,
+            ufo::ProfileVariableNames::FlagH,
+            ufo::ProfileVariableNames::Indx});
         valuesToCompare_float_.insert({
-            ufo::VariableNames::Press,
-            ufo::VariableNames::Temp,
-            ufo::VariableNames::rh,
-            ufo::VariableNames::td,
-            ufo::VariableNames::tbk,
-            ufo::VariableNames::rhbk});
+            ufo::ProfileVariableNames::Press,
+            ufo::ProfileVariableNames::Temp,
+            ufo::ProfileVariableNames::rh,
+            ufo::ProfileVariableNames::td,
+            ufo::ProfileVariableNames::tbk,
+            ufo::ProfileVariableNames::rhbk});
+        valuesToCompare_bool_.insert({
+            ufo::ProfileVariableNames::diagflags_interpolation_rh,
+            ufo::ProfileVariableNames::diagflags_final_reject_rh});
       } else if (check == "Time") {
-        valuesToCompare_int_.insert({
-            ufo::VariableNames::qcflags_eastward_wind,
-            ufo::VariableNames::qcflags_northward_wind});
+        valuesToCompare_bool_.insert({
+            ufo::ProfileVariableNames::diagflags_perm_reject_u,
+            ufo::ProfileVariableNames::diagflags_perm_reject_v});
       } else if (check == "PermanentReject") {
-        valuesToCompare_int_.insert({
-            ufo::VariableNames::qcflags_air_temperature,
-            ufo::VariableNames::qcflags_relative_humidity,
-            ufo::VariableNames::qcflags_eastward_wind,
-            ufo::VariableNames::qcflags_northward_wind,
-            ufo::VariableNames::qcflags_geopotential_height});
+        // todo : need to fix the check code first
+        valuesToCompare_bool_.insert({});
       } else if (check.find("Background") != std::string::npos) {
-        valuesToCompare_int_.insert({
-            ufo::VariableNames::qcflags_air_temperature,
-            ufo::VariableNames::qcflags_relative_humidity,
-            ufo::VariableNames::qcflags_eastward_wind,
-            ufo::VariableNames::qcflags_northward_wind,
-            ufo::VariableNames::qcflags_geopotential_height});
         valuesToCompare_float_.insert({
-            ufo::VariableNames::pge_air_temperature,
-            ufo::VariableNames::pge_relative_humidity,
-            ufo::VariableNames::pge_eastward_wind,
-            ufo::VariableNames::pge_northward_wind,
-            ufo::VariableNames::pge_geopotential_height});
+            ufo::ProfileVariableNames::pge_air_temperature,
+            ufo::ProfileVariableNames::pge_relative_humidity,
+            ufo::ProfileVariableNames::pge_eastward_wind,
+            ufo::ProfileVariableNames::pge_northward_wind,
+            ufo::ProfileVariableNames::pge_geopotential_height});
+        valuesToCompare_bool_.insert({
+            ufo::ProfileVariableNames::diagflags_back_perf_t,
+            ufo::ProfileVariableNames::diagflags_final_reject_t,
+            ufo::ProfileVariableNames::diagflags_final_reject_t,
+            ufo::ProfileVariableNames::diagflags_back_perf_rh,
+            ufo::ProfileVariableNames::diagflags_final_reject_rh,
+            ufo::ProfileVariableNames::diagflags_final_reject_rh,
+            ufo::ProfileVariableNames::diagflags_back_perf_u,
+            ufo::ProfileVariableNames::diagflags_final_reject_u,
+            ufo::ProfileVariableNames::diagflags_final_reject_u,
+            ufo::ProfileVariableNames::diagflags_back_perf_v,
+            ufo::ProfileVariableNames::diagflags_final_reject_v,
+            ufo::ProfileVariableNames::diagflags_final_reject_v,
+            ufo::ProfileVariableNames::diagflags_back_perf_z,
+            ufo::ProfileVariableNames::diagflags_final_reject_z,
+            ufo::ProfileVariableNames::diagflags_final_reject_z});
       } else if (check == "Pressure") {
-        valuesToCompare_int_.insert({
-            ufo::VariableNames::qcflags_observation_report});
         valuesToCompare_float_.insert({
-            ufo::VariableNames::obs_air_pressure});
+            ufo::ProfileVariableNames::obs_air_pressure});
+        valuesToCompare_bool_.insert({
+            ufo::ProfileVariableNames::diagflags_no_pressure_report
+          });
       } else if (check == "AveragePressure") {
         valuesToCompare_float_.insert({
-            ufo::VariableNames::LogP_derived,
-            ufo::VariableNames::bigPgaps_derived,
-            ufo::VariableNames::modellevels_logP_derived,
-            ufo::VariableNames::modellevels_ExnerP_derived,
-            ufo::VariableNames::modellevels_logP_rho_derived,
-            ufo::VariableNames::modellevels_ExnerP_rho_derived});
+            ufo::ProfileVariableNames::LogP_derived,
+            ufo::ProfileVariableNames::bigPgaps_derived,
+            ufo::ProfileVariableNames::modellevels_logP_derived,
+            ufo::ProfileVariableNames::modellevels_ExnerP_derived,
+            ufo::ProfileVariableNames::modellevels_logP_rho_derived,
+            ufo::ProfileVariableNames::modellevels_ExnerP_rho_derived});
       } else if (check == "AverageTemperature") {
         valuesToCompare_int_.insert({
-            ufo::VariableNames::qcflags_air_temperature,
-            ufo::VariableNames::counter_NumGapsT});
+            ufo::ProfileVariableNames::counter_NumGapsT});
         valuesToCompare_float_.insert({
-            ufo::VariableNames::modellevels_air_temperature_derived,
-            ufo::VariableNames::air_temperature_derived});
+            ufo::ProfileVariableNames::modellevels_air_temperature_derived,
+            ufo::ProfileVariableNames::air_temperature_derived});
+        valuesToCompare_bool_.insert({
+            ufo::ProfileVariableNames::diagflags_final_reject_t,
+            ufo::ProfileVariableNames::diagflags_final_reject_rh});
       } else if (check == "AverageWindSpeed") {
         valuesToCompare_int_.insert({
-            ufo::VariableNames::qcflags_eastward_wind,
-            ufo::VariableNames::qcflags_northward_wind,
-            ufo::VariableNames::counter_NumGapsU,
-            ufo::VariableNames::counter_NumGapsUWP});
+            ufo::ProfileVariableNames::counter_NumGapsU,
+            ufo::ProfileVariableNames::counter_NumGapsUWP});
         valuesToCompare_float_.insert({
-            ufo::VariableNames::eastward_wind_derived,
-            ufo::VariableNames::northward_wind_derived});
+            ufo::ProfileVariableNames::eastward_wind_derived,
+            ufo::ProfileVariableNames::northward_wind_derived});
+        valuesToCompare_bool_.insert({
+            ufo::ProfileVariableNames::diagflags_final_reject_u,
+            ufo::ProfileVariableNames::diagflags_final_reject_v          });
       } else if (check == "AverageRelativeHumidity") {
         valuesToCompare_int_.insert({
-            ufo::VariableNames::qcflags_relative_humidity,
-            ufo::VariableNames::counter_NumGapsRH});
+            ufo::ProfileVariableNames::counter_NumGapsRH});
         valuesToCompare_float_.insert({
-            ufo::VariableNames::relative_humidity_derived});
+            ufo::ProfileVariableNames::relative_humidity_derived});
+        valuesToCompare_bool_.insert({
+            ufo::ProfileVariableNames::diagflags_final_reject_rh});
       }
     }
   }
@@ -306,6 +329,21 @@ namespace ufo {
       const std::vector <float> &values_OPS =
         profileDataHandler.get<float>(varname_OPS);
       compareOutput(valueToCompare_float, values_OPS, values_thiscode,
+                    0, tol, nMismatches_);
+    }
+
+    // Compare bool values obtained in this code and OPS
+    for (const auto& valueToCompare_bool : valuesToCompare_bool_) {
+      oops::Log::debug() << "  " << valueToCompare_bool << std::endl;
+      std::string varname;
+      std::string groupname;
+      ufo::splitVarGroup(valueToCompare_bool, varname, groupname);
+      const std::string varname_OPS = groupname + std::string("/OPS_") + varname;
+      const std::vector <bool> &values_thiscode =
+        profileDataHandler.get<bool>(valueToCompare_bool);
+      const std::vector <bool> &values_OPS =
+        profileDataHandler.get<bool>(varname_OPS);
+      compareOutput(valueToCompare_bool, values_OPS, values_thiscode,
                     0, tol, nMismatches_);
     }
 

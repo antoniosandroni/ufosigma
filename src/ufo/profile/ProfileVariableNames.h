@@ -5,13 +5,13 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
-#ifndef UFO_PROFILE_VARIABLENAMES_H_
-#define UFO_PROFILE_VARIABLENAMES_H_
+#ifndef UFO_PROFILE_PROFILEVARIABLENAMES_H_
+#define UFO_PROFILE_PROFILEVARIABLENAMES_H_
 
 namespace ufo
 {
 
-struct VariableNames
+struct ProfileVariableNames
 {
   // Observation values
 
@@ -67,22 +67,140 @@ struct VariableNames
   static constexpr const char* const InstrType = "MetaData/instrumentIdentifier";
   static constexpr const char* const extended_obs_space = "MetaData/extendedObsSpace";
 
-  // QC flags
+  // Quality information
 
-  static constexpr const char* const qcflags_observation_report = "QCFlags/observationReport";
-  static constexpr const char* const qcflags_air_temperature = "QCFlags/airTemperature";
-  static constexpr const char* const qcflags_relative_humidity = "QCFlags/relativeHumidity";
-  static constexpr const char* const qcflags_geopotential_height = "QCFlags/height";
-  static constexpr const char* const qcflags_eastward_wind = "QCFlags/windEastward";
-  static constexpr const char* const qcflags_northward_wind = "QCFlags/windNorthward";
-  static constexpr const char* const qcflags_wind_profiler = "QCFlags/windProfiler";
+  static constexpr const char* const qualinf_wind_profiler =
+    "QualityInformation/windProfiler";
 
-  // Diagnostic flags
+  // Diagnostic flags for airTemperature
 
-  static constexpr const char* const diagflags_profile_interpolation_eastward_wind =
-    "DiagnosticFlags/Profile/Interpolation/windEastward";
-  static constexpr const char* const diagflags_profile_standard_level_eastward_wind =
-    "DiagnosticFlags/Profile/StandardLevel/windEastward";
+  static constexpr const char* const diagflags_back_perf_t =
+    "DiagnosticFlags/BackgroundCheckPerformed/airTemperature";
+  static constexpr const char* const diagflags_back_reject_t =
+    "DiagnosticFlags/BackgroundCheckRejection/airTemperature";
+  static constexpr const char* const diagflags_data_correct_t =
+    "DiagnosticFlags/ValueCorrected/airTemperature";
+  static constexpr const char* const diagflags_final_reject_t =
+    "DiagnosticFlags/FinalQCRejection/airTemperature";
+  static constexpr const char* const diagflags_hydro_t =
+    "DiagnosticFlags/HydrostaticCheckRejection/airTemperature";
+  static constexpr const char* const diagflags_interpolation_t =
+    "DiagnosticFlags/InterpolationCheckRejection/airTemperature";
+  static constexpr const char* const diagflags_partial_layer_t =
+    "DiagnosticFlags/PartialLayerUsedInAveraging/airTemperature";
+  static constexpr const char* const diagflags_perm_reject_t =
+    "DiagnosticFlags/PermanentStationRejection/airTemperature";
+  static constexpr const char* const diagflags_standard_level_t =
+    "DiagnosticFlags/StandardLevelInAscent/airTemperature";
+  static constexpr const char* const diagflags_sig_temp_t =
+    "DiagnosticFlags/SignificantTemperatureLevelInAscent/airTemperature";
+  static constexpr const char* const diagflags_superadiabat_t =
+    "DiagnosticFlags/SuperadiabatCheckRejection/airTemperature";
+  static constexpr const char* const diagflags_surface_level_t =
+    "DiagnosticFlags/SurfaceLevelInAscent/airTemperature";
+  static constexpr const char* const diagflags_tropo_t =
+    "DiagnosticFlags/TropopauseLevelInAscent/airTemperature";
+
+  // Diagnostic flags for eastwardWind
+
+  static constexpr const char* const diagflags_back_perf_u =
+    "DiagnosticFlags/BackgroundCheckPerformed/windEastward";
+  static constexpr const char* const diagflags_back_reject_u =
+    "DiagnosticFlags/BackgroundCheckRejection/windEastward";
+  static constexpr const char* const diagflags_final_reject_u =
+    "DiagnosticFlags/FinalQCRejection/windEastward";
+  static constexpr const char* const diagflags_interpolation_u =
+    "DiagnosticFlags/InterpolationCheckRejection/windEastward";
+  static constexpr const char* const diagflags_max_wind_u =
+    "DiagnosticFlags/MaximumWindLevelInAscent/windEastward";
+  static constexpr const char* const diagflags_partial_layer_u =
+    "DiagnosticFlags/PartialLayerUsedInAveraging/windEastward";
+  static constexpr const char* const diagflags_perm_reject_u =
+    "DiagnosticFlags/PermanentStationRejection/windEastward";
+  static constexpr const char* const diagflags_sig_wind_u =
+    "DiagnosticFlags/SignificantWindLevelInAscent/windEastward";
+  static constexpr const char* const diagflags_standard_level_u =
+    "DiagnosticFlags/StandardLevelInAscent/windEastward";
+  static constexpr const char* const diagflags_surface_level_u =
+    "DiagnosticFlags/SurfaceLevelInAscent/windEastward";
+
+  // Diagnostic flags for northwardWind
+
+  static constexpr const char* const diagflags_back_perf_v =
+    "DiagnosticFlags/BackgroundCheckPerformed/windNorthward";
+  static constexpr const char* const diagflags_back_reject_v =
+    "DiagnosticFlags/BackgroundCheckRejection/windNorthward";
+  static constexpr const char* const diagflags_final_reject_v =
+    "DiagnosticFlags/FinalQCRejection/windNorthward";
+  static constexpr const char* const diagflags_interpolation_v =
+    "DiagnosticFlags/InterpolationCheckRejection/windNorthward";
+  static constexpr const char* const diagflags_max_wind_v =
+    "DiagnosticFlags/MaximumWindLevelInAscent/windNorthward";
+  static constexpr const char* const diagflags_partial_layer_v =
+    "DiagnosticFlags/PartialLayerUsedInAveraging/windNorthward";
+  static constexpr const char* const diagflags_perm_reject_v =
+    "DiagnosticFlags/PermanentStationRejection/windNorthward";
+  static constexpr const char* const diagflags_sig_wind_v =
+    "DiagnosticFlags/SignificantWindLevelInAscent/windNorthward";
+  static constexpr const char* const diagflags_standard_level_v =
+    "DiagnosticFlags/StandardLevelInAscent/windNorthward";
+  static constexpr const char* const diagflags_surface_level_v =
+    "DiagnosticFlags/SurfaceLevelInAscent/windNorthward";
+
+  // Diagnostic flags for relativeHumidity
+
+  static constexpr const char* const diagflags_back_perf_rh =
+    "DiagnosticFlags/BackgroundCheckPerformed/relativeHumidity";
+  static constexpr const char* const diagflags_back_reject_rh =
+    "DiagnosticFlags/BackgroundCheckRejection/relativeHumidity";
+  static constexpr const char* const diagflags_final_reject_rh =
+    "DiagnosticFlags/FinalQCRejection/relativeHumidity";
+  static constexpr const char* const diagflags_interpolation_rh =
+    "DiagnosticFlags/InterpolationCheckRejection/relativeHumidity";
+  static constexpr const char* const diagflags_partial_layer_rh =
+    "DiagnosticFlags/PartialLayerUsedInAveraging/relativeHumidity";
+  static constexpr const char* const diagflags_perm_reject_rh =
+    "DiagnosticFlags/PermanentStationRejection/relativeHumidity";
+  static constexpr const char* const diagflags_standard_level_rh =
+    "DiagnosticFlags/StandardLevelInAscent/relativeHumidity";
+  static constexpr const char* const diagflags_surface_level_rh =
+    "DiagnosticFlags/SurfaceLevelInAscent/relativeHumidity";
+
+  // Diagnostic flags for height
+
+  static constexpr const char* const diagflags_back_perf_z =
+    "DiagnosticFlags/BackgroundCheckPerformed/height";
+  static constexpr const char* const diagflags_back_reject_z =
+    "DiagnosticFlags/BackgroundCheckRejection/height";
+  static constexpr const char* const diagflags_data_correct_z =
+    "DiagnosticFlags/ValueCorrected/height";
+  static constexpr const char* const diagflags_final_reject_z =
+    "DiagnosticFlags/FinalQCRejection/height";
+  static constexpr const char* const diagflags_hydro_z =
+    "DiagnosticFlags/HydrostaticCheckRejection/height";
+  static constexpr const char* const diagflags_interpolation_z =
+    "DiagnosticFlags/InterpolationCheckRejection/height";
+  static constexpr const char* const diagflags_perm_reject_z =
+    "DiagnosticFlags/PermanentStationRejection/height";
+
+  // Diagnostic flags for observationReport
+
+  static constexpr const char* const diagflags_final_reject_report =
+    "DiagnosticFlags/FinalQCRejection/observationReport";
+  static constexpr const char* const diagflags_interpolation_report =
+    "DiagnosticFlags/InterpolationCheckRejection/observationReport";
+  static constexpr const char* const diagflags_no_pressure_report =
+    "DiagnosticFlags/NoPressureSensor/observationReport";
+  static constexpr const char* const diagflags_out_of_area_report =
+    "DiagnosticFlags/OutsideDomain/observationReport";
+  static constexpr const char* const diagflags_perm_reject_report =
+    "DiagnosticFlags/PermanentStationRejection/observationReport";
+  static constexpr const char* const diagflags_surface_level_report =
+    "DiagnosticFlags/SurfaceLevelInAscent/observationReport";
+  static constexpr const char* const diagflags_surplus_report =
+    "DiagnosticFlags/ThinningRejection/observationReport";
+  static constexpr const char* const diagflags_track_reject_report =
+    "DiagnosticFlags/TrackCheckRejection/observationReport";
 
   // Counters
 
@@ -216,4 +334,4 @@ struct VariableNames
 
 }  // namespace ufo
 
-#endif  // UFO_PROFILE_VARIABLENAMES_H_
+#endif  // UFO_PROFILE_PROFILEVARIABLENAMES_H_

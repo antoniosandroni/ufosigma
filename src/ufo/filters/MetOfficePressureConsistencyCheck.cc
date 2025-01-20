@@ -43,11 +43,11 @@ void MetOfficePressureConsistencyCheck::applyFilter(const std::vector<bool> & ap
     const std::vector<util::DateTime> times = obsAccessor.getDateTimeVariableFromObsSpace(
           "MetaData", "dateTime");
     const std::vector<bool> PmslUsedFlag = obsAccessor.getBoolVariableFromObsSpace(
-        "DiagnosticFlags/PmslUsed", "surfacePressure");
+        "DiagnosticFlags/MeanSeaLevelPressureUsedInSurfacePressureCalculation", "surfacePressure");
     const std::vector<bool> PstdUsedFlag = obsAccessor.getBoolVariableFromObsSpace(
-        "DiagnosticFlags/PstdUsed", "surfacePressure");
+        "DiagnosticFlags/StandardPressureUsedInSurfacePressureCalculation", "surfacePressure");
     const std::vector<bool> PstnUsedFlag = obsAccessor.getBoolVariableFromObsSpace(
-        "DiagnosticFlags/PstnUsed", "surfacePressure");
+        "DiagnosticFlags/StationPressureUsedInSurfacePressureCalculation", "surfacePressure");
 
     std::vector<bool> isRejected(times.size(), false);
 

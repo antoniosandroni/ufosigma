@@ -29,28 +29,28 @@ namespace ufo {
 
     // Retrieve the observed geopotential height and associated metadata.
     std::vector <float> &zObs =
-      profileDataHandler.get<float>(ufo::VariableNames::obs_geopotential_height);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_geopotential_height);
     const std::vector <int> &ObsType =
-      profileDataHandler.get<int>(ufo::VariableNames::ObsType);
-    std::vector <int> &ReportFlags =
-      profileDataHandler.get<int>(ufo::VariableNames::qcflags_observation_report);
+      profileDataHandler.get<int>(ufo::ProfileVariableNames::ObsType);
+    std::vector <bool> &diagFlagsNoPressureSensor =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_no_pressure_report);
 
-    if (!oops::allVectorsSameNonZeroSize(zObs, ObsType, ReportFlags)) {
+    if (!oops::allVectorsSameNonZeroSize(zObs, ObsType, diagFlagsNoPressureSensor)) {
       oops::Log::debug() << "At least one vector is the wrong size. "
                          << "Profile pressure routine will not run." << std::endl;
       oops::Log::debug() << "Vector sizes: "
-                         << oops::listOfVectorSizes(zObs, ObsType, ReportFlags)
+                         << oops::listOfVectorSizes(zObs, ObsType, diagFlagsNoPressureSensor)
                          << std::endl;
       return;
     }
 
     // Retrieve the model background fields.
     const std::vector <float> &pressureGeoVaLs =
-      profileDataHandler.getGeoVaLVector(oops::Variable{
-                                         ufo::VariableNames::geovals_pressure_rho_minus_one});
+      profileDataHandler.getGeoVaLVector
+      (oops::Variable{ufo::ProfileVariableNames::geovals_pressure_rho_minus_one});
     const std::vector <float> &heightGeoVaLs =
       profileDataHandler.getGeoVaLVector(oops::Variable{
-                                         ufo::VariableNames::geovals_height_rho_minus_one});
+                                         ufo::ProfileVariableNames::geovals_height_rho_minus_one});
 
     if (!oops::allVectorsSameNonZeroSize(pressureGeoVaLs,
                                          heightGeoVaLs)) {
@@ -65,7 +65,7 @@ namespace ufo {
 
     // Retrive the vector of observed pressures.
     std::vector <float> &pressures =
-      profileDataHandler.get<float>(ufo::VariableNames::obs_derived_air_pressure);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_derived_air_pressure);
     // If pressures have not been recorded, initialise the vector with missing values.
     if (pressures.empty())
       pressures.assign(numProfileLevels, missingValueFloat);
@@ -96,7 +96,7 @@ namespace ufo {
         (!AllLevelsHaveValidP && (ObsType[0] == MetOfficeObsIDs::AtmosphericProfile::Sonde ||
                                   ObsType[0] == MetOfficeObsIDs::AtmosphericProfile::TSTSonde))) {
       for (int jlev = 0; jlev < numProfileLevels; ++jlev) {
-        ReportFlags[jlev] |= MetOfficeQCFlags::WholeObReport::NoPressureSensor;
+        diagFlagsNoPressureSensor[jlev] = true;
       }
     }
 
@@ -110,7 +110,7 @@ namespace ufo {
     // In this case the pressures will be (re)calculated from the geopotential heights.
     // This aims to improved the accuracy of the reported pressures if they are already present.
     if (AllLevelsHaveValidP &&
-        ReportFlags[0] & MetOfficeQCFlags::WholeObReport::NoPressureSensor &&
+        diagFlagsNoPressureSensor[0] &&
         AllLevelsHaveValidZ) {
       AllLevelsHaveValidP = false;
     }
@@ -133,8 +133,8 @@ namespace ufo {
 
   void ProfilePressure::fillValidationData(ProfileDataHandler &profileDataHandler)
   {
-    profileDataHandler.set(ufo::VariableNames::obs_air_pressure,
+    profileDataHandler.set(ufo::ProfileVariableNames::obs_air_pressure,
                            std::move(profileDataHandler.get<float>
-                                     (ufo::VariableNames::obs_derived_air_pressure)));
+                                     (ufo::ProfileVariableNames::obs_derived_air_pressure)));
   }
 }  // namespace ufo

@@ -30,7 +30,6 @@
 #include "ufo/profile/EntireSampleDataHandler.h"
 #include "ufo/profile/ProfileIndices.h"
 
-#include "ufo/utils/metoffice/MetOfficeQCFlags.h"
 #include "ufo/utils/StringUtils.h"
 
 namespace ioda {
@@ -166,6 +165,7 @@ namespace ufo {
       (const std::vector <std::string> &variableNamesInt,
        const std::vector <std::string> &variableNamesFloat,
        const std::vector <std::string> &variableNamesString,
+       const std::vector <std::string> &variableNamesBool,
        const oops::Variables &variableNamesGeoVaLs);
 
     /// Read values from a collection of profiles and update information related to each one.

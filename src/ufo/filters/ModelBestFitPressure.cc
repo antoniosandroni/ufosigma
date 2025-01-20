@@ -21,7 +21,6 @@
 #include "oops/util/Logger.h"
 
 #include "ufo/GeoVaLs.h"
-#include "ufo/utils/metoffice/MetOfficeQCFlags.h"
 
 namespace ufo {
 
@@ -120,15 +119,19 @@ void ModelBestFitPressure::applyFilter(const std::vector<bool> & apply,
   obsdb_.get_db("ObsValue", obs_northvec_name, obs_northward);
 
   // Get flags
-  std::vector<int> u_flags(obsdb_.nlocs());
-  std::vector<int> v_flags(obsdb_.nlocs());
-  if (obsdb_.has("QCFlags", obs_eastvec_name) &&
-      obsdb_.has("QCFlags", obs_northvec_name)) {
-    obsdb_.get_db("QCFlags", obs_eastvec_name, u_flags);
-    obsdb_.get_db("QCFlags", obs_northvec_name, v_flags);
+  std::vector<bool> diagFlagsUSatwindPoorConstraint(obsdb_.nlocs());
+  std::vector<bool> diagFlagsVSatwindPoorConstraint(obsdb_.nlocs());
+  if (obsdb_.has("DiagnosticFlags/BestFitPressurePoorlyConstrained", obs_eastvec_name) &&
+      obsdb_.has("DiagnosticFlags/BestFitPressurePoorlyConstrained", obs_northvec_name)) {
+    obsdb_.get_db("DiagnosticFlags/BestFitPressurePoorlyConstrained", obs_eastvec_name,
+                  diagFlagsUSatwindPoorConstraint);
+    obsdb_.get_db("DiagnosticFlags/BestFitPressurePoorlyConstrained", obs_northvec_name,
+                  diagFlagsVSatwindPoorConstraint);
   } else {
-    throw eckit::Exception("QCFlags/windEastward or QCFlags/windNorthward not initialised",
-                           Here());
+    throw eckit::Exception
+      ("DiagnosticFlags/BestFitPressurePoorlyConstrained/windEastward or "
+       "DiagnosticFlags/BestFitPressurePoorlyConstrained/windNorthward not initialised",
+       Here());
   }
 
   // Vectors storing GeoVaL column for each location.
@@ -243,15 +246,15 @@ void ModelBestFitPressure::applyFilter(const std::vector<bool> & apply,
                satwind_best_fit_press[idata] + pressure_band_half_width) &&
               vec_diff[ilev] <= min_vector_diff + lower_vector_diff) {
             countAccumulator->addTerm(idata, 1);
-            u_flags[idata] |= ufo::MetOfficeQCFlags::SatWind::SatwindPoorConstraint;
-            v_flags[idata] |= ufo::MetOfficeQCFlags::SatWind::SatwindPoorConstraint;
+            diagFlagsUSatwindPoorConstraint[idata] = true;
+            diagFlagsVSatwindPoorConstraint[idata] = true;
             break;
           }
         }
       } else {
         countAccumulator->addTerm(idata, 1);
-        u_flags[idata] |= ufo::MetOfficeQCFlags::SatWind::SatwindPoorConstraint;
-        v_flags[idata] |= ufo::MetOfficeQCFlags::SatWind::SatwindPoorConstraint;
+        diagFlagsUSatwindPoorConstraint[idata] = true;
+        diagFlagsVSatwindPoorConstraint[idata] = true;
       }
     }  // apply
   }  // location loop
@@ -262,8 +265,10 @@ void ModelBestFitPressure::applyFilter(const std::vector<bool> & apply,
                       << " observations with poorly constrained bestfit pressure" << std::endl;
   }
   // write back flags and best-fit pressure/ winds
-  obsdb_.put_db("QCFlags", obs_eastvec_name, u_flags);
-  obsdb_.put_db("QCFlags", obs_northvec_name, v_flags);
+  obsdb_.put_db("DiagnosticFlags/BestFitPressurePoorlyConstrained", obs_eastvec_name,
+                diagFlagsUSatwindPoorConstraint);
+  obsdb_.put_db("DiagnosticFlags/BestFitPressurePoorlyConstrained", obs_northvec_name,
+                diagFlagsVSatwindPoorConstraint);
   obsdb_.put_db("DerivedValue", "pressureBestFit", satwind_best_fit_press);
   if (calculate_best_fit_winds) {
     obsdb_.put_db("DerivedValue", "windEastwardBestFit",

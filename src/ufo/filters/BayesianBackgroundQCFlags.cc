@@ -17,7 +17,6 @@
 
 #include "oops/util/Logger.h"
 #include "ufo/filters/QCflags.h"
-#include "ufo/utils/metoffice/MetOfficeQCFlags.h"
 
 namespace ufo {
 
@@ -60,12 +59,21 @@ void BayesianBackgroundQCFlags::setFlags(const std::string& varname,
   // By default varPGE = varname.
   const std::string varPGE = getPGEsubstituteName(varname);
 
-  // Get QC flags.
-  std::vector <int> QCflags(nlocs, missingValueInt);
-  if (obsdb_.has("QCFlags", varname))
-    obsdb_.get_db("QCFlags", varname, QCflags);
-  else
-    throw eckit::BadValue("QCFlags/" + varname + " not present", Here());
+  // Get diagnostic flags.
+  std::vector<bool> diagFlagsBuddyReject(nlocs, false);
+  std::vector<bool> diagFlagsFinalReject(nlocs, false);
+  if (obsdb_.has("DiagnosticFlags/BuddyCheckRejection", varname)) {
+    obsdb_.get_db("DiagnosticFlags/BuddyCheckRejection", varname, diagFlagsBuddyReject);
+  } else {
+    throw eckit::BadValue("DiagnosticFlags/BuddyCheckRejection/" + varname + " not present",
+                          Here());
+  }
+  if (obsdb_.has("DiagnosticFlags/FinalQCRejection", varname)) {
+    obsdb_.get_db("DiagnosticFlags/FinalQCRejection", varname, diagFlagsFinalReject);
+  } else {
+    throw eckit::BadValue("DiagnosticFlags/FinalQCRejection/" + varname + " not present", Here());
+  }
+
 
   // Get the PGE values that each observation had after
   // the Bayesian background and/or buddy checks were applied.
@@ -75,11 +83,11 @@ void BayesianBackgroundQCFlags::setFlags(const std::string& varname,
     for (size_t iloc = 0; iloc < nlocs; ++iloc) {
       if (!apply[iloc]) continue;
       if (PGE[iloc] == PGEMDI) {
-        QCflags[iloc] |= ufo::MetOfficeQCFlags::Elem::FinalRejectFlag;
+        diagFlagsFinalReject[iloc] = true;
         flagged[iloc] = true;
       } else if (PGE[iloc] >= PGECrit) {
-        QCflags[iloc] |= ufo::MetOfficeQCFlags::Elem::FinalRejectFlag;
-        QCflags[iloc] |= ufo::MetOfficeQCFlags::Elem::BuddyRejectFlag;
+        diagFlagsBuddyReject[iloc] = true;
+        diagFlagsFinalReject[iloc] = true;
         flagged[iloc] = true;
       }
     }
@@ -91,7 +99,8 @@ void BayesianBackgroundQCFlags::setFlags(const std::string& varname,
   }
 
   // Save modified flags.
-  obsdb_.put_db("QCFlags", varname, QCflags);
+  obsdb_.put_db("DiagnosticFlags/BuddyCheckRejection", varname, diagFlagsBuddyReject);
+  obsdb_.put_db("DiagnosticFlags/FinalQCRejection", varname, diagFlagsFinalReject);
 }
 
 void BayesianBackgroundQCFlags::applyFilter(const std::vector<bool> & apply,

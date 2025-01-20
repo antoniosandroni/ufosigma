@@ -6,7 +6,7 @@
  */
 
 #include "ufo/profile/ProfileCheckSign.h"
-#include "ufo/profile/VariableNames.h"
+#include "ufo/profile/ProfileVariableNames.h"
 
 namespace ufo {
 
@@ -23,34 +23,41 @@ namespace ufo {
     const int numProfileLevels = profileDataHandler.getNumProfileLevels();
 
     const std::vector <float> &pressures =
-       profileDataHandler.get<float>(ufo::VariableNames::obs_air_pressure);
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_air_pressure);
     const std::vector <float> &tObs =
-       profileDataHandler.get<float>(ufo::VariableNames::obs_air_temperature);
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_air_temperature);
     const std::vector <float> &tBkg =
-       profileDataHandler.get<float>(ufo::VariableNames::hofx_air_temperature);
-    std::vector <int> &tFlags =
-       profileDataHandler.get<int>(ufo::VariableNames::qcflags_air_temperature);
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::hofx_air_temperature);
+    std::vector <bool> &diagFlagsTFinalReject =
+       profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_final_reject_t);
+    std::vector <bool> &diagFlagsTDataCorrect =
+       profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_data_correct_t);
     std::vector <int> &NumAnyErrors =
-       profileDataHandler.get<int>(ufo::VariableNames::counter_NumAnyErrors);
+       profileDataHandler.get<int>(ufo::ProfileVariableNames::counter_NumAnyErrors);
     std::vector <int> &NumSignChange =
-       profileDataHandler.get<int>(ufo::VariableNames::counter_NumSignChange);
+       profileDataHandler.get<int>(ufo::ProfileVariableNames::counter_NumSignChange);
     std::vector <float> &tObsCorrection =
-       profileDataHandler.get<float>(ufo::VariableNames::obscorrection_air_temperature);
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::obscorrection_air_temperature);
 
     if (!oops::allVectorsSameNonZeroSize(pressures, tObs, tBkg,
-                                         tFlags, tObsCorrection)) {
+                                         diagFlagsTFinalReject,
+                                         diagFlagsTDataCorrect,
+                                         tObsCorrection)) {
       oops::Log::debug() << "At least one vector is the wrong size. "
                          << "Check will not be performed." << std::endl;
       oops::Log::debug() << "Vector sizes: "
                          << oops::listOfVectorSizes(pressures, tObs, tBkg,
-                                                    tFlags, tObsCorrection)
+                                                    diagFlagsTFinalReject,
+                                                    diagFlagsTDataCorrect,
+                                                    tObsCorrection)
                          << std::endl;
       return;
     }
 
     // Obtain air pressure GeoVals.
     const std::vector <float> &pressureGeoVaLs =
-      profileDataHandler.getGeoVaLVector(oops::Variable{ufo::VariableNames::geovals_pressure});
+      profileDataHandler.getGeoVaLVector
+      (oops::Variable{ufo::ProfileVariableNames::geovals_pressure});
     if (pressureGeoVaLs.empty())
       throw eckit::BadValue("Air pressure GeoVaLs vector is empty.", Here());
 
@@ -59,7 +66,7 @@ namespace ufo {
 
     for (int jlev = 0; jlev < numProfileLevels; ++jlev) {
       // Ignore this level if it has been flagged as rejected.
-      if (tFlags[jlev] & ufo::MetOfficeQCFlags::Elem::FinalRejectFlag) continue;
+      if (diagFlagsTFinalReject[jlev]) continue;
       if (pressures[jlev] <= Pstar - options_.SCheck_PstarThresh.value() &&
           tObs[jlev] != missingValueFloat &&
           std::abs(tObs[jlev] - tBkg[jlev]) >= options_.SCheck_tObstBkgThresh.value()) {
@@ -69,7 +76,7 @@ namespace ufo {
           NumAnyErrors[0]++;
           NumSignChange[0]++;
 
-          tFlags[jlev] |= ufo::MetOfficeQCFlags::Elem::DataCorrectFlag;
+          diagFlagsTDataCorrect[jlev] = true;
 
           oops::Log::debug() << " -> Failed sign check for level " << jlev << std::endl;
           oops::Log::debug() << " -> P = " << pressures[jlev] * 0.01 << "hPa, tObs = "
@@ -88,7 +95,7 @@ namespace ufo {
                                << tObs[jlev] + tObsCorrection[jlev] << "C" << std::endl;
           } else {
             // Observation is rejected
-            tFlags[jlev] |= ufo::MetOfficeQCFlags::Elem::FinalRejectFlag;
+            diagFlagsTFinalReject[jlev] = true;
           }
         } else if (pressures[jlev] > options_.SCheck_PrintLargeTThresh.value()) {
           // Print out information on other large T differences

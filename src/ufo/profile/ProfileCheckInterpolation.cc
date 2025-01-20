@@ -6,7 +6,7 @@
  */
 
 #include "ufo/profile/ProfileCheckInterpolation.h"
-#include "ufo/profile/VariableNames.h"
+#include "ufo/profile/ProfileVariableNames.h"
 
 namespace ufo {
 
@@ -26,28 +26,42 @@ namespace ufo {
     const int numProfileLevels = profileDataHandler.getNumProfileLevels();
 
     const std::vector <float> &pressures =
-       profileDataHandler.get<float>(ufo::VariableNames::obs_air_pressure);
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_air_pressure);
     const std::vector <float> &tObs =
-       profileDataHandler.get<float>(ufo::VariableNames::obs_air_temperature);
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_air_temperature);
     const std::vector <float> &tBkg =
-       profileDataHandler.get<float>(ufo::VariableNames::hofx_air_temperature);
-    std::vector <int> &tFlags =
-       profileDataHandler.get<int>(ufo::VariableNames::qcflags_air_temperature);
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::hofx_air_temperature);
+    std::vector <bool> &diagFlagsTSurfaceLevel =
+       profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_surface_level_t);
+    std::vector <bool> &diagFlagsTStandardLevel =
+       profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_standard_level_t);
+    std::vector <bool> &diagFlagsTInterp =
+       profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_interpolation_t);
+    std::vector <bool> &diagFlagsTFinalReject =
+       profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_final_reject_t);
     std::vector <int> &NumAnyErrors =
-       profileDataHandler.get<int>(ufo::VariableNames::counter_NumAnyErrors);
+       profileDataHandler.get<int>(ufo::ProfileVariableNames::counter_NumAnyErrors);
     std::vector <int> &NumInterpErrors =
-       profileDataHandler.get<int>(ufo::VariableNames::counter_NumInterpErrors);
+       profileDataHandler.get<int>(ufo::ProfileVariableNames::counter_NumInterpErrors);
     std::vector <int> &NumInterpErrObs =
-       profileDataHandler.get<int>(ufo::VariableNames::counter_NumInterpErrObs);
+       profileDataHandler.get<int>(ufo::ProfileVariableNames::counter_NumInterpErrObs);
     const std::vector <float> &tObsCorrection =
-       profileDataHandler.get<float>(ufo::VariableNames::obscorrection_air_temperature);
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::obscorrection_air_temperature);
 
-    if (!oops::allVectorsSameNonZeroSize(pressures, tObs, tBkg, tFlags,
+    if (!oops::allVectorsSameNonZeroSize(pressures, tObs, tBkg,
+                                         diagFlagsTSurfaceLevel,
+                                         diagFlagsTStandardLevel,
+                                         diagFlagsTInterp,
+                                         diagFlagsTFinalReject,
                                          tObsCorrection)) {
       oops::Log::debug() << "At least one vector is the wrong size. "
                          << "Check will not be performed." << std::endl;
       oops::Log::debug() << "Vector sizes: "
-                         << oops::listOfVectorSizes(pressures, tObs, tBkg, tFlags,
+                         << oops::listOfVectorSizes(pressures, tObs, tBkg,
+                                                    diagFlagsTSurfaceLevel,
+                                                    diagFlagsTStandardLevel,
+                                                    diagFlagsTInterp,
+                                                    diagFlagsTFinalReject,
                                                     tObsCorrection)
                          << std::endl;
       return;
@@ -56,7 +70,10 @@ namespace ufo {
     std::vector <float> tObsFinal;
     correctVector(tObs, tObsCorrection, tObsFinal);
 
-    calcStdLevels(numProfileLevels, pressures, tObsFinal, tFlags);
+    calcStdLevels(numProfileLevels, pressures, tObsFinal,
+                  diagFlagsTFinalReject,
+                  diagFlagsTSurfaceLevel,
+                  diagFlagsTStandardLevel);
 
     LevErrors_.assign(numProfileLevels, -1);
     tInterp_.assign(numProfileLevels, missingValueFloat);
@@ -66,7 +83,7 @@ namespace ufo {
     for (int jlevstd = 0; jlevstd < NumStd_; ++jlevstd) {
       int jlev = StdLev_[jlevstd];  // Standard level
 
-      if (tFlags[jlev] & ufo::MetOfficeQCFlags::Profile::SurfaceLevelFlag) continue;
+      if (diagFlagsTSurfaceLevel[jlev]) continue;
       int SigB = SigBelow_[jlevstd];
       int SigA = SigAbove_[jlevstd];
       float PStd = pressures[jlev];
@@ -106,9 +123,9 @@ namespace ufo {
         NumErrors++;
 
         // Simplest form of flagging - sig or std flags may be unset in other routines
-        tFlags[jlev] |= ufo::MetOfficeQCFlags::Profile::InterpolationFlag;
-        tFlags[SigB] |= ufo::MetOfficeQCFlags::Profile::InterpolationFlag;
-        tFlags[SigA] |= ufo::MetOfficeQCFlags::Profile::InterpolationFlag;
+        diagFlagsTInterp[jlev] = true;
+        diagFlagsTInterp[SigB] = true;
+        diagFlagsTInterp[SigA] = true;
 
         LevErrors_[jlev]++;
         LevErrors_[SigB]++;
@@ -139,17 +156,17 @@ namespace ufo {
 
   void ProfileCheckInterpolation::fillValidationData(ProfileDataHandler &profileDataHandler)
   {
-    profileDataHandler.set(ufo::VariableNames::StdLev, std::move(StdLev_));
-    profileDataHandler.set(ufo::VariableNames::SigAbove, std::move(SigAbove_));
-    profileDataHandler.set(ufo::VariableNames::SigBelow, std::move(SigBelow_));
-    profileDataHandler.set(ufo::VariableNames::IndStd, std::move(IndStd_));
-    profileDataHandler.set(ufo::VariableNames::LevErrors, std::move(LevErrors_));
-    profileDataHandler.set(ufo::VariableNames::tInterp, std::move(tInterp_));
-    profileDataHandler.set(ufo::VariableNames::LogP, std::move(LogP_));
+    profileDataHandler.set(ufo::ProfileVariableNames::StdLev, std::move(StdLev_));
+    profileDataHandler.set(ufo::ProfileVariableNames::SigAbove, std::move(SigAbove_));
+    profileDataHandler.set(ufo::ProfileVariableNames::SigBelow, std::move(SigBelow_));
+    profileDataHandler.set(ufo::ProfileVariableNames::IndStd, std::move(IndStd_));
+    profileDataHandler.set(ufo::ProfileVariableNames::LevErrors, std::move(LevErrors_));
+    profileDataHandler.set(ufo::ProfileVariableNames::tInterp, std::move(tInterp_));
+    profileDataHandler.set(ufo::ProfileVariableNames::LogP, std::move(LogP_));
     std::vector <int> NumStd(profileDataHandler.getNumProfileLevels(), std::move(NumStd_));
     std::vector <int> NumSig(profileDataHandler.getNumProfileLevels(), std::move(NumSig_));
-    profileDataHandler.set(ufo::VariableNames::NumStd, std::move(NumStd));
-    profileDataHandler.set(ufo::VariableNames::NumSig, std::move(NumSig));
+    profileDataHandler.set(ufo::ProfileVariableNames::NumStd, std::move(NumStd));
+    profileDataHandler.set(ufo::ProfileVariableNames::NumSig, std::move(NumSig));
   }
 }  // namespace ufo
 

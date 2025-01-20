@@ -16,7 +16,7 @@
 #include "ufo/filters/ConventionalProfileProcessingParameters.h"
 
 #include "ufo/profile/ProfileDataHandler.h"
-#include "ufo/profile/VariableNames.h"
+#include "ufo/profile/ProfileVariableNames.h"
 
 namespace ufo {
 
@@ -59,6 +59,9 @@ namespace ufo {
       bool differenceWithinTol(const T A, const T B, const float tol = 1e-10) const
       {return (std::fabs(A - B) <= tol);}
 
+    bool differenceWithinTol(const bool A, const bool B, const float tol = 1e-10) const
+    {return A == B;}
+
    private:  // variables
     /// Configurable parameters.
     const ConventionalProfileProcessingParameters &options_;
@@ -74,6 +77,9 @@ namespace ufo {
 
     /// Float values to compare.
     std::set <std::string> valuesToCompare_float_;
+
+    /// Bool values to compare.
+    std::set <std::string> valuesToCompare_bool_;
 
     /// Values for which there is an offset between this code and OPS due to
     /// array indices starting at 0 in C++ and 1 in Fortran.

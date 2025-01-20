@@ -17,7 +17,6 @@
 #include "oops/util/Logger.h"
 #include "ufo/filters/QCflags.h"
 #include "ufo/utils/metoffice/MetOfficeObservationIDs.h"
-#include "ufo/utils/metoffice/MetOfficeQCFlags.h"
 
 namespace ufo {
 
@@ -78,26 +77,28 @@ void ProbabilityGrossErrorWholeReport::applyFilter(const std::vector<bool> & app
   std::vector<std::vector<float>> varPGEInitial(nvars, std::vector<float>(nlocs));
   // Vector holding combined probability densities
   std::vector<std::vector<float>> varPGETotal(nvars, std::vector<float>(nlocs));
-  // Vector holding OPS style QCflags for each variable
-  std::vector<std::vector<int>> varQCflags(nvars, std::vector<int>(nlocs));
+  // Vector holding diagnostic flags for each variable
+  std::vector<std::vector<bool>> diagFlagsBackReject(nvars, std::vector<bool>(nlocs));
 
   for (size_t ivar = 0; ivar < filtervars.nvars(); ++ivar) {
       varname[ivar] = filtervars.variable(ivar).variable();
-    // Get Gross Error Probability values and Met Office QCFlags from ObsSpace
+    // Get Gross Error Probability values and diagnostic flags from ObsSpace
     if (obsdb_.has("GrossErrorProbability", varname[ivar]) &&
         obsdb_.has("GrossErrorProbabilityInitial", varname[ivar]) &&
         obsdb_.has("GrossErrorProbabilityTotal", varname[ivar]) &&
-        obsdb_.has("QCFlags", varname[ivar])) {
+        obsdb_.has("DiagnosticFlags/BackgroundCheckRejection", varname[ivar])) {
     obsdb_.get_db("GrossErrorProbability", varname[ivar], varPGE[ivar]);
     obsdb_.get_db("GrossErrorProbabilityInitial", varname[ivar], varPGEInitial[ivar]);
     obsdb_.get_db("GrossErrorProbabilityTotal", varname[ivar], varPGETotal[ivar]);
-    obsdb_.get_db("QCFlags", varname[ivar], varQCflags[ivar]);
+    obsdb_.get_db("DiagnosticFlags/BackgroundCheckRejection", varname[ivar],
+                  diagFlagsBackReject[ivar]);
     } else {
       std::stringstream errormessage;
       errormessage << "GrossErrorProbability/" + varname[ivar] + ", "
                    << "GrossErrorProbabilityInitial/" + varname[ivar] + ", "
                    << "GrossErrorProbabilityTotal/" + varname[ivar] + ", and "
-                   << "QCFlags/" + varname[ivar] + " must all be present"
+                   << "DiagnosticFlags/BackgroundCheckRejection/" + varname[ivar]
+                   << " must all be present"
                    << std::endl;
       throw eckit::BadValue(errormessage.str(), Here());
     }
@@ -173,7 +174,7 @@ void ProbabilityGrossErrorWholeReport::applyFilter(const std::vector<bool> & app
       continue;
     if (secondComponentOfTwo) {
       varPGE[ivar] = varPGE[ivar - 1];
-      varQCflags[ivar] = varQCflags[ivar - 1];
+      diagFlagsBackReject[ivar] = diagFlagsBackReject[ivar - 1];
       flagged[ivar] = flagged[ivar - 1];
     } else {
       for (size_t jobs = 0; jobs < nlocs; ++jobs) {
@@ -196,7 +197,7 @@ void ProbabilityGrossErrorWholeReport::applyFilter(const std::vector<bool> & app
                    (1.0f - PBadRep[jobs])/PdReport[jobs];
                 }
             if (PGE1 >= PGECrit) {
-              varQCflags[ivar][jobs] |= ufo::MetOfficeQCFlags::Elem::BackRejectFlag;
+              diagFlagsBackReject[ivar][jobs] = true;
               flagged[ivar][jobs] = true;
             }
             varPGE[ivar][jobs] = PGE1;
@@ -204,9 +205,10 @@ void ProbabilityGrossErrorWholeReport::applyFilter(const std::vector<bool> & app
         }
       }
     }
-    // Save updated gross error probabilities and QCFlags to ObsSpace
+    // Save updated gross error probabilities and diagnostic flags to ObsSpace
     obsdb_.put_db("GrossErrorProbability", varname[ivar], varPGE[ivar]);
-    obsdb_.put_db("QCFlags", varname[ivar], varQCflags[ivar]);
+    obsdb_.put_db("DiagnosticFlags/BackgroundCheckRejection", varname[ivar],
+                  diagFlagsBackReject[ivar]);
   }
   obsdb_.put_db("MetaData", "grossErrorProbabilityReport", ReportPGE);
 }

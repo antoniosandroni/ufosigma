@@ -10,7 +10,7 @@
 #include "eckit/utils/StringTools.h"
 
 #include "ufo/profile/EntireSampleDataHandler.h"
-#include "ufo/profile/VariableNames.h"
+#include "ufo/profile/ProfileVariableNames.h"
 
 namespace ufo {
   EntireSampleDataHandler::EntireSampleDataHandler(const ObsFilterData &data,
@@ -31,9 +31,7 @@ namespace ufo {
       std::string groupname;
       ufo::splitVarGroup(fullname, varname, groupname);
 
-      if (groupname == "QCFlags") {
-        putDataVector(fullname, get<int>(fullname));
-      } else if (eckit::StringTools::startsWith(groupname, "DiagnosticFlags")) {
+      if (eckit::StringTools::startsWith(groupname, "DiagnosticFlags")) {
         putDataVector(fullname, get<bool>(fullname));
       } else if (groupname == "Corrections" ||
                  groupname == "DerivedObsValue" ||
@@ -47,8 +45,8 @@ namespace ufo {
 
     // Write out the NumAnyErrors counter, which is used in multiple QC checks.
     const std::vector <int> &NumAnyErrors =
-      get<int>(ufo::VariableNames::counter_NumAnyErrors);
-    putDataVector(ufo::VariableNames::counter_NumAnyErrors, NumAnyErrors);
+      get<int>(ufo::ProfileVariableNames::counter_NumAnyErrors);
+    putDataVector(ufo::ProfileVariableNames::counter_NumAnyErrors, NumAnyErrors);
   }
 
   int EntireSampleDataHandler::defaultValue(const std::vector <int> &vec,

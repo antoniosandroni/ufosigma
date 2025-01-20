@@ -14,8 +14,8 @@
 #include "ufo/profile/ProfileCheckBase.h"
 #include "ufo/profile/ProfileDataHandler.h"
 #include "ufo/profile/ProfileDataHolder.h"
+#include "ufo/profile/ProfileVariableNames.h"
 #include "ufo/profile/SlantPathLocations.h"
-#include "ufo/profile/VariableNames.h"
 
 namespace ufo {
   ProfileDataHandler::ProfileDataHandler(const ObsFilterData &data,
@@ -32,8 +32,8 @@ namespace ufo {
   {
     if (data.getGeoVaLs() && data.getGeoVaLs()->nlocs() > 0) {
       geovals_.reset(new GeoVaLs(*(data.getGeoVaLs())));
-      oops::Variable pres_var{ufo::VariableNames::geovals_pressure};
-      oops::Variable pres_rho_var{ufo::VariableNames::geovals_pressure_rho_minus_one};
+      oops::Variable pres_var{ufo::ProfileVariableNames::geovals_pressure};
+      oops::Variable pres_rho_var{ufo::ProfileVariableNames::geovals_pressure_rho_minus_one};
       if (geovals_->has(pres_var)) {
         std::vector<float> vec_gv(geovals_->nlevs(pres_var));
         geovals_->getAtLocation(vec_gv, pres_var, 0);
@@ -108,8 +108,7 @@ namespace ufo {
       std::string groupname;
       ufo::splitVarGroup(fullname, varname, groupname);
 
-      if (groupname == "QCFlags" ||
-          groupname == "Counters") {
+      if (groupname == "Counters") {
         const std::vector <int>& profileData = get<int>(fullname);
         getProfileIndicesInEntireSample(groupname);
         std::vector <int>& entireSampleData = entireSampleDataHandler_->get<int>(fullname);
@@ -123,7 +122,7 @@ namespace ufo {
                  groupname == "DerivedMetaData" ||
                  groupname == "DerivedModelValue" ||
                  groupname == "GrossErrorProbability" ||
-                 fullname == ufo::VariableNames::obs_air_pressure) {
+                 fullname == ufo::ProfileVariableNames::obs_air_pressure) {
         const std::vector <float>& profileData = get<float>(fullname);
         getProfileIndicesInEntireSample(groupname);
         std::vector <float>& entireSampleData = entireSampleDataHandler_->get<float>(fullname);
@@ -147,13 +146,15 @@ namespace ufo {
 
   void ProfileDataHandler::setFinalReportFlags()
   {
-    std::vector <int> &ReportFlags = get<int>(ufo::VariableNames::qcflags_observation_report);
-    const std::vector <int> &NumAnyErrors = get<int>(ufo::VariableNames::counter_NumAnyErrors);
+    std::vector<bool> &diagFlagsFinalReject =
+      get<bool>(ufo::ProfileVariableNames::diagflags_final_reject_report);
+    const std::vector <int> &NumAnyErrors =
+      get<int>(ufo::ProfileVariableNames::counter_NumAnyErrors);
     if (!NumAnyErrors.empty() && NumAnyErrors[0] > options_.nErrorsFail.value()) {
       oops::Log::debug() << " " << NumAnyErrors[0]
                          << " errors detected, whole profile rejected" << std::endl;
-      for (size_t jlev = 0; jlev < ReportFlags.size(); ++jlev) {
-        ReportFlags[jlev] |= ufo::MetOfficeQCFlags::WholeObReport::FinalRejectReport;
+      for (size_t jlev = 0; jlev < diagFlagsFinalReject.size(); ++jlev) {
+        diagFlagsFinalReject[jlev] = true;
       }
     }
   }
@@ -168,11 +169,11 @@ namespace ufo {
       std::string groupname;
       ufo::splitVarGroup(fullname, varname, groupname);
 
-      if (groupname == "QCFlags") {
+      if (groupname == "DiagnosticFlags/FinalQCRejection") {
         oops::Log::debug() << "    " << fullname << std::endl;
 
-        // Obtain QC flags
-        const std::vector <int> &Flags = get<int>(fullname);
+        // Obtain final reject diagnostic flags
+        const std::vector <bool> &Flags = get<bool>(fullname);
         if (Flags.empty()) continue;
         getProfileIndicesInEntireSample(groupname);
 
@@ -187,15 +188,14 @@ namespace ufo {
         }
 
         // If varname is observation_report then all filter variables will be rejected.
-        bool isObservationReport = varname == "observationReport";
+        const bool isObservationReport = varname == "observationReport";
 
         // Index of elements in this profile.
         size_t idxprof = 0;
         // Loop over indices of elements in entire profile sample.
         for (const auto& profileIndex : profileIndicesInEntireSample_) {
           // Flag all filter variables if the whole observation has been rejected.
-          if (isObservationReport &&
-              Flags[idxprof] & ufo::MetOfficeQCFlags::WholeObReport::FinalRejectReport) {
+          if (isObservationReport && Flags[idxprof]) {
             oops::Log::debug() << "     Reject all variables, index " << profileIndex << std::endl;
             for (size_t jvar = 0; jvar < filtervars_.size(); ++jvar)
               flagged_[jvar][profileIndex] = true;
@@ -204,8 +204,7 @@ namespace ufo {
             continue;
           }
           // Flag variable if its specific value has been rejected.
-          if (idxvar < filtervars_.size() &&
-              Flags[idxprof] & ufo::MetOfficeQCFlags::Elem::FinalRejectFlag) {
+          if (idxvar < filtervars_.size() && Flags[idxprof]) {
             oops::Log::debug() << "     Reject " << varname
                                << ", index " << profileIndex << std::endl;
             flagged_[idxvar][profileIndex] = true;
@@ -249,7 +248,7 @@ namespace ufo {
           ufo::getSlantPathLocations(obsdb_,
                                      *geovals_,
                                      profileIndices_->getProfileIndices(),
-                                     ufo::VariableNames::obs_air_pressure,
+                                     ufo::ProfileVariableNames::obs_air_pressure,
                                      this->getAssociatedVerticalCoordinate(variable));
         // Vector storing GeoVaL data for current profile.
         vec_GeoVaL_column.assign(geovals_->nlevs(variable), 0.0);
@@ -287,6 +286,7 @@ namespace ufo {
   (const std::vector <std::string> &variableNamesInt,
    const std::vector <std::string> &variableNamesFloat,
    const std::vector <std::string> &variableNamesString,
+   const std::vector <std::string> &variableNamesBool,
    const oops::Variables &variableNamesGeoVaLs)
   {
     profileIndices_->reset();
@@ -298,6 +298,7 @@ namespace ufo {
       profile.fill(variableNamesInt,
                    variableNamesFloat,
                    variableNamesString,
+                   variableNamesBool,
                    variableNamesGeoVaLs);
       profiles.emplace_back(profile);
     }

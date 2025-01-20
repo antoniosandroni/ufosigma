@@ -9,7 +9,6 @@
 #include <string>
 
 #include "oops/util/missingValues.h"
-#include "ufo/utils/metoffice/MetOfficeQCFlags.h"
 #include "ufo/variabletransforms/Cal_PStar.h"
 
 namespace ufo {
@@ -115,12 +114,14 @@ void Cal_PStar::runTransform(const std::vector<bool> &apply) {
   std::vector<bool> PstnUsed_flag(nlocs, false);
 
   // get diagnostic flags from ObsSpace (warn if they have not yet been created)
-  if (obsdb_.has("DiagnosticFlags/PreferredVariable", "stationPressure")) {
-    obsdb_.get_db("DiagnosticFlags/PreferredVariable", "stationPressure", PreferredVariable_flag);
+  if (obsdb_.has("DiagnosticFlags/PreferredForSurfacePressureCalculation", "stationPressure")) {
+    obsdb_.get_db("DiagnosticFlags/PreferredForSurfacePressureCalculation", "stationPressure",
+                  PreferredVariable_flag);
   } else {
-    throw eckit::UserError("Variable 'DiagnosticFlags/PreferredVariable/stationPressure' does not "
-                           "exist yet. It needs to be set up with the 'Create Diagnostic "
-                           "Flags' filter prior to using the 'set' or 'unset' action.");
+    throw eckit::UserError
+      ("Variable 'DiagnosticFlags/PreferredForSurfacePressureCalculation/stationPressure' does not "
+       "exist yet. It needs to be set up with the 'Create Diagnostic "
+       "Flags' filter prior to using the 'set' or 'unset' action.");
   }
 
   // Loop over all obs to calculate PStar
@@ -179,9 +180,12 @@ void Cal_PStar::runTransform(const std::vector<bool> &apply) {
     obserr_[iv][jobs] = PStar_error[jobs];
   }
   obsdb_.put_db("GrossErrorProbability", "surfacePressure", PStar_PGE);
-  obsdb_.put_db("DiagnosticFlags/PmslUsed", "surfacePressure", PmslUsed_flag);
-  obsdb_.put_db("DiagnosticFlags/PstdUsed", "surfacePressure", PstdUsed_flag);
-  obsdb_.put_db("DiagnosticFlags/PstnUsed", "surfacePressure", PstnUsed_flag);
+  obsdb_.put_db("DiagnosticFlags/MeanSeaLevelPressureUsedInSurfacePressureCalculation",
+                "surfacePressure", PmslUsed_flag);
+  obsdb_.put_db("DiagnosticFlags/StandardPressureUsedInSurfacePressureCalculation",
+                "surfacePressure", PstdUsed_flag);
+  obsdb_.put_db("DiagnosticFlags/StationPressureUsedInSurfacePressureCalculation",
+                "surfacePressure", PstnUsed_flag);
 }
 }  // namespace ufo
 

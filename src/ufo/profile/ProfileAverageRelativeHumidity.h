@@ -55,14 +55,14 @@ namespace ufo {
 
     /// List of names of required GeoVaLs.
     oops::Variables getGeoVaLNames() override {
-      return oops::Variables({ufo::VariableNames::geovals_relative_humidity});}
+      return oops::Variables({ufo::ProfileVariableNames::geovals_relative_humidity});}
 
     /// List of names of GeoVaLs used in check validation.
     oops::Variables getValidationGeoVaLNames() override {
-      return oops::Variables({oops::Variable
-                              {ufo::VariableNames::geovals_testreference_relative_humidity},
-            oops::Variable{ufo::VariableNames::geovals_testreference_relative_humidity_qcflags}
-            });}
+      return oops::Variables
+        ({oops::Variable{ufo::ProfileVariableNames::geovals_testreference_relative_humidity},
+          oops::Variable{ufo::ProfileVariableNames::geovals_testreference_relative_humidity_qcflags}
+        });}
 
    private:
     /// Run check on a profile in the original ObsSpace and

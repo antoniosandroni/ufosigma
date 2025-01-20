@@ -23,38 +23,60 @@ namespace ufo {
 
     const size_t numProfileLevels = profileDataHandler.getNumProfileLevels();
     const std::vector <float> &Latitude =
-      profileDataHandler.get<float>(ufo::VariableNames::Latitude);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::Latitude);
     const std::vector <float> &pressures =
-      profileDataHandler.get<float>(ufo::VariableNames::obs_air_pressure);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_air_pressure);
     const std::vector <float> &tObs =
-      profileDataHandler.get<float>(ufo::VariableNames::obs_air_temperature);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_air_temperature);
     const std::vector <float> &tObsErr =
-      profileDataHandler.get<float>(ufo::VariableNames::obserr_air_temperature);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::obserr_air_temperature);
     const std::vector <float> &tBkg =
-      profileDataHandler.get<float>(ufo::VariableNames::hofx_air_temperature);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::hofx_air_temperature);
     const std::vector <float> &tBkgErr =
       profileDataHandler.get<float>
       (options_.bkgErrGroup.value() + "/" + options_.bkgErrName_air_temperature.value());
     std::vector <float> &tPGE =
-      profileDataHandler.get<float>(ufo::VariableNames::pge_air_temperature);
-    std::vector <int> &tFlags =
-      profileDataHandler.get<int>(ufo::VariableNames::qcflags_air_temperature);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::pge_air_temperature);
+
+    std::vector <bool> &diagFlagsTSuperadiabat =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_superadiabat_t);
+    std::vector <bool> &diagFlagsTInterp =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_interpolation_t);
+    std::vector <bool> &diagFlagsTHydro =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_hydro_t);
+    std::vector <bool> &diagFlagsTBackPerf =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_back_perf_t);
+    std::vector <bool> &diagFlagsTBackReject =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_back_reject_t);
+    std::vector <bool> &diagFlagsTPermReject =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_perm_reject_t);
+    std::vector <bool> &diagFlagsTFinalReject =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_final_reject_t);
+
     const std::vector <float> &tObsCorrection =
-       profileDataHandler.get<float>(ufo::VariableNames::obscorrection_air_temperature);
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::obscorrection_air_temperature);
     const std::vector <int> &extended_obs_space =
-      profileDataHandler.get<int>(ufo::VariableNames::extended_obs_space);
+      profileDataHandler.get<int>(ufo::ProfileVariableNames::extended_obs_space);
     const bool ModelLevels = std::find(extended_obs_space.begin(), extended_obs_space.end(), 1)
       != extended_obs_space.end();
 
     if (!oops::allVectorsSameNonZeroSize(Latitude, pressures,
                                          tObs, tObsErr, tBkg, tBkgErr,
-                                         tPGE, tFlags, tObsCorrection)) {
+                                         tPGE,
+                                         diagFlagsTSuperadiabat,
+                                         diagFlagsTInterp,
+                                         diagFlagsTHydro,
+                                         tObsCorrection)) {
       oops::Log::debug() << "At least one vector is the wrong size. "
                          << "Check will not be performed." << std::endl;
       oops::Log::debug() << "Vector sizes: "
                          << oops::listOfVectorSizes(Latitude, pressures,
                                                     tObs, tObsErr, tBkg, tBkgErr,
-                                                    tPGE, tFlags, tObsCorrection)
+                                                    tPGE,
+                                                    diagFlagsTSuperadiabat,
+                                                    diagFlagsTInterp,
+                                                    diagFlagsTHydro,
+                                                    tObsCorrection)
                          << std::endl;
       return;
     }
@@ -90,11 +112,11 @@ namespace ufo {
 
     // Modify observation PGE if certain flags have been set.
     for (int jlev = 0; jlev < numProfileLevels; ++jlev) {
-      if (tFlags[jlev] & ufo::MetOfficeQCFlags::Profile::SuperadiabatFlag)
+      if (diagFlagsTSuperadiabat[jlev])
         tPGE[jlev] = 0.5 + 0.5 * tPGE[jlev];
-      if (tFlags[jlev] & ufo::MetOfficeQCFlags::Profile::InterpolationFlag)
+      if (diagFlagsTInterp[jlev])
         tPGE[jlev] = 0.5 + 0.5 * tPGE[jlev];
-      if (tFlags[jlev] & ufo::MetOfficeQCFlags::Profile::HydrostaticFlag)
+      if (diagFlagsTHydro[jlev])
         tPGE[jlev] = 0.5 + 0.5 * tPGE[jlev];
     }
 
@@ -106,7 +128,10 @@ namespace ufo {
                            BackgrErrT,  // Used instead of tBkgErr.
                            PdBad,
                            ModelLevels,
-                           tFlags,
+                           diagFlagsTBackPerf,
+                           diagFlagsTBackReject,
+                           diagFlagsTPermReject,
+                           diagFlagsTFinalReject,
                            tPGE);
   }
 }  // namespace ufo

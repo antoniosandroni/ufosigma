@@ -31,7 +31,6 @@
 
 #include "ufo/profile/DataHandlerParameters.h"
 
-#include "ufo/utils/metoffice/MetOfficeQCFlags.h"
 #include "ufo/utils/StringUtils.h"
 
 namespace ioda {

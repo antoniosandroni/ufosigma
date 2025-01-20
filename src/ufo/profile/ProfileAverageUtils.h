@@ -54,6 +54,17 @@ namespace ufo {
       }
     }
 
+    /// Set boolean values in a profile to true.
+    /// Used in profile averaging routines to set various diagnostic flags.
+    static void setProfileTrue
+      (ProfileDataHolder & profile,
+       const std::vector <std::string> & variableNames) {
+      for (const std::string & variableName : variableNames) {
+        profile.set<bool>(variableName,
+                          std::move(std::vector<bool>(profile.getNumProfileLevels(), true)));
+      }
+    }
+
     /// Transfer one variable in a profile to another variable in the same profile.
     template <typename T>
       static void copyProfileValues(ProfileDataHolder & profile,

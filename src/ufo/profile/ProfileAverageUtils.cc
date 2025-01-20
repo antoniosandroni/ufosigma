@@ -45,14 +45,14 @@ namespace ufo {
   (ProfileDataHolder & profile,
    bool extended_obs_space,
    const std::string & average_name,
-   const std::string & qcflags_name,
+   const std::string & diagflags_name,
    const oops::Variable & geovals_testreference_name,
    const oops::Variable & geovals_qcflags_name)
   {
     const float missing = util::missingValue<float>();
 
     // Retrieve, then save, the OPS versions of the variable averaged onto model levels,
-    // and the QC flags associated with the averaging process.
+    // and the diagnostic flags associated with the averaging process.
     // The quantities retrieved depend on whether the profile lies in the original
     // or averaged sections of the ObsSpace.
     if (extended_obs_space) {
@@ -62,20 +62,16 @@ namespace ufo {
       const size_t numModelLevels = profile.getNumProfileLevels();
       averaged_values.resize(numModelLevels, missing);
       profile.set<float>(ufo::addOPSPrefix(average_name), std::move(averaged_values));
-      // The QC flags are stored as floats but are converted to integers here.
-      // Due to the loss of precision, 5 must be added to the missing value.
+      // The QC flags are stored as floats but are converted to booleans here.
       const std::vector <float>& average_qcflags_float =
         profile.getGeoVaLVector(geovals_qcflags_name);
-      std::vector <int> average_qcflags_int
-        (average_qcflags_float.begin(),
-         average_qcflags_float.end());
-      std::replace(average_qcflags_int.begin(),
-                   average_qcflags_int.end(),
-                   -2147483648L,
-                   -2147483643L);
+      std::vector <bool> average_qcflags_bool;
+      for (size_t n = 0; n < average_qcflags_float.size(); ++n) {
+        average_qcflags_bool.push_back(average_qcflags_float[n] > 0.0);
+      }
       // Ensure all vectors are the correct size to be saved to the ObsSpace.
-      average_qcflags_int.resize(numModelLevels, 0);
-      profile.set<int>(ufo::addOPSPrefix(qcflags_name), std::move(average_qcflags_int));
+      average_qcflags_bool.resize(numModelLevels, 0);
+      profile.set<bool>(ufo::addOPSPrefix(diagflags_name), std::move(average_qcflags_bool));
     } else {
       // Create a copy here because the vector will be used later in the routine.
       std::vector <float> avg = profile.get<float>(average_name);

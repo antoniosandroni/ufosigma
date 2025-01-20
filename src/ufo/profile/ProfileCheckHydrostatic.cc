@@ -6,7 +6,7 @@
  */
 
 #include "ufo/profile/ProfileCheckHydrostatic.h"
-#include "ufo/profile/VariableNames.h"
+#include "ufo/profile/ProfileVariableNames.h"
 
 namespace ufo {
 
@@ -25,43 +25,64 @@ namespace ufo {
     const int numProfileLevels = profileDataHandler.getNumProfileLevels();
 
     const std::vector <float> &pressures =
-       profileDataHandler.get<float>(ufo::VariableNames::obs_air_pressure);
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_air_pressure);
     const std::vector <float> &tObs =
-       profileDataHandler.get<float>(ufo::VariableNames::obs_air_temperature);
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_air_temperature);
     const std::vector <float> &tBkg =
-       profileDataHandler.get<float>(ufo::VariableNames::hofx_air_temperature);
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::hofx_air_temperature);
     const std::vector <float> &zObs =
-       profileDataHandler.get<float>(ufo::VariableNames::obs_geopotential_height);
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_geopotential_height);
     const std::vector <float> &zBkg =
-       profileDataHandler.get<float>(ufo::VariableNames::hofx_geopotential_height);
-    std::vector <int> &tFlags =
-       profileDataHandler.get<int>(ufo::VariableNames::qcflags_air_temperature);
-    std::vector <int> &zFlags =
-       profileDataHandler.get<int>(ufo::VariableNames::qcflags_geopotential_height);
-    std::vector <int> &NumAnyErrors =
-       profileDataHandler.get<int>(ufo::VariableNames::counter_NumAnyErrors);
-    std::vector <int> &Num925Miss =
-       profileDataHandler.get<int>(ufo::VariableNames::counter_Num925Miss);
-    std::vector <int> &Num100Miss =
-       profileDataHandler.get<int>(ufo::VariableNames::counter_Num100Miss);
-    std::vector <int> &NumStdMiss =
-       profileDataHandler.get<int>(ufo::VariableNames::counter_NumStdMiss);
-    std::vector <int> &NumHydErrObs =
-       profileDataHandler.get<int>(ufo::VariableNames::counter_NumHydErrObs);
-    std::vector <int> &NumIntHydErrors =
-       profileDataHandler.get<int>(ufo::VariableNames::counter_NumIntHydErrors);
-    const std::vector <float> &tObsCorrection =
-       profileDataHandler.get<float>(ufo::VariableNames::obscorrection_air_temperature);
-    std::vector <float> &zObsCorrection =
-       profileDataHandler.get<float>(ufo::VariableNames::obscorrection_geopotential_height);
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::hofx_geopotential_height);
 
-    if (!oops::allVectorsSameNonZeroSize(pressures, tObs, tBkg, zObs, zBkg, tFlags, zFlags,
+    std::vector <bool> &diagFlagsTInterp =
+       profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_interpolation_t);
+    std::vector <bool> &diagFlagsTHydro =
+       profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_hydro_t);
+    std::vector <bool> &diagFlagsTSurfaceLevel =
+       profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_surface_level_t);
+    std::vector <bool> &diagFlagsTStandardLevel =
+       profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_standard_level_t);
+    std::vector <bool> &diagFlagsTFinalReject =
+       profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_final_reject_t);
+
+    std::vector <bool> &diagFlagsZHydro =
+       profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_hydro_z);
+    std::vector <bool> &diagFlagsZDataCorrect =
+       profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_data_correct_z);
+    std::vector <bool> &diagFlagsZFinalReject =
+       profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_final_reject_z);
+
+    std::vector <int> &NumAnyErrors =
+       profileDataHandler.get<int>(ufo::ProfileVariableNames::counter_NumAnyErrors);
+    std::vector <int> &Num925Miss =
+       profileDataHandler.get<int>(ufo::ProfileVariableNames::counter_Num925Miss);
+    std::vector <int> &Num100Miss =
+       profileDataHandler.get<int>(ufo::ProfileVariableNames::counter_Num100Miss);
+    std::vector <int> &NumStdMiss =
+       profileDataHandler.get<int>(ufo::ProfileVariableNames::counter_NumStdMiss);
+    std::vector <int> &NumHydErrObs =
+       profileDataHandler.get<int>(ufo::ProfileVariableNames::counter_NumHydErrObs);
+    std::vector <int> &NumIntHydErrors =
+       profileDataHandler.get<int>(ufo::ProfileVariableNames::counter_NumIntHydErrors);
+    const std::vector <float> &tObsCorrection =
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::obscorrection_air_temperature);
+    std::vector <float> &zObsCorrection =
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::obscorrection_geopotential_height);
+
+    if (!oops::allVectorsSameNonZeroSize(pressures, tObs, tBkg, zObs, zBkg,
+                                         diagFlagsTInterp, diagFlagsTHydro,
+                                         diagFlagsTSurfaceLevel, diagFlagsZHydro,
+                                         diagFlagsZDataCorrect, diagFlagsZFinalReject,
                                          tObsCorrection, zObsCorrection)) {
       oops::Log::debug() << "At least one vector is the wrong size. "
                          << "Check will not be performed." << std::endl;
       oops::Log::debug() << "Vector sizes: "
-                         << oops::listOfVectorSizes(pressures, tObs, tBkg, zObs, zBkg, tFlags,
-                                                    zFlags, tObsCorrection, zObsCorrection)
+                         << oops::listOfVectorSizes(pressures, tObs, tBkg, zObs, zBkg,
+                                                    diagFlagsTInterp, diagFlagsTHydro,
+                                                    diagFlagsTSurfaceLevel, diagFlagsZHydro,
+                                                    diagFlagsZDataCorrect, diagFlagsZFinalReject,
+                                                    tObsCorrection, zObsCorrection)
                          << std::endl;
       return;
     }
@@ -69,7 +90,10 @@ namespace ufo {
     std::vector <float> tObsFinal;
     correctVector(tObs, tObsCorrection, tObsFinal);
 
-    calcStdLevels(numProfileLevels, pressures, tObsFinal, tFlags);
+    calcStdLevels(numProfileLevels, pressures, tObsFinal,
+                  diagFlagsTFinalReject,
+                  diagFlagsTSurfaceLevel,
+                  diagFlagsTStandardLevel);
     findHCheckStdLevs();
 
     HydDesc_ = options_.HydDesc.value();
@@ -145,8 +169,8 @@ namespace ufo {
         HydError_[jlevstd] = 0;  // Probably OK
         if (std::fabs(E_[jlevstd]) <= options_.HCheck_EThresh.value() &&
             std::fabs(E_[jlevstd - 1]) <= options_.HCheck_EThreshB.value() &&
-            tFlags[jlevB] & ufo::MetOfficeQCFlags::Profile::InterpolationFlag) {
-          tFlags[jlevB] &= ~ufo::MetOfficeQCFlags::Profile::InterpolationFlag;
+            diagFlagsTInterp[jlevB]) {
+          diagFlagsTInterp[jlevB] = false;
           oops::Log::debug() << " -> removed interpolation flag on level " << jlevB << std::endl;
         }
       }
@@ -169,10 +193,10 @@ namespace ufo {
           }
           if (E_[jlevstd - 1] == missingValueFloat) {
             if (E_[jlevstd + 1] == missingValueFloat) {
-              zFlags[jlevB] |= ufo::MetOfficeQCFlags::Profile::HydrostaticFlag;
-              tFlags[jlevB] |= ufo::MetOfficeQCFlags::Profile::HydrostaticFlag;
-              zFlags[jlev]  |= ufo::MetOfficeQCFlags::Profile::HydrostaticFlag;
-              tFlags[jlev]  |= ufo::MetOfficeQCFlags::Profile::HydrostaticFlag;
+              diagFlagsZHydro[jlevB] = true;
+              diagFlagsTHydro[jlevB] = true;
+              diagFlagsZHydro[jlev] = true;
+              diagFlagsTHydro[jlev] = true;
               oops::Log::debug() << " -> Isolated large residual on levels "
                                  << jlev << " and " << jlevB << std::endl;
             }
@@ -207,7 +231,7 @@ namespace ufo {
               (std::fabs(E_[jlevstd - 1] + E_[jlevstd]) <=
                options_.HCheck_ESumThreshLarger.value() &&
                MinAbsE >= options_.HCheck_MinAbsEThreshLarger.value())) {
-            zFlags[jlevB] |= ufo::MetOfficeQCFlags::Profile::HydrostaticFlag;
+            diagFlagsZHydro[jlevB] = true;
             oops::Log::debug() << " -> Failed hydrostatic check (height error) on level "
                                << jlevB << std::endl;
             HydError_[jlevstd - 1] = 1;
@@ -220,7 +244,7 @@ namespace ufo {
                                << "Z Correction? " << Corr << "m"
                                << ", rounded = " << CorrApp << "m" << std::endl;
             if (CorrApp != 0.0) {
-              zFlags[jlevB] |= ufo::MetOfficeQCFlags::Elem::DataCorrectFlag;
+              diagFlagsZDataCorrect[jlevB] = true;
               if (options_.HCheck_CorrectZ.value()) {
                 zObsCorrection[jlevB] = CorrApp;
                 oops::Log::debug() << " -> Uncorrected zObs: " << zObs[jlevB] << "m" << std::endl;
@@ -229,7 +253,7 @@ namespace ufo {
                                    << zObs[jlevB] + zObsCorrection[jlevB] << "m" << std::endl;
               } else {
                 // Observation is rejected
-                zFlags[jlevB] |= ufo::MetOfficeQCFlags::Elem::FinalRejectFlag;
+                diagFlagsZFinalReject[jlevB] = true;
               }
             }
             // Height errors in two adjacent levels
@@ -237,8 +261,8 @@ namespace ufo {
                      std::fabs(E_[jlevstd - 1] + E_[jlevstd] + ENext) <=
                      options_.HCheck_ESumNextThresh.value() &&
                      MinAbsE >= options_.HCheck_MinAbsEThresh.value()) {
-            zFlags[jlevB] |= ufo::MetOfficeQCFlags::Profile::HydrostaticFlag;
-            zFlags[jlev]  |= ufo::MetOfficeQCFlags::Profile::HydrostaticFlag;
+            diagFlagsZHydro[jlevB] = true;
+            diagFlagsZHydro[jlev] = true;
             HydError_[jlevstd - 1] = 1;
             HydError_[jlevstd] = 1;
 
@@ -258,7 +282,7 @@ namespace ufo {
           } else if (MinAbsE >= options_.HCheck_MinAbsEThreshT.value() &&
                      AbsEDCDiff <= CorrDiffThreshDC &&
                      MinAbsEDC >= CorrMinThreshDC) {
-            tFlags[jlevB] |= ufo::MetOfficeQCFlags::Profile::HydrostaticFlag;
+            diagFlagsTHydro[jlevB] = true;
             HydError_[jlevstd - 1] = 2;
             HydError_[jlevstd] = 0;
 
@@ -278,12 +302,12 @@ namespace ufo {
                                << DC_[jlevstd - 1] << ", " << DC_[jlevstd]
                                << std::endl;
 
-            if (tFlags[jlevB] & ufo::MetOfficeQCFlags::Profile::InterpolationFlag) {
+            if (diagFlagsTInterp[jlevB]) {
               int SigB = SigBelow_[jlevstd - 1];
               int SigA = SigAbove_[jlevstd - 1];
 
-              tFlags[SigB] &= ~ufo::MetOfficeQCFlags::Profile::InterpolationFlag;
-              tFlags[SigA] &= ~ufo::MetOfficeQCFlags::Profile::InterpolationFlag;
+              diagFlagsTInterp[SigB] = false;
+              diagFlagsTInterp[SigA] = false;
 
               NumIntHydErrors[0]++;
               oops::Log::debug() << " -> Hyd: remove interpolation flags on levels "
@@ -295,8 +319,8 @@ namespace ufo {
             if (E_[jlevstd - 2] == missingValueFloat) {
               int L1 = StdLev_[jlevstd - 2];
 
-              zFlags[L1] |= ufo::MetOfficeQCFlags::Profile::HydrostaticFlag;
-              tFlags[L1] |= ufo::MetOfficeQCFlags::Profile::HydrostaticFlag;
+              diagFlagsZHydro[L1] = true;
+              diagFlagsTHydro[L1] = true;
 
               oops::Log::debug() << " -> Failed hydrostatic check "
                                  << "(bottom level error in T or Z) on level " << L1 << std::endl;
@@ -304,7 +328,7 @@ namespace ufo {
               HydError_[jlevstd - 2] = 4;
               HydError_[jlevstd - 1] = 0;
 
-              if (tFlags[L1] & ufo::MetOfficeQCFlags::Profile::SurfaceLevelFlag) {
+              if (diagFlagsTSurfaceLevel[L1]) {
                 oops::Log::debug() << " -> Baseline error for level " << L1
                                    << "? P = " << pressures[L1] * 0.01 << "hPa, zObs = "
                                    << zObs[L1] << "m, zBkg = " << zBkg[L1]
@@ -314,15 +338,15 @@ namespace ufo {
             } else {
               // Error in all subsequent heights?
               HydError_[jlevstd - 1] = 6;
-              zFlags[jlevB] |= ufo::MetOfficeQCFlags::Profile::HydrostaticFlag;
+              diagFlagsZHydro[jlevB] = true;
 
               oops::Log::debug() << " -> Failed hydrostatic check "
                                  << "(error in all subsequent heights) on level "
                                  << jlevB << std::endl;
             }
           } else if (HydError_[jlevstd - 1] == 3) {  // T and/or Z error
-            zFlags[jlevB] |= ufo::MetOfficeQCFlags::Profile::HydrostaticFlag;
-            tFlags[jlevB] |= ufo::MetOfficeQCFlags::Profile::HydrostaticFlag;
+            diagFlagsZHydro[jlevB] = true;
+            diagFlagsTHydro[jlevB] = true;
 
             oops::Log::debug() << " -> Failed hydrostatic check "
                                << "(T and/or Z error) on level " << jlevB << std::endl;
@@ -330,8 +354,8 @@ namespace ufo {
 
           // Top level error in T or Z
           if (HydError_[jlevstd] == 3 && E_[jlevstd + 1] == missingValueFloat) {
-            zFlags[jlev] |= ufo::MetOfficeQCFlags::Profile::HydrostaticFlag;
-            tFlags[jlev] |= ufo::MetOfficeQCFlags::Profile::HydrostaticFlag;
+            diagFlagsZHydro[jlev] = true;
+            diagFlagsTHydro[jlev] = true;
             HydError_[jlevstd] = 5;
 
             oops::Log::debug() << " -> Failed hydrostatic check "
@@ -358,11 +382,11 @@ namespace ufo {
 
   void ProfileCheckHydrostatic::fillValidationData(ProfileDataHandler &profileDataHandler)
   {
-    profileDataHandler.set(ufo::VariableNames::DC, std::move(DC_));
-    profileDataHandler.set(ufo::VariableNames::ETol, std::move(ETol_));
-    profileDataHandler.set(ufo::VariableNames::D, std::move(D_));
-    profileDataHandler.set(ufo::VariableNames::E, std::move(E_));
-    profileDataHandler.set(ufo::VariableNames::HydError, std::move(HydError_));
+    profileDataHandler.set(ufo::ProfileVariableNames::DC, std::move(DC_));
+    profileDataHandler.set(ufo::ProfileVariableNames::ETol, std::move(ETol_));
+    profileDataHandler.set(ufo::ProfileVariableNames::D, std::move(D_));
+    profileDataHandler.set(ufo::ProfileVariableNames::E, std::move(E_));
+    profileDataHandler.set(ufo::ProfileVariableNames::HydError, std::move(HydError_));
   }
 }  // namespace ufo
 

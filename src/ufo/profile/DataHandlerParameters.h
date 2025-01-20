@@ -76,7 +76,11 @@ namespace ufo {
     /// Needed for some unit tests.
     oops::Parameter<std::vector<std::string>> groups_modellevels
       {"groups_modellevels",
-          {"ModelLevelsDerivedValue", "ModelLevelsQCFlags"}, this};
+          {"ModelLevelsDerivedValue",
+              "ModelLevelsDiagnosticFlags/FinalQCRejection",
+              "ModelLevelsDiagnosticFlags/PermanentStationRejection",
+              "ModelLevelsDiagnosticFlags/PartialLayerUsedInAveraging"},
+          this};
 
     /// Groups of variables which are on model rho levels.
     /// Needed for some unit tests.

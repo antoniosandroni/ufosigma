@@ -33,7 +33,7 @@ observations:
       initial value: false
     - name: DensityStep
       initial value: false
-    - name: Superadiabat
+    - name: SuperadiabatCheckRejection
       initial value: false
 ###
   - filter: Ocean Vertical Stability Check
@@ -53,7 +53,7 @@ observations:
     threshold: 0.25
     actions:
     - name: set
-      flag: Superadiabat
+      flag: SuperadiabatCheckRejection
     - name: reject
 ### where there are any density inversions, reject temperature only:
   - filter: Perform Action
@@ -61,7 +61,7 @@ observations:
       - name: ObsValue/waterTemperature
     where:
     - variable:
-        name: DiagnosticFlags/Superadiabat/depthBelowWaterSurface
+        name: DiagnosticFlags/SuperadiabatCheckRejection/depthBelowWaterSurface
       value: is_true
     action:
       name: reject

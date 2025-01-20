@@ -37,6 +37,6 @@ observations:
   flaggedBenchmark: 93
   compareVariables:
   - test:
-      name: DiagnosticFlags/Profile/Interpolation/windEastward
+      name: DiagnosticFlags/InterpolationCheckRejection/windEastward
     reference:
-      name: DiagnosticFlagsReference/Profile/Interpolation/windEastward
+      name: DiagnosticFlagsReference/InterpolationCheckRejection/windEastward

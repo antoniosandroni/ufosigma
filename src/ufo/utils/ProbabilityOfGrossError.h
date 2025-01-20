@@ -14,7 +14,6 @@
 
 #include "oops/util/missingValues.h"
 
-#include "ufo/utils/metoffice/MetOfficeQCFlags.h"
 #include "ufo/utils/ProbabilityOfGrossErrorParameters.h"
 
 namespace ufo {
@@ -32,7 +31,14 @@ namespace ufo {
   /// \param[in] bkgErr: Background errors.
   /// \param[in] PdBad: Probability density for 'bad' observations.
   /// \param[in] ModelLevels: Have the data been averaged onto model levels?
-  /// \param[inout] flags: QC flags.
+  /// \param[inout] diagFlagsBackPerf: diagnostic flag indicating that the background check
+  /// has been performed.
+  /// \param[inout] diagFlagsBackReject: diagnostic flag indicating that an observation
+  /// has been rejected by the background check.
+  /// \param[in] diagFlagsPermReject: diagnostic flag indicating that an observation
+  /// has already been permanently rejected by a stationlist (or similar).
+  /// \param[inout] diagFlagsFinalReject: diagnostic flag indicating that an observation
+  /// has been finally rejected.
   /// \param[inout] PGE: Probability of gross error.
   /// \param[in] ErrVarMax: (Optional) Maximum error variance.
   /// \param[in] obsVal2: (Optional) Second component of 2D observation values.
@@ -46,7 +52,10 @@ namespace ufo {
                          const std::vector<float> &bkgErr,
                          const std::vector<float> &PdBad,
                          const bool ModelLevels,
-                         std::vector<int> &flags,
+                         std::vector<bool> &diagFlagsBackPerf,
+                         std::vector<bool> &diagFlagsBackReject,
+                         const std::vector<bool> &diagFlagsPermReject,
+                         std::vector<bool> &diagFlagsFinalReject,
                          std::vector<float> &PGE,
                          float ErrVarMax = -1,
                          const std::vector<float> *obsVal2 = nullptr,

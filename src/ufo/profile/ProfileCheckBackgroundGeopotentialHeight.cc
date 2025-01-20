@@ -23,39 +23,58 @@ namespace ufo {
 
     const size_t numProfileLevels = profileDataHandler.getNumProfileLevels();
     const std::vector <float> &Zstation =
-      profileDataHandler.get<float>(ufo::VariableNames::Zstation);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::Zstation);
     const std::vector <float> &pressures =
-      profileDataHandler.get<float>(ufo::VariableNames::obs_air_pressure);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_air_pressure);
     const std::vector <float> &zObs =
-      profileDataHandler.get<float>(ufo::VariableNames::obs_geopotential_height);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_geopotential_height);
     const std::vector <float> &zObsErr =
-      profileDataHandler.get<float>(ufo::VariableNames::obserr_geopotential_height);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::obserr_geopotential_height);
     const std::vector <float> &zBkg =
-      profileDataHandler.get<float>(ufo::VariableNames::hofx_geopotential_height);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::hofx_geopotential_height);
     std::vector <float> &zPGE =
-      profileDataHandler.get<float>(ufo::VariableNames::pge_geopotential_height);
-    std::vector <int> &zFlags =
-      profileDataHandler.get<int>(ufo::VariableNames::qcflags_geopotential_height);
-    const std::vector <int> &tFlags =
-      profileDataHandler.get<int>(ufo::VariableNames::qcflags_air_temperature);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::pge_geopotential_height);
+    std::vector <bool> &diagFlagsZInterp =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_interpolation_z);
+    std::vector <bool> &diagFlagsZHydro =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_hydro_z);
+
+    std::vector <bool> &diagFlagsZBackPerf =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_back_perf_z);
+    std::vector <bool> &diagFlagsZBackReject =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_back_reject_z);
+    std::vector <bool> &diagFlagsZPermReject =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_perm_reject_z);
+    std::vector <bool> &diagFlagsZFinalReject =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_final_reject_z);
+
+
+    const std::vector <bool> &diagFlagsTSurfaceLevel =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_surface_level_t);
     const std::vector <float> &zObsCorrection =
-       profileDataHandler.get<float>(ufo::VariableNames::obscorrection_geopotential_height);
+       profileDataHandler.get<float>(ufo::ProfileVariableNames::obscorrection_geopotential_height);
     const std::vector <int> &extended_obs_space =
-      profileDataHandler.get<int>(ufo::VariableNames::extended_obs_space);
+      profileDataHandler.get<int>(ufo::ProfileVariableNames::extended_obs_space);
     const bool ModelLevels = std::find(extended_obs_space.begin(), extended_obs_space.end(), 1)
       != extended_obs_space.end();
 
     if (!oops::allVectorsSameNonZeroSize(Zstation, pressures,
                                          zObs, zObsErr, zBkg,
-                                         zPGE, zFlags, zObsCorrection,
-                                         tFlags)) {
+                                         zPGE,
+                                         diagFlagsZInterp,
+                                         diagFlagsZHydro,
+                                         diagFlagsTSurfaceLevel,
+                                         zObsCorrection)) {
       oops::Log::debug() << "At least one vector is the wrong size. "
                          << "Check will not be performed." << std::endl;
       oops::Log::debug() << "Vector sizes: "
                          << oops::listOfVectorSizes(Zstation, pressures,
                                                     zObs, zObsErr, zBkg,
-                                                    zPGE, zFlags, zObsCorrection,
-                                                    tFlags)
+                                                    zPGE,
+                                                    diagFlagsZInterp,
+                                                    diagFlagsZHydro,
+                                                    diagFlagsTSurfaceLevel,
+                                                    zObsCorrection)
                          << std::endl;
       return;
     }
@@ -73,9 +92,9 @@ namespace ufo {
     for (int jlev = 0; jlev < numProfileLevels; ++jlev) {
       if (zObsFinal[jlev] != missingValueFloat) {
         // Permanently reject any levels at/below surface
-        if (tFlags[jlev] & ufo::MetOfficeQCFlags::Profile::SurfaceLevelFlag ||
+        if (diagFlagsTSurfaceLevel[jlev] ||
             zObsFinal[jlev] <= Zstation[jlev]) {
-          zFlags[jlev] |= ufo::MetOfficeQCFlags::Elem::PermRejectFlag;
+          diagFlagsZPermReject[jlev];
         }
         const float Plevel = pressures[jlev] / 100.0;  // hPa
         const std::vector<float> zBkgErrs = options_.BkCheck_zBkgErrs.value();
@@ -94,9 +113,9 @@ namespace ufo {
 
     // Modify observation PGE if certain flags have been set.
     for (int jlev = 0; jlev < numProfileLevels; ++jlev) {
-      if (zFlags[jlev] & ufo::MetOfficeQCFlags::Profile::InterpolationFlag)
+      if (diagFlagsZInterp[jlev])
         zPGE[jlev] = 0.5 + 0.5 * zPGE[jlev];
-      if (zFlags[jlev] & ufo::MetOfficeQCFlags::Profile::HydrostaticFlag)
+      if (diagFlagsZHydro[jlev])
         zPGE[jlev] = 0.5 + 0.5 * zPGE[jlev];
     }
 
@@ -108,7 +127,10 @@ namespace ufo {
                            zBkgErr,
                            PdBad,
                            ModelLevels,
-                           zFlags,
+                           diagFlagsZBackPerf,
+                           diagFlagsZBackReject,
+                           diagFlagsZPermReject,
+                           diagFlagsZFinalReject,
                            zPGE);
   }
 }  // namespace ufo

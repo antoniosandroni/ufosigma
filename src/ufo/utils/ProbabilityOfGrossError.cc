@@ -15,7 +15,10 @@ namespace ufo {
                          const std::vector<float> &bkgErr,
                          const std::vector<float> &PdBad,
                          const bool PerformSDiffCheck,
-                         std::vector<int> &flags,
+                         std::vector<bool> &diagFlagsBackPerf,
+                         std::vector<bool> &diagFlagsBackReject,
+                         const std::vector<bool> & diagFlagsPermReject,
+                         std::vector<bool> &diagFlagsFinalReject,
                          std::vector<float> &PGE,
                          float ErrVarMax,
                          const std::vector<float> *obsVal2,
@@ -93,9 +96,9 @@ namespace ufo {
             (*TotalPd)[jloc] = TotalProbDist;
 
         // Set QC flags.
-        flags[jloc] |= ufo::MetOfficeQCFlags::Elem::BackPerfFlag;
+        diagFlagsBackPerf[jloc] = true;
         if (PGE[jloc] >= PGECrit) {
-          flags[jloc] |= ufo::MetOfficeQCFlags::Elem::BackRejectFlag;
+          diagFlagsBackReject[jloc] = true;
         }
       } else {
         // Deal with missing data.
@@ -110,10 +113,10 @@ namespace ufo {
       // reject (o - b)**2/errvar >= SDiffCrit
       if (PerformSDiffCheck &&
           (SDiff >= SDiffCrit ||
-           flags[jloc] & ufo::MetOfficeQCFlags::Elem::PermRejectFlag ||
-           flags[jloc] & ufo::MetOfficeQCFlags::Elem::FinalRejectFlag)) {
+           diagFlagsPermReject[jloc] ||
+           diagFlagsFinalReject[jloc])) {
         PGE[jloc] = PGEMDI;  // Do not apply buddy check in this case.
-        flags[jloc] |= ufo::MetOfficeQCFlags::Elem::FinalRejectFlag;
+        diagFlagsFinalReject[jloc] = true;
       }
     }
   }

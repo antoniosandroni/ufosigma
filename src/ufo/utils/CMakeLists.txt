@@ -28,7 +28,6 @@ set ( utils_files
       metoffice/MetOfficeBMatrixStatic.h
       metoffice/MetOfficeBMatrixStatic.interface.h
       metoffice/MetOfficeBMatrixStatic.interface.F90
-      metoffice/MetOfficeQCFlags.h
       metoffice/MetOfficeRMatrixRadiance.cc
       metoffice/MetOfficeRMatrixRadiance.h
       metoffice/MetOfficeRMatrixRadiance.interface.h

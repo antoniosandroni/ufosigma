@@ -5,6 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include <map>
 #include <set>
 #include <sstream>
 #include <string>
@@ -33,38 +34,34 @@ namespace ufo {
 
     // Produce vector of profiles containing data for the temperature averaging.
     std::vector <std::string> variableNamesInt =
-      {ufo::VariableNames::qcflags_air_temperature,
-       ufo::VariableNames::qcflags_relative_humidity,
-       ufo::VariableNames::counter_NumGapsT,
-       ufo::VariableNames::extended_obs_space};
+      {ufo::ProfileVariableNames::counter_NumGapsT,
+       ufo::ProfileVariableNames::extended_obs_space};
     std::vector <std::string> variableNamesFloat =
-      {ufo::VariableNames::obs_air_temperature,
-       ufo::VariableNames::obscorrection_air_temperature,
-       ufo::VariableNames::pge_air_temperature,
-       ufo::VariableNames::LogP_derived,
-       ufo::VariableNames::bigPgaps_derived,
-       ufo::VariableNames::modellevels_ExnerP_rho_derived,
-       ufo::VariableNames::modellevels_ExnerP_derived,
-       ufo::VariableNames::modellevels_logP_rho_derived,
-       ufo::VariableNames::modellevels_logP_derived,
-       ufo::VariableNames::modellevels_air_temperature_derived,
-       ufo::VariableNames::air_temperature_derived};
+      {ufo::ProfileVariableNames::obs_air_temperature,
+       ufo::ProfileVariableNames::obscorrection_air_temperature,
+       ufo::ProfileVariableNames::pge_air_temperature,
+       ufo::ProfileVariableNames::LogP_derived,
+       ufo::ProfileVariableNames::bigPgaps_derived,
+       ufo::ProfileVariableNames::modellevels_ExnerP_rho_derived,
+       ufo::ProfileVariableNames::modellevels_ExnerP_derived,
+       ufo::ProfileVariableNames::modellevels_logP_rho_derived,
+       ufo::ProfileVariableNames::modellevels_logP_derived,
+       ufo::ProfileVariableNames::modellevels_air_temperature_derived,
+       ufo::ProfileVariableNames::air_temperature_derived};
     oops::Variables variableNamesGeoVaLs{
-      {oops::Variable{ufo::VariableNames::geovals_air_potential_temperature}}};
+      {oops::Variable{ufo::ProfileVariableNames::geovals_air_potential_temperature}}};
 
     if (options_.compareWithOPS.value()) {
-      variableNamesInt.insert
-        (variableNamesInt.end(),
-         {addOPSPrefix(ufo::VariableNames::qcflags_air_temperature)});
       variableNamesFloat.insert
         (variableNamesFloat.end(),
-         {addOPSPrefix(ufo::VariableNames::modellevels_air_temperature_derived),
-             addOPSPrefix(ufo::VariableNames::air_temperature_derived)});
-      variableNamesGeoVaLs.push_back(oops::Variable{ufo::VariableNames::geovals_air_temperature});
-      variableNamesGeoVaLs.push_back(oops::Variable
-                                     {ufo::VariableNames::geovals_testreference_air_temperature});
-      variableNamesGeoVaLs.push_back(oops::Variable
-                               {ufo::VariableNames::geovals_testreference_air_temperature_qcflags});
+         {addOPSPrefix(ufo::ProfileVariableNames::modellevels_air_temperature_derived),
+             addOPSPrefix(ufo::ProfileVariableNames::air_temperature_derived)});
+      variableNamesGeoVaLs.push_back
+        (oops::Variable{ufo::ProfileVariableNames::geovals_air_temperature});
+      variableNamesGeoVaLs.push_back
+        (oops::Variable {ufo::ProfileVariableNames::geovals_testreference_air_temperature});
+      variableNamesGeoVaLs.push_back
+        (oops::Variable{ufo::ProfileVariableNames::geovals_testreference_air_temperature_qcflags});
     }
 
     std::vector <ProfileDataHolder> profiles =
@@ -72,6 +69,17 @@ namespace ufo {
       (variableNamesInt,
        variableNamesFloat,
        {},
+       {ufo::ProfileVariableNames::diagflags_final_reject_t,
+        ufo::ProfileVariableNames::diagflags_perm_reject_t,
+        ufo::ProfileVariableNames::diagflags_back_reject_t,
+        ufo::ProfileVariableNames::diagflags_interpolation_t,
+        ufo::ProfileVariableNames::diagflags_hydro_t,
+        ufo::ProfileVariableNames::diagflags_superadiabat_t,
+        ufo::ProfileVariableNames::diagflags_partial_layer_t,
+        ufo::ProfileVariableNames::diagflags_final_reject_rh,
+        ufo::ProfileVariableNames::diagflags_perm_reject_rh,
+        ufo::ProfileVariableNames::diagflags_back_reject_rh,
+        ufo::ProfileVariableNames::diagflags_interpolation_rh},
        variableNamesGeoVaLs);
 
     // Run temperature averaging on each profile in the original ObsSpace,
@@ -89,7 +97,7 @@ namespace ufo {
       (profileDataHandler,
        profiles,
        "airTemperature",
-       ufo::VariableNames::air_temperature_derived);
+       ufo::ProfileVariableNames::air_temperature_derived);
 
     // Fill validation information if required.
     if (options_.compareWithOPS.value()) {
@@ -98,20 +106,23 @@ namespace ufo {
         ProfileAverageUtils::fillValidationData
           (profiles[jprof],
            jprof >= halfnprofs,
-           ufo::VariableNames::air_temperature_derived,
-           ufo::VariableNames::qcflags_air_temperature,
-           oops::Variable{ufo::VariableNames::geovals_testreference_air_temperature},
-           oops::Variable{ufo::VariableNames::geovals_testreference_air_temperature_qcflags});
+           ufo::ProfileVariableNames::air_temperature_derived,
+           ufo::ProfileVariableNames::diagflags_final_reject_t,
+           oops::Variable
+           {ufo::ProfileVariableNames::geovals_testreference_air_temperature},
+           oops::Variable
+           {ufo::ProfileVariableNames::geovals_testreference_air_temperature_qcflags});
         // Also fill validation values of model air temperature.
         if (jprof >= halfnprofs) {
           auto & profile = profiles[jprof];
           std::vector <float> & model_air_temperature =
-            profile.getGeoVaLVector(oops::Variable{ufo::VariableNames::geovals_air_temperature});
+            profile.getGeoVaLVector
+            (oops::Variable{ufo::ProfileVariableNames::geovals_air_temperature});
           // Ensure all vectors are the correct size to be saved to the ObsSpace.
           const size_t numModelLevels = profile.getNumProfileLevels();
           model_air_temperature.resize(numModelLevels, missingValueFloat);
           profile.set<float>
-            (addOPSPrefix(ufo::VariableNames::modellevels_air_temperature_derived),
+            (addOPSPrefix(ufo::ProfileVariableNames::modellevels_air_temperature_derived),
              std::move(model_air_temperature));
         }
       }
@@ -132,69 +143,99 @@ namespace ufo {
     const size_t numProfileLevels = profileOriginal.getNumProfileLevels();
     const size_t numModelLevels = profileExtended.getNumProfileLevels();
 
+    const std::vector<std::string> diagFlagNamesT {
+      ufo::ProfileVariableNames::diagflags_final_reject_t,
+      ufo::ProfileVariableNames::diagflags_perm_reject_t,
+      ufo::ProfileVariableNames::diagflags_back_reject_t,
+      ufo::ProfileVariableNames::diagflags_interpolation_t,
+      ufo::ProfileVariableNames::diagflags_hydro_t,
+      ufo::ProfileVariableNames::diagflags_superadiabat_t};
+    const std::vector<std::string> diagFlagNamesRH {
+      ufo::ProfileVariableNames::diagflags_final_reject_rh,
+      ufo::ProfileVariableNames::diagflags_perm_reject_rh,
+      ufo::ProfileVariableNames::diagflags_back_reject_rh,
+      ufo::ProfileVariableNames::diagflags_interpolation_rh};
+
     // Do not perform averaging if there are fewer than two reported levels.
     // Instead, fill the averaged profile vectors with missing values.
     if (numProfileLevels <= 1) {
       ProfileAverageUtils::setProfileMissing<float>(profileExtended,
-        {ufo::VariableNames::modellevels_air_temperature_derived,
-         ufo::VariableNames::air_temperature_derived});
-      ProfileAverageUtils::setProfileMissing<int>(profileExtended,
-        {ufo::VariableNames::qcflags_air_temperature});
+        {ufo::ProfileVariableNames::modellevels_air_temperature_derived,
+         ufo::ProfileVariableNames::air_temperature_derived});
+      for (const std::string & diagFlagNameT : diagFlagNamesT) {
+        ProfileAverageUtils::setProfileTrue(profileExtended, {diagFlagNameT});
+      }
+      ProfileAverageUtils::setProfileTrue(profileExtended,
+        {ufo::ProfileVariableNames::diagflags_partial_layer_t});
+      for (const std::string & diagFlagNameRH : diagFlagNamesRH) {
+        ProfileAverageUtils::setProfileTrue(profileExtended, {diagFlagNameRH});
+      }
 
       // Store the observed temperature in the vector of derived values.
       // The derived values are initially missing, so performing this action
       // ensures that any filters subsequently run on the original ObsSpace
       // will work correctly.
-      ProfileAverageUtils::copyProfileValues<float>(profileOriginal,
-                                                    ufo::VariableNames::obs_air_temperature,
-                                                    ufo::VariableNames::air_temperature_derived);
+      ProfileAverageUtils::copyProfileValues<float>
+        (profileOriginal,
+         ufo::ProfileVariableNames::obs_air_temperature,
+         ufo::ProfileVariableNames::air_temperature_derived);
       return;
     }
 
     const std::vector <float> &tObs =
-      profileOriginal.get<float>(ufo::VariableNames::obs_air_temperature);
+      profileOriginal.get<float>(ufo::ProfileVariableNames::obs_air_temperature);
     const std::vector <float> &tPGE =
-      profileOriginal.get<float>(ufo::VariableNames::pge_air_temperature);
-    std::vector <int> &tFlags =
-      profileOriginal.get<int>(ufo::VariableNames::qcflags_air_temperature);
-    std::vector <int> &rhFlags =
-      profileOriginal.get<int>(ufo::VariableNames::qcflags_relative_humidity);
+      profileOriginal.get<float>(ufo::ProfileVariableNames::pge_air_temperature);
+    std::map<std::string, std::vector<bool> > diagFlagVectorsT;
+    for (const auto & diagFlagNameT : diagFlagNamesT) {
+      const std::vector <bool> diagFlagVector =
+        profileOriginal.get<bool>(diagFlagNameT);
+      diagFlagVectorsT[diagFlagNameT] = diagFlagVector;
+    }
+    std::map<std::string, std::vector<bool> > diagFlagVectorsRH;
+    for (const auto & diagFlagNameRH : diagFlagNamesRH) {
+      const std::vector <bool> diagFlagVector =
+        profileOriginal.get<bool>(diagFlagNameRH);
+      diagFlagVectorsRH[diagFlagNameRH] = diagFlagVector;
+    }
     const std::vector <float> &tObsCorrection =
-      profileOriginal.get<float>(ufo::VariableNames::obscorrection_air_temperature);
+      profileOriginal.get<float>(ufo::ProfileVariableNames::obscorrection_air_temperature);
     std::vector <int> &NumGapsT =
-       profileOriginal.get<int>(ufo::VariableNames::counter_NumGapsT);
+       profileOriginal.get<int>(ufo::ProfileVariableNames::counter_NumGapsT);
 
-    if (!oops::allVectorsSameNonZeroSize(tObs, tPGE, tFlags, rhFlags, tObsCorrection)) {
+    if (!oops::allVectorsSameNonZeroSize(tObs, tPGE,
+                                         tObsCorrection)) {
       std::stringstream errorMessage;
       errorMessage << "At least one vector is the wrong size. "
                    << "Temperature averaging will not be performed." << std::endl;
       errorMessage << "Vector sizes: "
-                   << oops::listOfVectorSizes(tObs, tPGE, tFlags, rhFlags, tObsCorrection)
+                   << oops::listOfVectorSizes(tObs, tPGE,
+                                              tObsCorrection)
                    << std::endl;
       throw eckit::BadValue(errorMessage.str(), Here());
     }
 
     // Obtain GeoVaLs potential temperature.
     const std::vector <float> &potempGeoVaLs =
-      profileOriginal.getGeoVaLVector(oops::Variable
-                                      {ufo::VariableNames::geovals_air_potential_temperature});
+      profileOriginal.getGeoVaLVector
+      (oops::Variable{ufo::ProfileVariableNames::geovals_air_potential_temperature});
     if (potempGeoVaLs.empty())
       throw eckit::BadValue("Potential temperature GeoVaLs vector is empty.", Here());
     const size_t numTLevels = potempGeoVaLs.size();
 
     // Obtain vectors that were produced in the AveragePressure routine.
     const std::vector <float> &ExnerPA =
-      profileExtended.get<float>(ufo::VariableNames::modellevels_ExnerP_rho_derived);
+      profileExtended.get<float>(ufo::ProfileVariableNames::modellevels_ExnerP_rho_derived);
     const std::vector <float> &ExnerPB =
-      profileExtended.get<float>(ufo::VariableNames::modellevels_ExnerP_derived);
+      profileExtended.get<float>(ufo::ProfileVariableNames::modellevels_ExnerP_derived);
     const std::vector <float> &LogPA =
-      profileExtended.get<float>(ufo::VariableNames::modellevels_logP_rho_derived);
+      profileExtended.get<float>(ufo::ProfileVariableNames::modellevels_logP_rho_derived);
     const std::vector <float> &LogPB =
-      profileExtended.get<float>(ufo::VariableNames::modellevels_logP_derived);
+      profileExtended.get<float>(ufo::ProfileVariableNames::modellevels_logP_derived);
     const std::vector <float> &RepLogP =
-      profileOriginal.get<float>(ufo::VariableNames::LogP_derived);
+      profileOriginal.get<float>(ufo::ProfileVariableNames::LogP_derived);
     const std::vector <float> &BigGap =
-      profileOriginal.get<float>(ufo::VariableNames::bigPgaps_derived);
+      profileOriginal.get<float>(ufo::ProfileVariableNames::bigPgaps_derived);
 
     if (!oops::allVectorsSameNonZeroSize(ExnerPA, LogPA) ||
         !oops::allVectorsSameNonZeroSize(ExnerPB, LogPB) ||
@@ -218,31 +259,38 @@ namespace ufo {
     // Values which have been flagged here, or previously, are not used in the averaging routines.
     for (size_t jlev = 0; jlev < numProfileLevels; ++jlev) {
       if (tPGE[jlev] > options_.AvgT_PGEskip.value()) {
-        tFlags[jlev] |= ufo::MetOfficeQCFlags::Elem::FinalRejectFlag;
+        diagFlagVectorsT[ufo::ProfileVariableNames::diagflags_final_reject_t][jlev] = true;
         // NB the relative humidity flags are modified in this routine and also
         // in the routine that performs RH averaging.
-        rhFlags[jlev] |= ufo::MetOfficeQCFlags::Elem::FinalRejectFlag;
+        diagFlagVectorsRH[ufo::ProfileVariableNames::diagflags_final_reject_rh][jlev] = true;
       }
     }
 
     // Average observed temperatures onto model levels.
     int NumGaps = 0;  //  Number of large gaps in reported profile.
     std::vector <float> tModObs;  // T observations averaged onto model levels.
-    std::vector <int> tFlagsModObs;  // Flags associated with the averaging procedure.
+    // Diagnostic flags associated with the averaging procedure.
+    std::map<std::string, std::vector<bool> > diagFlagVectorsTModObs;
+    for (const auto & diagFlagNameT : diagFlagNamesT) {
+      diagFlagVectorsTModObs[diagFlagNameT] = {};
+    }
+    std::vector <bool> diagFlagsTPartialLayerModObs;
     std::vector <float> LogP_Min;  // Min log(pressure) used in layer average.
     std::vector <float> LogP_Max;  // Max log(pressure) used in layer average.
     // Minimum fraction of a model layer that must have been covered (in the vertical coordinate)
     // by observed values in order for averaging onto that layer to be performed.
     const float SondeDZFraction = options_.AvgT_SondeDZFraction.value();
-    calculateVerticalAverage(tFlags,
-                             tObsFinal,
+
+    calculateVerticalAverage(tObsFinal,
                              RepLogP,
                              BigGap,
                              LogPA,
+                             diagFlagVectorsT,
                              SondeDZFraction,
                              ProfileAveraging::Method::Averaging,
-                             tFlagsModObs,
                              tModObs,
+                             diagFlagVectorsTModObs,
+                             diagFlagsTPartialLayerModObs,
                              NumGaps,
                              &LogP_Max,
                              &LogP_Min);
@@ -348,19 +396,28 @@ namespace ufo {
 
     // Ensure all vectors are the correct size to be saved to the ObsSpace.
     tModObs.resize(numModelLevels, missingValueFloat);
-    tFlagsModObs.resize(numModelLevels, 0);
+    for (const auto & diagFlagNameT : diagFlagNamesT) {
+      diagFlagVectorsTModObs[diagFlagNameT].resize(numModelLevels, false);
+    }
+    diagFlagsTPartialLayerModObs.resize(numModelLevels, false);
 
     // Store the model temperature.
     profileExtended.set<float>
-      (ufo::VariableNames::modellevels_air_temperature_derived, std::move(tModBkg));
+      (ufo::ProfileVariableNames::modellevels_air_temperature_derived, std::move(tModBkg));
 
     // Store the temperature averaged onto model levels.
     profileExtended.set<float>
-      (ufo::VariableNames::air_temperature_derived, std::move(tModObs));
+      (ufo::ProfileVariableNames::air_temperature_derived, std::move(tModObs));
 
-    // Store the QC flags associated with temperature averaging.
-    profileExtended.set<int>
-      (ufo::VariableNames::qcflags_air_temperature, std::move(tFlagsModObs));
+    // Store the diagnostic flags associated with the temperature averaging.
+    for (const auto & diagFlagNameT : diagFlagNamesT) {
+      profileExtended.set<bool>
+        (diagFlagNameT,
+         std::move(diagFlagVectorsTModObs[diagFlagNameT]));
+    }
+    profileExtended.set<bool>
+      (ufo::ProfileVariableNames::diagflags_partial_layer_t,
+      std::move(diagFlagsTPartialLayerModObs));
 
     // Store the observed temperature in the vector of derived values.
     // The derived values are initially missing, so performing this action
@@ -369,6 +426,14 @@ namespace ufo {
     // Create a copy to avoid moving from a const vector.
     std::vector<float> tObsToSave = tObs;
     profileOriginal.set<float>
-      (ufo::VariableNames::air_temperature_derived, std::move(tObsToSave));
+      (ufo::ProfileVariableNames::air_temperature_derived, std::move(tObsToSave));
+
+    // Save final rejection diagnostic flag vectors, which may have been modified.
+    profileOriginal.set<bool>
+      (ufo::ProfileVariableNames::diagflags_final_reject_t,
+       std::move(diagFlagVectorsT[ufo::ProfileVariableNames::diagflags_final_reject_t]));
+    profileOriginal.set<bool>
+      (ufo::ProfileVariableNames::diagflags_final_reject_rh,
+       std::move(diagFlagVectorsRH[ufo::ProfileVariableNames::diagflags_final_reject_rh]));
   }
 }  // namespace ufo

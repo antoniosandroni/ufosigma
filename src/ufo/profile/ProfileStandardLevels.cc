@@ -19,7 +19,9 @@ namespace ufo {
   void ProfileStandardLevels::calcStdLevels(const int numProfileLevels,
                                             const std::vector <float> &pressures,
                                             const std::vector <float> &tObs,
-                                            const std::vector <int> &tFlags)
+                                            const std::vector <bool> &diagFlagsTFinalReject,
+                                            const std::vector <bool> &diagFlagsTSurfaceLevel,
+                                            const std::vector <bool> &diagFlagsTStandardLevel)
   {
     oops::Log::debug() << " Finding standard levels" << std::endl;
 
@@ -39,15 +41,15 @@ namespace ufo {
     int jlevStdA = 0;  // Standard level below previous significant level
     for (int jlev = 0; jlev < numProfileLevels; ++jlev) {
       // Ignore this level if it has been flagged as rejected.
-      if (tFlags[jlev] & ufo::MetOfficeQCFlags::Elem::FinalRejectFlag) continue;
+      if (diagFlagsTFinalReject[jlev]) continue;
       if (tObs[jlev] != missingValueFloat &&
           pressures[jlev] > optionsSL_.FS_MinP.value()) {
         LogP_[jlev] = (pressures[jlev] > 0 ? std::log(pressures[jlev]) : 0.0);
-        if (tFlags[jlev] & ufo::MetOfficeQCFlags::Profile::SurfaceLevelFlag) {
+        if (diagFlagsTSurfaceLevel[jlev]) {
           // Surface
           NumStd_++;
           StdLev_[NumStd_ - 1] = jlev;
-        } else if (tFlags[jlev] & ufo::MetOfficeQCFlags::Profile::StandardLevelFlag) {
+        } else if (diagFlagsTStandardLevel[jlev]) {
           // Standard level
           NumStd_++;
           StdLev_[NumStd_ - 1] = jlev;
@@ -66,7 +68,7 @@ namespace ufo {
     // Calculate IndStd_ (standard level indices)
     for (int jlevstd = 0; jlevstd < NumStd_; ++jlevstd) {
       int jlev = StdLev_[jlevstd];  // Standard level
-      if (tFlags[jlev] & ufo::MetOfficeQCFlags::Profile::SurfaceLevelFlag) continue;
+      if (diagFlagsTSurfaceLevel[jlev]) continue;
       int IPStd = std::round(pressures[jlev] * 0.01);  // Pressure rounded to nearest hPa
       for (size_t i = 0; i < StandardLevels_.size(); ++i) {
         if (IPStd == StandardLevels_[i])

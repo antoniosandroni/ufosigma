@@ -33,7 +33,7 @@ class BayesianBackgroundQCFlagsParameters : public FilterParametersBase {
 
  public:
   /// This parameter is a collection of PGE variable name substitutions.
-  /// The PGE of the second variable in each pair is used to set the QC flags
+  /// The PGE of the second variable in each pair is used to set the diagnostic flags
   /// of the first variable; this happens for (e.g.) wind u and v components.
   /// todo(UKMO): might need to add the variables known as
   /// u10, v10 and uSuperob, vSuperob in OPS.
@@ -45,12 +45,12 @@ class BayesianBackgroundQCFlagsParameters : public FilterParametersBase {
   ProbabilityOfGrossErrorParameters PGEParameters{this};
 };
 
-/// BayesianBackgroundQCFlags: apply QC flags based on values of probability of
+/// BayesianBackgroundQCFlags: set diagnostic flags based on values of probability of
 /// gross error (PGE). If the PGE is larger than the threshold \p PGEcrit then
 /// the observation is rejected.
 /// If the Bayesian background or buddy checks were applied,
 /// use the PGE that was obtained from those checks.
-/// Sometimes the PGE of one variable is used to set the QC flags of another;
+/// Sometimes the PGE of one variable is used to set the diagnostic flags of another;
 /// this happens for (e.g.) wind u and v components.
 ///
 /// todo(UKMO): deal with Pstar/Pmsl and u10AmbWind/v10AmbWind (as they are known in OPS).
@@ -74,13 +74,13 @@ class BayesianBackgroundQCFlags : public FilterBase,
   int qcFlag() const override {return QCflags::bayesianQC;}
 
   /// Get the name of the variable whose PGE is tested in order to
-  /// set the QC flags for the variable \p varname.
+  /// set the diagnostic flags for the variable \p varname.
   /// By default, \p varname is returned by this routine; any substitutions
   /// are listed in the \p PGEsubstituteNames parameter.
   std::string getPGEsubstituteName(const std::string& varname) const;
 
-  /// Set flags for the variable \p varname given the \p apply vector.
-  /// Set both integer bitmap flags and an overall filter flag (bayesianQC).
+  /// Set diagnostic flags for the variable \p varname given the \p apply vector.
+  /// Also set an overall filter flag (bayesianQC).
   void setFlags(const std::string& varname,
                 const std::vector<bool>& apply,
                 std::vector<bool>& flagged) const;

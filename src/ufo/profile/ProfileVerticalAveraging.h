@@ -8,6 +8,8 @@
 #ifndef UFO_PROFILE_PROFILEVERTICALAVERAGING_H_
 #define UFO_PROFILE_PROFILEVERTICALAVERAGING_H_
 
+#include <map>
+#include <string>
 #include <vector>
 
 namespace ufo {
@@ -47,27 +49,34 @@ namespace ufo {
   /// valid values used in the weighted mean calculation, can optionally be recorded.
   /// These values are used in (e.g.) atmospheric profile temperature averaging.
   ///
-  /// \param[in] flagsIn: flags on input data.
+  /// Existing diagnostic flags are combined onto model levels using a logical `or`.
+  /// The partial layer diagnostic flag is filled in for model levels that are only partially
+  /// filled in the averaging procedure.
+  ///
   /// \param[in] valuesIn: reported-level values.
   /// \param[in] coordIn: reported-level coordinates.
   /// \param[in] bigGap: maximum gap to be filled in.
   /// \param[in] coordOut: model layer boundaries.
+  /// \param[in] diagFlags: input diagnostic flags.
   /// \param[in] DZFrac: minimum fraction for partially filled layers to be used.
   /// \param[in] method: interpolate to model layer boundaries or average over model layers?
-  /// \param[out] flagsOut: flags on output data.
   /// \param[out] valuesOut: output data (averaged or interpolated).
+  /// \param[out] diagFlagsModObs: diagnostic flags combined onto model levels.
+  /// \param[out] diagFlagsModObsPartialLayer: diagnostic flags indicating a partial layer has been
+  /// filled in the averaging procedure.
   /// \param[out] numGaps: number of large gaps in profile.
   /// \param[out] coordMax: maximum coordinate of the values used in the model layer average.
   /// \param[out] coordMin: minimum coordinate of the values used in the model layer average.
-  void calculateVerticalAverage(const std::vector <int> &flagsIn,
-                                const std::vector <float> &valuesIn,
+  void calculateVerticalAverage(const std::vector <float> &valuesIn,
                                 const std::vector <float> &coordIn,
                                 const std::vector <float> &bigGap,
                                 const std::vector <float> &coordOut,
+                                const std::map <std::string, std::vector<bool>> & diagFlags,
                                 float DZFrac,
                                 ProfileAveraging::Method method,
-                                std::vector <int> &flagsOut,
                                 std::vector <float> &valuesOut,
+                                std::map <std::string, std::vector<bool>> & diagFlagsModObs,
+                                std::vector <bool> &diagFlagsModObsPartialLayer,
                                 int &numGaps,
                                 std::vector <float> *coordMax = nullptr,
                                 std::vector <float> *coordMin = nullptr);

@@ -31,7 +31,7 @@ namespace ufo {
   /// using a Bayesian method.
   /// This check can be performed on both reported level data and on data which have been
   /// averaged onto model levels.
-  /// QC flags are not set for reported level data so that all levels
+  /// Diagnostic flags are not set for reported level data so that all levels
   /// (except those with PGE > 0.999) will be used in vertical averaging.
   class ProfileCheckBackgroundWindSpeed : public ProfileCheckBase {
    public:

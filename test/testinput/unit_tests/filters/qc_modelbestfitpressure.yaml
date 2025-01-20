@@ -17,14 +17,15 @@ observations:
   geovals:
     filename: Data/ufo/testinput_tier_1/satwind_geoval_20201001T0600Z.nc4
   obs filters:
+  - filter: Create Diagnostic Flags
+    filter variables:
+    - name: windEastward
+    - name: windNorthward
+    flags:
+    - name: BestFitPressurePoorlyConstrained
+      initial value: false
   - filter: Variable Assignment
     assignments:
-    - name: QCFlags/windEastward
-      type: int
-      value: 0
-    - name: QCFlags/windNorthward
-      type: int
-      value: 0
     - name: DerivedValue/pressureBestFit
       type: float
       value: -99999.0
@@ -62,14 +63,15 @@ observations:
   geovals:
     filename: Data/ufo/testinput_tier_1/satwind_geoval_small_reversed_20201001T0600Z.nc4
   obs filters:
+  - filter: Create Diagnostic Flags
+    filter variables:
+    - name: windEastward
+    - name: windNorthward
+    flags:
+    - name: BestFitPressurePoorlyConstrained
+      initial value: false
   - filter: Variable Assignment
     assignments:
-    - name: QCFlags/windEastward
-      type: int
-      value: 0
-    - name: QCFlags/windNorthward
-      type: int
-      value: 0
     - name: DerivedValue/pressureBestFit
       type: float
       value: -99999.0
@@ -87,7 +89,7 @@ observations:
     calculate bestfit winds: false
   expectExceptionWithMessage: GeoVaLs are not ordered from model top to bottom
 - obs space:
-    name: Fail to initialise QCFlags
+    name: Fail to initialise diagnostic flags
     obsdatain:
       engine:
         type: H5File
@@ -112,4 +114,4 @@ observations:
     tolerance vector diff: 1.0e-8
     tolerance pressure: 0.01
     calculate bestfit winds: false
-  expectExceptionWithMessage: QCFlags/windEastward or QCFlags/windNorthward not initialised
+  expectExceptionWithMessage: DiagnosticFlags/BestFitPressurePoorlyConstrained/windEastward or DiagnosticFlags/BestFitPressurePoorlyConstrained/windNorthward not initialised

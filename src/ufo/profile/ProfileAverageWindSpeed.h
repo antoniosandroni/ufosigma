@@ -48,14 +48,14 @@ namespace ufo {
 
     /// List of names of required GeoVaLs.
     oops::Variables getGeoVaLNames() override {
-      return oops::Variables({ufo::VariableNames::geovals_air_pressure_at_surface});}
+      return oops::Variables({ufo::ProfileVariableNames::geovals_air_pressure_at_surface});}
 
     /// List of names of GeoVaLs used in check validation.
     oops::Variables getValidationGeoVaLNames() override {
-      return oops::Variables({ufo::VariableNames::geovals_testreference_eastward_wind,
-            ufo::VariableNames::geovals_testreference_eastward_wind_qcflags,
-            ufo::VariableNames::geovals_testreference_northward_wind,
-            ufo::VariableNames::geovals_testreference_northward_wind_qcflags
+      return oops::Variables({ufo::ProfileVariableNames::geovals_testreference_eastward_wind,
+            ufo::ProfileVariableNames::geovals_testreference_eastward_wind_qcflags,
+            ufo::ProfileVariableNames::geovals_testreference_northward_wind,
+            ufo::ProfileVariableNames::geovals_testreference_northward_wind_qcflags
             });}
 
    private:

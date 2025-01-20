@@ -5,9 +5,9 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "ufo/variabletransforms/Cal_PotentialTFromT.h"
+#include "eckit/utils/StringTools.h"
 #include "ufo/utils/Constants.h"
-#include "ufo/utils/metoffice/MetOfficeQCFlags.h"
+#include "ufo/variabletransforms/Cal_PotentialTFromT.h"
 
 
 namespace ufo {
@@ -56,7 +56,6 @@ void Cal_PotentialTFromT::runTransform(const std::vector<bool> &apply) {
   std::vector<float> potTemp(nlocs, missingValueFloat);
   std::vector<float> potTempErr(nlocs, missingValueFloat);
   std::vector<float> temppge;
-  std::vector<int> tempflags;
   getObservation(pressuregroup_, pressurevariable_,
                  pressure, true);
   getObservation("ObsValue", temperaturevariable_,
@@ -64,14 +63,9 @@ void Cal_PotentialTFromT::runTransform(const std::vector<bool> &apply) {
   data_.get(Variable(std::string("ObsErrorData/") + temperaturevariable_), tempError);
   getObservation("GrossErrorProbability", temperaturevariable_,
                  temppge);
-  getObservation("QCFlags", temperaturevariable_,
-                 tempflags);
 
   if (temppge.empty()) {
     temppge.assign(nlocs, missingValueFloat);
-  }
-  if (tempflags.empty()) {
-    tempflags.assign(nlocs, 0);
   }
 
   if (!oops::allVectorsSameSize(pressure, temperature, tempError)) {
@@ -114,8 +108,36 @@ void Cal_PotentialTFromT::runTransform(const std::vector<bool> &apply) {
     obserr_[iv][jobs] = potTempErr[jobs];
   }
 
-  // copy temperature's PGEFinal and QCflags to new potentialTemperature
+  // Copy airTemperature PGEFinal to potentialTemperature PGEFinal
   obsdb_.put_db("GrossErrorProbability", potentialtempvariable_, temppge);
-  obsdb_.put_db("QCFlags", potentialtempvariable_, tempflags);
-}
+
+  // Transfer each airTemperature diagnostic flag to the potentialTemperature equivalent.
+  // Get list of all ObsSpace variable names.
+  const std::vector<std::string> obsSpaceVarList = obsdb_.listVariables();
+  // Loop over all ObsSpace variable names. If they have the correct format,
+  // copy the relevant diagnostic flag.
+  for (const std::string & obsSpaceVarName : obsSpaceVarList) {
+    if (eckit::StringTools::startsWith(obsSpaceVarName, "DiagnosticFlags") &&
+        eckit::StringTools::endsWith(obsSpaceVarName, "airTemperature")) {
+      // Expect two slashes in the variable name.
+      // The first slash is guaranteed to appear at position 15.
+      const std::size_t slashFirst = 15;
+      const std::size_t slashLast = obsSpaceVarName.find_last_of("/");
+      if (slashLast == std::string::npos ||
+          slashLast == slashFirst) {
+        continue;
+      }
+      const std::string diagFlagName =
+        obsSpaceVarName.substr(slashFirst + 1, slashLast - slashFirst - 1);
+      // Copy the contents of the airTemperature diagnostic flag to the
+      // potentialTemperature equivalent. Note that the airTemperature flag
+      // must have been added to the ObsSpace with the Create Diagnostic Flags filter.
+      if (obsdb_.has("DiagnosticFlags/" + diagFlagName, "airTemperature")) {
+        std::vector<bool> diagFlags(nlocs);
+        obsdb_.get_db("DiagnosticFlags/" + diagFlagName, "airTemperature", diagFlags);
+        obsdb_.put_db("DiagnosticFlags/" + diagFlagName, "potentialTemperature", diagFlags);
+        }
+      }
+    }
+  }
 }  // namespace ufo

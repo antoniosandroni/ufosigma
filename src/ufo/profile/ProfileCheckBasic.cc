@@ -6,7 +6,7 @@
  */
 
 #include "ufo/profile/ProfileCheckBasic.h"
-#include "ufo/profile/VariableNames.h"
+#include "ufo/profile/ProfileVariableNames.h"
 
 namespace ufo {
 
@@ -32,17 +32,17 @@ namespace ufo {
 
     const int numProfileLevels = profileDataHandler.getNumProfileLevels();
     const std::vector <float> &pressures =
-      profileDataHandler.get<float>(ufo::VariableNames::obs_air_pressure);
-    // All QC flags are retrieved for the basic checks.
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_air_pressure);
+    // All diagnostic flags are retrieved for the basic checks.
     // (Some might be empty; that is checked before they are used.)
-    std::vector <int> &tFlags = profileDataHandler.get<int>
-      (ufo::VariableNames::qcflags_air_temperature);
-    std::vector <int> &uFlags = profileDataHandler.get<int>
-      (ufo::VariableNames::qcflags_eastward_wind);
-    std::vector <int> &vFlags = profileDataHandler.get<int>
-      (ufo::VariableNames::qcflags_northward_wind);
-    std::vector <int> &rhFlags = profileDataHandler.get<int>
-      (ufo::VariableNames::qcflags_relative_humidity);
+    std::vector <bool> &diagFlagsTFinalReject = profileDataHandler.get<bool>
+      (ufo::ProfileVariableNames::diagflags_final_reject_t);
+    std::vector <bool> &diagFlagsUFinalReject = profileDataHandler.get<bool>
+      (ufo::ProfileVariableNames::diagflags_final_reject_u);
+    std::vector <bool> &diagFlagsVFinalReject = profileDataHandler.get<bool>
+      (ufo::ProfileVariableNames::diagflags_final_reject_v);
+    std::vector <bool> &diagFlagsRHFinalReject = profileDataHandler.get<bool>
+      (ufo::ProfileVariableNames::diagflags_final_reject_rh);
 
     // Warn and exit if pressures vector is empty
     if (pressures.empty()) {
@@ -90,10 +90,10 @@ namespace ufo {
         if (pressures[jlev] == missingValueFloat) continue;
         if (pressures[jlev] > pressure_current ||
             pressures[jlev] <= options_.BChecks_minValidP.value()) {
-          if (!tFlags.empty()) tFlags[jlev] |= ufo::MetOfficeQCFlags::Elem::FinalRejectFlag;
-          if (!uFlags.empty()) uFlags[jlev] |= ufo::MetOfficeQCFlags::Elem::FinalRejectFlag;
-          if (!vFlags.empty()) vFlags[jlev] |= ufo::MetOfficeQCFlags::Elem::FinalRejectFlag;
-          if (!rhFlags.empty()) rhFlags[jlev] |= ufo::MetOfficeQCFlags::Elem::FinalRejectFlag;
+          if (!diagFlagsTFinalReject.empty()) diagFlagsTFinalReject[jlev] = true;
+          if (!diagFlagsUFinalReject.empty()) diagFlagsUFinalReject[jlev] = true;
+          if (!diagFlagsVFinalReject.empty()) diagFlagsVFinalReject[jlev] = true;
+          if (!diagFlagsRHFinalReject.empty()) diagFlagsRHFinalReject[jlev] = true;
         }
         pressure_current = pressures[jlev];
       }

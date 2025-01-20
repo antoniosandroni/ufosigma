@@ -16,9 +16,9 @@ observations:
     filter variables:
       - name: stationPressure
     flags:
-    - name: QNHhPa
-    - name: QNHinHg
-    - name: notRounded
+    - name: MetarQNHUnitsHPa
+    - name: MetarQNHUnitsInchesOfMercury
+    - name: MetarQNHNotRoundedToNearestHPa
   - filter: Variable Transforms
     Transform: QNHtoQFEpressure
     UseValidDataOnly: false
@@ -36,13 +36,13 @@ observations:
     - reference:
         name: TestReference/QNHhPaFlag
       test:
-        name: DiagnosticFlags/QNHhPa/stationPressure
+        name: DiagnosticFlags/MetarQNHUnitsHPa/stationPressure
     - reference:
         name: TestReference/QNHinHgFlag
       test:
-        name: DiagnosticFlags/QNHinHg/stationPressure
+        name: DiagnosticFlags/MetarQNHUnitsInchesOfMercury/stationPressure
 
-# Check for missing QNHhPa
+# Check for missing MetarQNHUnitsHPa
 - obs space:
     name: Surface
     obsdatain:
@@ -55,14 +55,14 @@ observations:
     filter variables:
       - name: stationPressure
     flags:
-    - name: QNHinHg
-    - name: notRounded
+    - name: MetarQNHUnitsInchesOfMercury
+    - name: MetarQNHNotRoundedToNearestHPa
   - filter: Variable Transforms
     Transform: QNHtoQFEpressure
     UseValidDataOnly: false
-  expectExceptionWithMessage: "Variable 'DiagnosticFlags/QNHhPa/stationPressure' does not exist yet. It needs to be set up with the 'Create Diagnostic Flags' filter prior to using the 'set' or 'unset' action."
+  expectExceptionWithMessage: "Variable 'DiagnosticFlags/MetarQNHUnitsHPa/stationPressure' does not exist yet. It needs to be set up with the 'Create Diagnostic Flags' filter prior to using the 'set' or 'unset' action."
 
-# Check for missing QNHinHg
+# Check for missing MetarQNHUnitsInchesOfMercury
 - obs space:
     name: Surface
     obsdatain:
@@ -75,14 +75,14 @@ observations:
     filter variables:
       - name: stationPressure
     flags:
-    - name: QNHhPa
-    - name: notRounded
+    - name: MetarQNHUnitsHPa
+    - name: MetarQNHNotRoundedToNearestHPa
   - filter: Variable Transforms
     Transform: QNHtoQFEpressure
     UseValidDataOnly: false
-  expectExceptionWithMessage: "Variable 'DiagnosticFlags/QNHinHg/stationPressure' does not exist yet. It needs to be set up with the 'Create Diagnostic Flags' filter prior to using the 'set' or 'unset' action."
+  expectExceptionWithMessage: "Variable 'DiagnosticFlags/MetarQNHUnitsInchesOfMercury/stationPressure' does not exist yet. It needs to be set up with the 'Create Diagnostic Flags' filter prior to using the 'set' or 'unset' action."
 
-# Check for missing notRounded
+# Check for missing MetarQNHNotRoundedToNearestHPa
 - obs space:
     name: Surface
     obsdatain:
@@ -95,9 +95,9 @@ observations:
     filter variables:
       - name: stationPressure
     flags:
-    - name: QNHhPa
-    - name: QNHinHg
+    - name: MetarQNHUnitsHPa
+    - name: MetarQNHUnitsInchesOfMercury
   - filter: Variable Transforms
     Transform: QNHtoQFEpressure
     UseValidDataOnly: false
-  expectExceptionWithMessage: "Variable 'DiagnosticFlags/notRounded/stationPressure' does not exist yet. It needs to be set up with the 'Create Diagnostic Flags' filter prior to using the 'set' or 'unset' action."
+  expectExceptionWithMessage: "Variable 'DiagnosticFlags/MetarQNHNotRoundedToNearestHPa/stationPressure' does not exist yet. It needs to be set up with the 'Create Diagnostic Flags' filter prior to using the 'set' or 'unset' action."

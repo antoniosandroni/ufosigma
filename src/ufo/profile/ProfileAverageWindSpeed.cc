@@ -5,6 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include <map>
 #include <set>
 #include <sstream>
 #include <string>
@@ -33,41 +34,35 @@ namespace ufo {
 
     // Produce vector of profiles containing data for the wind speed averaging.
     std::vector <std::string> variableNamesInt =
-      {ufo::VariableNames::qcflags_eastward_wind,
-       ufo::VariableNames::qcflags_northward_wind,
-       ufo::VariableNames::counter_NumGapsU,
-       ufo::VariableNames::counter_NumGapsUWP,
-       ufo::VariableNames::ObsType,
-       ufo::VariableNames::extended_obs_space};
+      {ufo::ProfileVariableNames::counter_NumGapsU,
+       ufo::ProfileVariableNames::counter_NumGapsUWP,
+       ufo::ProfileVariableNames::ObsType,
+       ufo::ProfileVariableNames::extended_obs_space};
     std::vector <std::string> variableNamesFloat =
-      {ufo::VariableNames::obs_eastward_wind,
-       ufo::VariableNames::obs_northward_wind,
-       ufo::VariableNames::pge_eastward_wind,
-       ufo::VariableNames::LogP_derived,
-       ufo::VariableNames::bigPgaps_derived,
-       ufo::VariableNames::modellevels_logP_derived,
-       ufo::VariableNames::eastward_wind_derived,
-       ufo::VariableNames::northward_wind_derived};
+      {ufo::ProfileVariableNames::obs_eastward_wind,
+       ufo::ProfileVariableNames::obs_northward_wind,
+       ufo::ProfileVariableNames::pge_eastward_wind,
+       ufo::ProfileVariableNames::LogP_derived,
+       ufo::ProfileVariableNames::bigPgaps_derived,
+       ufo::ProfileVariableNames::modellevels_logP_derived,
+       ufo::ProfileVariableNames::eastward_wind_derived,
+       ufo::ProfileVariableNames::northward_wind_derived};
     oops::Variables variableNamesGeoVaLs{
-      {oops::Variable{ufo::VariableNames::geovals_air_pressure_at_surface}}};
+      {oops::Variable{ufo::ProfileVariableNames::geovals_air_pressure_at_surface}}};
 
     if (options_.compareWithOPS.value()) {
-      variableNamesInt.insert
-        (variableNamesInt.end(),
-         {addOPSPrefix(ufo::VariableNames::qcflags_eastward_wind),
-             addOPSPrefix(ufo::VariableNames::qcflags_northward_wind)});
       variableNamesFloat.insert
         (variableNamesFloat.end(),
-         {addOPSPrefix(ufo::VariableNames::eastward_wind_derived),
-             addOPSPrefix(ufo::VariableNames::northward_wind_derived)});
-      variableNamesGeoVaLs.push_back(oops::Variable
-                                     {ufo::VariableNames::geovals_testreference_eastward_wind});
-      variableNamesGeoVaLs.push_back(oops::Variable
-                                 {ufo::VariableNames::geovals_testreference_eastward_wind_qcflags});
-      variableNamesGeoVaLs.push_back(oops::Variable
-                                     {ufo::VariableNames::geovals_testreference_northward_wind});
-      variableNamesGeoVaLs.push_back(oops::Variable
-                                {ufo::VariableNames::geovals_testreference_northward_wind_qcflags});
+         {addOPSPrefix(ufo::ProfileVariableNames::eastward_wind_derived),
+             addOPSPrefix(ufo::ProfileVariableNames::northward_wind_derived)});
+      variableNamesGeoVaLs.push_back
+        (oops::Variable{ufo::ProfileVariableNames::geovals_testreference_eastward_wind});
+      variableNamesGeoVaLs.push_back
+        (oops::Variable{ufo::ProfileVariableNames::geovals_testreference_eastward_wind_qcflags});
+      variableNamesGeoVaLs.push_back
+        (oops::Variable{ufo::ProfileVariableNames::geovals_testreference_northward_wind});
+      variableNamesGeoVaLs.push_back
+        (oops::Variable{ufo::ProfileVariableNames::geovals_testreference_northward_wind_qcflags});
     }
 
     std::vector <ProfileDataHolder> profiles =
@@ -75,6 +70,16 @@ namespace ufo {
       (variableNamesInt,
        variableNamesFloat,
        {},
+       {ufo::ProfileVariableNames::diagflags_final_reject_u,
+        ufo::ProfileVariableNames::diagflags_perm_reject_u,
+        ufo::ProfileVariableNames::diagflags_back_reject_u,
+        ufo::ProfileVariableNames::diagflags_interpolation_u,
+        ufo::ProfileVariableNames::diagflags_partial_layer_u,
+        ufo::ProfileVariableNames::diagflags_final_reject_v,
+        ufo::ProfileVariableNames::diagflags_perm_reject_v,
+        ufo::ProfileVariableNames::diagflags_back_reject_v,
+        ufo::ProfileVariableNames::diagflags_interpolation_v,
+        ufo::ProfileVariableNames::diagflags_partial_layer_v},
        variableNamesGeoVaLs);
 
     // Run wind speed averaging on each profile in the original ObsSpace,
@@ -92,12 +97,12 @@ namespace ufo {
       (profileDataHandler,
        profiles,
        "windEastward",
-       ufo::VariableNames::eastward_wind_derived);
+       ufo::ProfileVariableNames::eastward_wind_derived);
     ProfileAverageUtils::passNonMissingAveragedObservations
       (profileDataHandler,
        profiles,
        "windNorthward",
-       ufo::VariableNames::northward_wind_derived);
+       ufo::ProfileVariableNames::northward_wind_derived);
 
     // Fill validation information if required.
     if (options_.compareWithOPS.value()) {
@@ -106,17 +111,17 @@ namespace ufo {
         ProfileAverageUtils::fillValidationData
           (profiles[jprof],
            jprof >= halfnprofs,
-           ufo::VariableNames::eastward_wind_derived,
-           ufo::VariableNames::qcflags_eastward_wind,
-           oops::Variable{ufo::VariableNames::geovals_testreference_eastward_wind},
-           oops::Variable{ufo::VariableNames::geovals_testreference_eastward_wind_qcflags});
+           ufo::ProfileVariableNames::eastward_wind_derived,
+           ufo::ProfileVariableNames::diagflags_final_reject_u,
+           oops::Variable{ufo::ProfileVariableNames::geovals_testreference_eastward_wind},
+           oops::Variable{ufo::ProfileVariableNames::geovals_testreference_eastward_wind_qcflags});
         ProfileAverageUtils::fillValidationData
           (profiles[jprof],
            jprof >= halfnprofs,
-           ufo::VariableNames::northward_wind_derived,
-           ufo::VariableNames::qcflags_northward_wind,
-           oops::Variable{ufo::VariableNames::geovals_testreference_northward_wind},
-           oops::Variable{ufo::VariableNames::geovals_testreference_northward_wind_qcflags});
+           ufo::ProfileVariableNames::northward_wind_derived,
+           ufo::ProfileVariableNames::diagflags_final_reject_v,
+           oops::Variable{ufo::ProfileVariableNames::geovals_testreference_northward_wind},
+           oops::Variable{ufo::ProfileVariableNames::geovals_testreference_northward_wind_qcflags});
       }
     }
 
@@ -135,53 +140,78 @@ namespace ufo {
     const size_t numProfileLevels = profileOriginal.getNumProfileLevels();
     const size_t numModelLevels = profileExtended.getNumProfileLevels();
 
+    const std::vector<std::string> diagFlagNamesU {
+      ufo::ProfileVariableNames::diagflags_final_reject_u,
+      ufo::ProfileVariableNames::diagflags_perm_reject_u,
+      ufo::ProfileVariableNames::diagflags_back_reject_u,
+      ufo::ProfileVariableNames::diagflags_interpolation_u};
+    const std::vector<std::string> diagFlagNamesV {
+      ufo::ProfileVariableNames::diagflags_final_reject_v,
+      ufo::ProfileVariableNames::diagflags_perm_reject_v,
+      ufo::ProfileVariableNames::diagflags_back_reject_v,
+      ufo::ProfileVariableNames::diagflags_interpolation_v};
+
     // Do not perform averaging if there are fewer than two reported levels.
     // Instead, fill the averaged profile vectors with missing values.
     if (numProfileLevels <= 1) {
       ProfileAverageUtils::setProfileMissing<float>(profileExtended,
-        {ufo::VariableNames::eastward_wind_derived});
+        {ufo::ProfileVariableNames::eastward_wind_derived});
       ProfileAverageUtils::setProfileMissing<float>(profileExtended,
-        {ufo::VariableNames::northward_wind_derived});
-      ProfileAverageUtils::setProfileMissing<int>(profileExtended,
-        {ufo::VariableNames::qcflags_eastward_wind});
-      ProfileAverageUtils::setProfileMissing<int>(profileExtended,
-        {ufo::VariableNames::qcflags_northward_wind});
-
+        {ufo::ProfileVariableNames::northward_wind_derived});
+      for (const std::string & diagFlagNameU : diagFlagNamesU) {
+        ProfileAverageUtils::setProfileTrue(profileExtended, {diagFlagNameU});
+      }
+      ProfileAverageUtils::setProfileTrue(profileExtended,
+        {ufo::ProfileVariableNames::diagflags_partial_layer_u});
+      for (const std::string & diagFlagNameV : diagFlagNamesV) {
+        ProfileAverageUtils::setProfileTrue(profileExtended, {diagFlagNameV});
+      }
+      ProfileAverageUtils::setProfileTrue(profileExtended,
+        {ufo::ProfileVariableNames::diagflags_partial_layer_v});
       // Store the observed eastward and northward winds in the vectors of derived values.
       // The derived values are initially missing, so performing this action
       // ensures that any filters subsequently run on the original ObsSpace
       // will work correctly.
-      ProfileAverageUtils::copyProfileValues<float>(profileOriginal,
-                                                    ufo::VariableNames::obs_eastward_wind,
-                                                    ufo::VariableNames::eastward_wind_derived);
-      ProfileAverageUtils::copyProfileValues<float>(profileOriginal,
-                                                    ufo::VariableNames::obs_northward_wind,
-                                                    ufo::VariableNames::northward_wind_derived);
+      ProfileAverageUtils::copyProfileValues<float>
+        (profileOriginal,
+         ufo::ProfileVariableNames::obs_eastward_wind,
+         ufo::ProfileVariableNames::eastward_wind_derived);
+      ProfileAverageUtils::copyProfileValues<float>
+        (profileOriginal,
+         ufo::ProfileVariableNames::obs_northward_wind,
+         ufo::ProfileVariableNames::northward_wind_derived);
 
       return;
     }
 
     const std::vector <float> &uObs =
-      profileOriginal.get<float>(ufo::VariableNames::obs_eastward_wind);
+      profileOriginal.get<float>(ufo::ProfileVariableNames::obs_eastward_wind);
     const std::vector <float> &vObs =
-      profileOriginal.get<float>(ufo::VariableNames::obs_northward_wind);
+      profileOriginal.get<float>(ufo::ProfileVariableNames::obs_northward_wind);
     const std::vector <float> &uPGE =
-      profileOriginal.get<float>(ufo::VariableNames::pge_eastward_wind);
-    std::vector <int> &uFlags =
-      profileOriginal.get<int>(ufo::VariableNames::qcflags_eastward_wind);
-    std::vector <int> &vFlags =
-      profileOriginal.get<int>(ufo::VariableNames::qcflags_northward_wind);
+      profileOriginal.get<float>(ufo::ProfileVariableNames::pge_eastward_wind);
     std::vector <int> &NumGapsU =
-       profileOriginal.get<int>(ufo::VariableNames::counter_NumGapsU);
+       profileOriginal.get<int>(ufo::ProfileVariableNames::counter_NumGapsU);
+    std::map<std::string, std::vector<bool> > diagFlagVectorsU;
+    for (const auto & diagFlagNameU : diagFlagNamesU) {
+      const std::vector <bool> diagFlagVector =
+        profileOriginal.get<bool>(diagFlagNameU);
+      diagFlagVectorsU[diagFlagNameU] = diagFlagVector;
+    }
+    std::map<std::string, std::vector<bool> > diagFlagVectorsV;
+    for (const auto & diagFlagNameV : diagFlagNamesV) {
+      const std::vector <bool> diagFlagVector =
+        profileOriginal.get<bool>(diagFlagNameV);
+      diagFlagVectorsV[diagFlagNameV] = diagFlagVector;
+    }
     // Number of gaps for wind profilers.
     std::vector <int> &NumGapsUWP =
-       profileOriginal.get<int>(ufo::VariableNames::counter_NumGapsUWP);
+       profileOriginal.get<int>(ufo::ProfileVariableNames::counter_NumGapsUWP);
     const std::vector <int> &ObsType =
-      profileOriginal.get<int>(ufo::VariableNames::ObsType);
+      profileOriginal.get<int>(ufo::ProfileVariableNames::ObsType);
 
     if (!oops::allVectorsSameNonZeroSize(uObs, vObs,
                                          uPGE,
-                                         uFlags, vFlags,
                                          ObsType)) {
       std::stringstream errorMessage;
       errorMessage << "At least one vector is the wrong size. "
@@ -189,7 +219,6 @@ namespace ufo {
       errorMessage << "Vector sizes: "
                    << oops::listOfVectorSizes(uObs, vObs,
                                               uPGE,
-                                              uFlags, vFlags,
                                               ObsType)
                    << std::endl;
       throw eckit::BadValue(errorMessage.str(), Here());
@@ -198,17 +227,17 @@ namespace ufo {
     // Obtain GeoVaLs surface pressure and eastward wind speed.
     std::vector <float> &geovals_air_pressure_at_surface =
       profileOriginal.getGeoVaLVector(oops::Variable{
-          ufo::VariableNames::geovals_air_pressure_at_surface});
+          ufo::ProfileVariableNames::geovals_air_pressure_at_surface});
     if (geovals_air_pressure_at_surface.empty())
       throw eckit::BadValue("Surface pressure GeoVaLs vector is empty.", Here());
 
     // Obtain vectors that were produced in the AveragePressure routine.
     const std::vector <float> &LogPB =
-      profileExtended.get<float>(ufo::VariableNames::modellevels_logP_derived);
+      profileExtended.get<float>(ufo::ProfileVariableNames::modellevels_logP_derived);
     const std::vector <float> &RepLogP =
-      profileOriginal.get<float>(ufo::VariableNames::LogP_derived);
+      profileOriginal.get<float>(ufo::ProfileVariableNames::LogP_derived);
     const std::vector <float> &BigGap =
-      profileOriginal.get<float>(ufo::VariableNames::bigPgaps_derived);
+      profileOriginal.get<float>(ufo::ProfileVariableNames::bigPgaps_derived);
 
     if (LogPB.empty() ||
         !oops::allVectorsSameNonZeroSize(RepLogP, BigGap)) {
@@ -232,27 +261,34 @@ namespace ufo {
     // Values which have been flagged here, or previously, are not used in the averaging routines.
     for (size_t jlev = 0; jlev < numProfileLevels; ++jlev) {
       if (uPGE[jlev] > options_.AvgU_PGEskip.value()) {
-        uFlags[jlev] |= ufo::MetOfficeQCFlags::Elem::FinalRejectFlag;
-        vFlags[jlev] |= ufo::MetOfficeQCFlags::Elem::FinalRejectFlag;
+        diagFlagVectorsU[ufo::ProfileVariableNames::diagflags_final_reject_u][jlev] = true;
+        diagFlagVectorsV[ufo::ProfileVariableNames::diagflags_final_reject_v][jlev] = true;
       }
     }
 
     // Average observed wind speeds onto model levels.
     int NumGaps = 0;  //  Number of large gaps in reported profile
     std::vector <float> uModObs;  // u observations averaged onto model levels.
-    std::vector <int> uFlagsModObs;  // Flags associated with the u averaging procedure.
+    // Diagnostic flags associated with the averaging procedure.
+    std::map<std::string, std::vector<bool> > diagFlagVectorsUModObs;
+    for (const auto & diagFlagNameU : diagFlagNamesU) {
+      diagFlagVectorsUModObs[diagFlagNameU] = {};
+    }
+    std::vector <bool> diagFlagsUPartialLayerModObs;
     // Minimum fraction of a model layer that must have been covered (in the vertical coordinate)
     // by observed values in order for averaging onto that layer to be performed.
     const float SondeDZFraction = options_.AvgU_SondeDZFraction.value();
-    calculateVerticalAverage(uFlags,
-                             uObs,
+
+    calculateVerticalAverage(uObs,
                              RepLogP,
                              BigGap,
                              LogPWB,
+                             diagFlagVectorsU,
                              SondeDZFraction,
                              ProfileAveraging::Method::Averaging,
-                             uFlagsModObs,
                              uModObs,
+                             diagFlagVectorsUModObs,
+                             diagFlagsUPartialLayerModObs,
                              NumGaps);
 
     // Increment wind speed gap counter if necessary.
@@ -264,33 +300,51 @@ namespace ufo {
     }
 
     std::vector <float> vModObs;  // v observations averaged onto model levels.
-    std::vector <int> vFlagsModObs;  // Flags associated with the v averaging procedure.
-    calculateVerticalAverage(vFlags,
-                             vObs,
+    std::map<std::string, std::vector<bool> > diagFlagVectorsVModObs;
+    for (const auto & diagFlagNameV : diagFlagNamesV) {
+      diagFlagVectorsVModObs[diagFlagNameV] = {};
+    }
+    std::vector <bool> diagFlagsVPartialLayerModObs;
+
+    calculateVerticalAverage(vObs,
                              RepLogP,
                              BigGap,
                              LogPWB,
+                             diagFlagVectorsV,
                              SondeDZFraction,
                              ProfileAveraging::Method::Averaging,
-                             vFlagsModObs,
                              vModObs,
+                             diagFlagVectorsVModObs,
+                             diagFlagsVPartialLayerModObs,
                              NumGaps);
 
     // Store the eastward wind speed averaged onto model levels.
     profileExtended.set<float>
-      (ufo::VariableNames::eastward_wind_derived, std::move(uModObs));
+      (ufo::ProfileVariableNames::eastward_wind_derived, std::move(uModObs));
 
-    // Store the QC flags associated with the eastward wind averaging.
-    profileExtended.set<int>
-      (ufo::VariableNames::qcflags_eastward_wind, std::move(uFlagsModObs));
+    // Store the diagnostic flags associated with the eastward wind averaging.
+    for (const auto & diagFlagNameU : diagFlagNamesU) {
+      profileExtended.set<bool>
+        (diagFlagNameU,
+         std::move(diagFlagVectorsUModObs[diagFlagNameU]));
+    }
+    profileExtended.set<bool>
+      (ufo::ProfileVariableNames::diagflags_partial_layer_u,
+      std::move(diagFlagsUPartialLayerModObs));
 
     // Store the northward wind speed averaged onto model levels.
     profileExtended.set<float>
-      (ufo::VariableNames::northward_wind_derived, std::move(vModObs));
+      (ufo::ProfileVariableNames::northward_wind_derived, std::move(vModObs));
 
-    // Store the QC flags associated with the northward wind averaging.
-    profileExtended.set<int>
-      (ufo::VariableNames::qcflags_northward_wind, std::move(vFlagsModObs));
+    // Store the diagnostic flags associated with the northward wind averaging.
+    for (const auto & diagFlagNameV : diagFlagNamesV) {
+      profileExtended.set<bool>
+        (diagFlagNameV,
+         std::move(diagFlagVectorsVModObs[diagFlagNameV]));
+    }
+    profileExtended.set<bool>
+      (ufo::ProfileVariableNames::diagflags_partial_layer_v,
+       std::move(diagFlagsVPartialLayerModObs));
 
     // Store the observed eastward and northward winds in the vectors of derived values.
     // The derived values are initially missing, so performing this action
@@ -299,9 +353,17 @@ namespace ufo {
     // In each case create a copy to avoid moving from a const vector.
     std::vector<float> uObsToSave = uObs;
     profileOriginal.set<float>
-      (ufo::VariableNames::eastward_wind_derived, std::move(uObsToSave));
+      (ufo::ProfileVariableNames::eastward_wind_derived, std::move(uObsToSave));
     std::vector<float> vObsToSave = vObs;
     profileOriginal.set<float>
-      (ufo::VariableNames::northward_wind_derived, std::move(vObsToSave));
+      (ufo::ProfileVariableNames::northward_wind_derived, std::move(vObsToSave));
+
+    // Save final rejection diagnostic flag vectors, which may have been modified.
+    profileOriginal.set<bool>
+      (ufo::ProfileVariableNames::diagflags_final_reject_u,
+       std::move(diagFlagVectorsU[ufo::ProfileVariableNames::diagflags_final_reject_u]));
+    profileOriginal.set<bool>
+      (ufo::ProfileVariableNames::diagflags_final_reject_v,
+       std::move(diagFlagVectorsV[ufo::ProfileVariableNames::diagflags_final_reject_v]));
   }
 }  // namespace ufo

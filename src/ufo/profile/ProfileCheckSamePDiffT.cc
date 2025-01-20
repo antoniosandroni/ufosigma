@@ -6,7 +6,7 @@
  */
 
 #include "ufo/profile/ProfileCheckSamePDiffT.h"
-#include "ufo/profile/VariableNames.h"
+#include "ufo/profile/ProfileVariableNames.h"
 
 namespace ufo {
 
@@ -26,25 +26,33 @@ namespace ufo {
     const int numProfileLevels = profileDataHandler.getNumProfileLevels();
 
     const std::vector <float> &pressures =
-      profileDataHandler.get<float>(ufo::VariableNames::obs_air_pressure);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_air_pressure);
     const std::vector <float> &tObs =
-      profileDataHandler.get<float>(ufo::VariableNames::obs_air_temperature);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_air_temperature);
     const std::vector <float> &tBkg =
-      profileDataHandler.get<float>(ufo::VariableNames::hofx_air_temperature);
-    std::vector <int> &tFlags =
-      profileDataHandler.get<int>(ufo::VariableNames::qcflags_air_temperature);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::hofx_air_temperature);
+    std::vector <bool> &diagFlagsTFinalReject =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_final_reject_t);
+    std::vector <bool> &diagFlagsTInterpolation =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_interpolation_t);
     std::vector <int> &NumAnyErrors =
-      profileDataHandler.get<int>(ufo::VariableNames::counter_NumAnyErrors);
+      profileDataHandler.get<int>(ufo::ProfileVariableNames::counter_NumAnyErrors);
     std::vector <int> &NumSamePErrObs =
-      profileDataHandler.get<int>(ufo::VariableNames::counter_NumSamePErrObs);
+      profileDataHandler.get<int>(ufo::ProfileVariableNames::counter_NumSamePErrObs);
     const std::vector <float> &tObsCorrection =
-      profileDataHandler.get<float>(ufo::VariableNames::obscorrection_air_temperature);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::obscorrection_air_temperature);
 
-    if (!oops::allVectorsSameNonZeroSize(pressures, tObs, tBkg, tFlags, tObsCorrection)) {
+    if (!oops::allVectorsSameNonZeroSize(pressures, tObs, tBkg,
+                                         diagFlagsTFinalReject,
+                                         diagFlagsTInterpolation,
+                                         tObsCorrection)) {
       oops::Log::debug() << "At least one vector is the wrong size. "
                          << "Check will not be performed." << std::endl;
       oops::Log::debug() << "Vector sizes: "
-                         << oops::listOfVectorSizes(pressures, tObs, tBkg, tFlags, tObsCorrection)
+                         << oops::listOfVectorSizes(pressures, tObs, tBkg,
+                                                    diagFlagsTFinalReject,
+                                                    diagFlagsTInterpolation,
+                                                    tObsCorrection)
                          << std::endl;
       return;
     }
@@ -69,12 +77,12 @@ namespace ufo {
           // Choose which level to flag
           if (std::abs(tObsFinal[jlev] - tBkg[jlev]) <=
               std::abs(tObsFinal[jlevprev] - tBkg[jlevprev])) {
-            tFlags[jlevprev] |= ufo::MetOfficeQCFlags::Elem::FinalRejectFlag;
-            tFlags[jlev]     |= ufo::MetOfficeQCFlags::Profile::InterpolationFlag;
+            diagFlagsTFinalReject[jlevprev] = true;
+            diagFlagsTInterpolation[jlev] = true;
             jlevuse = jlev;
           } else {
-            tFlags[jlevprev] |= ufo::MetOfficeQCFlags::Profile::InterpolationFlag;
-            tFlags[jlev]     |= ufo::MetOfficeQCFlags::Elem::FinalRejectFlag;
+            diagFlagsTInterpolation[jlevprev] = true;
+            diagFlagsTFinalReject[jlev] = true;
           }
 
           oops::Log::debug() << " -> Failed same P/different T check for levels "

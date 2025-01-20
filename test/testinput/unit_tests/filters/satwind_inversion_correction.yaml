@@ -17,14 +17,13 @@ observations:
   geovals:
     filename: Data/ufo/testinput_tier_1/satwind_geoval_20201001T0600Z.nc4
   obs filters:
-  - filter: Variable Assignment
-    assignments:
-    - name: QCFlags/windEastward
-      type: int
-      value: 0
-    - name: QCFlags/windNorthward
-      type: int
-      value: 0
+  - filter: Create Diagnostic Flags
+    filter variables:
+    - name: windEastward
+    - name: windNorthward
+    flags:
+    - name: InversionCorrectionPerformed
+      initial value: false
   - filter: Satwind Inversion Correction
     observation pressure:
       name: MetaData/pressure
@@ -50,14 +49,13 @@ observations:
   geovals:
     filename: Data/ufo/testinput_tier_1/satwind_geoval_small_reversed_20201001T0600Z.nc4
   obs filters:
-  - filter: Variable Assignment
-    assignments:
-    - name: QCFlags/windEastward
-      type: int
-      value: 0
-    - name: QCFlags/windNorthward
-      type: int
-      value: 0
+  - filter: Create Diagnostic Flags
+    filter variables:
+    - name: windEastward
+    - name: windNorthward
+    flags:
+    - name: InversionCorrectionPerformed
+      initial value: false
   - filter: Satwind Inversion Correction
     observation pressure:
       name: MetaData/pressure
@@ -65,7 +63,7 @@ observations:
   expectExceptionWithMessage: GeoVaLs are not ordered from model top to bottom
 #---------------------------------------------------
 - obs space:
-    name: QcFlags not initialised
+    name: Diagnostic flags not initialised
     obsdatain:
       engine:
         type: H5File
@@ -82,4 +80,6 @@ observations:
     observation pressure:
       name: MetaData/pressure
     RH threshold: 54
-  expectExceptionWithMessage: QCFlags/windEastward or QCFlags/windNorthward not initialised
+  expectExceptionWithMessage: DiagnosticFlags/InversionCorrectionPerformed/windEastward or DiagnosticFlags/InversionCorrectionPerformed/windNorthward not initialised
+
+

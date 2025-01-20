@@ -5,6 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include <map>
 #include <set>
 #include <sstream>
 #include <string>
@@ -33,33 +34,30 @@ namespace ufo {
 
     // Produce vector of profiles containing data for the relative humidity averaging.
     std::vector <std::string> variableNamesInt =
-      {ufo::VariableNames::qcflags_relative_humidity,
-       ufo::VariableNames::counter_NumGapsRH,
-       ufo::VariableNames::extended_obs_space,
-       ufo::VariableNames::InstrType};
+      {ufo::ProfileVariableNames::counter_NumGapsRH,
+       ufo::ProfileVariableNames::extended_obs_space,
+       ufo::ProfileVariableNames::InstrType};
     std::vector <std::string> variableNamesFloat =
-      {ufo::VariableNames::obs_relative_humidity,
-       ufo::VariableNames::pge_relative_humidity,
-       ufo::VariableNames::LogP_derived,
-       ufo::VariableNames::bigPgaps_derived,
-       ufo::VariableNames::modellevels_logP_derived,
-       ufo::VariableNames::modellevels_logP_rho_derived,
-       ufo::VariableNames::air_temperature_derived,
-       ufo::VariableNames::relative_humidity_derived};
+      {ufo::ProfileVariableNames::obs_relative_humidity,
+       ufo::ProfileVariableNames::pge_relative_humidity,
+       ufo::ProfileVariableNames::LogP_derived,
+       ufo::ProfileVariableNames::bigPgaps_derived,
+       ufo::ProfileVariableNames::modellevels_logP_derived,
+       ufo::ProfileVariableNames::modellevels_logP_rho_derived,
+       ufo::ProfileVariableNames::air_temperature_derived,
+       ufo::ProfileVariableNames::relative_humidity_derived};
     oops::Variables variableNamesGeoVaLs{
-      {oops::Variable{ufo::VariableNames::geovals_relative_humidity}}};
+      {oops::Variable{ufo::ProfileVariableNames::geovals_relative_humidity}}};
 
     if (options_.compareWithOPS.value()) {
-      variableNamesInt.insert
-        (variableNamesInt.end(),
-         {addOPSPrefix(ufo::VariableNames::qcflags_relative_humidity)});
       variableNamesFloat.insert
         (variableNamesFloat.end(),
-         {addOPSPrefix(ufo::VariableNames::relative_humidity_derived)});
-      variableNamesGeoVaLs.push_back(oops::Variable
-                                     {ufo::VariableNames::geovals_testreference_relative_humidity});
-      variableNamesGeoVaLs.push_back(oops::Variable
-                             {ufo::VariableNames::geovals_testreference_relative_humidity_qcflags});
+         {addOPSPrefix(ufo::ProfileVariableNames::relative_humidity_derived)});
+      variableNamesGeoVaLs.push_back
+        (oops::Variable{ufo::ProfileVariableNames::geovals_testreference_relative_humidity});
+      variableNamesGeoVaLs.push_back
+        (oops::Variable
+         {ufo::ProfileVariableNames::geovals_testreference_relative_humidity_qcflags});
     }
 
     std::vector <ProfileDataHolder> profiles =
@@ -67,6 +65,10 @@ namespace ufo {
       (variableNamesInt,
        variableNamesFloat,
        {},
+       {ufo::ProfileVariableNames::diagflags_final_reject_rh,
+        ufo::ProfileVariableNames::diagflags_perm_reject_rh,
+        ufo::ProfileVariableNames::diagflags_back_reject_rh,
+        ufo::ProfileVariableNames::diagflags_interpolation_rh},
        variableNamesGeoVaLs);
 
     // Run relative humidity averaging on each profile in the original ObsSpace,
@@ -84,7 +86,7 @@ namespace ufo {
       (profileDataHandler,
        profiles,
        "relativeHumidity",
-       ufo::VariableNames::relative_humidity_derived);
+       ufo::ProfileVariableNames::relative_humidity_derived);
 
     // Fill validation information if required.
     if (options_.compareWithOPS.value()) {
@@ -93,10 +95,11 @@ namespace ufo {
         ProfileAverageUtils::fillValidationData
           (profiles[jprof],
            jprof >= halfnprofs,
-           ufo::VariableNames::relative_humidity_derived,
-           ufo::VariableNames::qcflags_relative_humidity,
-           oops::Variable{ufo::VariableNames::geovals_testreference_relative_humidity},
-           oops::Variable{ufo::VariableNames::geovals_testreference_relative_humidity_qcflags});
+           ufo::ProfileVariableNames::relative_humidity_derived,
+           ufo::ProfileVariableNames::diagflags_final_reject_rh,
+           oops::Variable{ufo::ProfileVariableNames::geovals_testreference_relative_humidity},
+           oops::Variable
+           {ufo::ProfileVariableNames::geovals_testreference_relative_humidity_qcflags});
       }
     }
 
@@ -115,65 +118,79 @@ namespace ufo {
     const size_t numProfileLevels = profileOriginal.getNumProfileLevels();
     const size_t numModelLevels = profileExtended.getNumProfileLevels();
 
+    const std::vector<std::string> diagFlagNamesRH {
+      ufo::ProfileVariableNames::diagflags_final_reject_rh,
+      ufo::ProfileVariableNames::diagflags_perm_reject_rh,
+      ufo::ProfileVariableNames::diagflags_back_reject_rh,
+      ufo::ProfileVariableNames::diagflags_interpolation_rh};
+
     // Do not perform averaging if there are fewer than two reported levels.
     // Instead, fill the averaged profile vectors with missing values.
     if (numProfileLevels <= 1) {
       ProfileAverageUtils::setProfileMissing<float>(profileExtended,
-        {ufo::VariableNames::relative_humidity_derived});
-      ProfileAverageUtils::setProfileMissing<int>(profileExtended,
-        {ufo::VariableNames::qcflags_relative_humidity});
+        {ufo::ProfileVariableNames::relative_humidity_derived});
+      for (const std::string & diagFlagNameRH : diagFlagNamesRH) {
+        ProfileAverageUtils::setProfileTrue(profileExtended, {diagFlagNameRH});
+      }
+      ProfileAverageUtils::setProfileTrue(profileExtended,
+        {ufo::ProfileVariableNames::diagflags_partial_layer_rh});
 
       // Store the observed relative humidity in the vector of derived values.
       // The derived values are initially missing, so performing this action
       // ensures that any filters subsequently run on the original ObsSpace
       // will work correctly.
-      ProfileAverageUtils::copyProfileValues<float>(profileOriginal,
-                                                    ufo::VariableNames::obs_relative_humidity,
-                                                    ufo::VariableNames::relative_humidity_derived);
+      ProfileAverageUtils::copyProfileValues<float>
+        (profileOriginal,
+         ufo::ProfileVariableNames::obs_relative_humidity,
+         ufo::ProfileVariableNames::relative_humidity_derived);
 
       return;
     }
 
     const std::vector <float> &rhObs =
-      profileOriginal.get<float>(ufo::VariableNames::obs_relative_humidity);
+      profileOriginal.get<float>(ufo::ProfileVariableNames::obs_relative_humidity);
     std::vector <float> &rhPGE =
-      profileOriginal.get<float>(ufo::VariableNames::pge_relative_humidity);
-    std::vector <int> &rhFlags =
-      profileOriginal.get<int>(ufo::VariableNames::qcflags_relative_humidity);
+      profileOriginal.get<float>(ufo::ProfileVariableNames::pge_relative_humidity);
+    std::map<std::string, std::vector<bool> > diagFlagVectorsRH;
+    for (const auto & diagFlagNameRH : diagFlagNamesRH) {
+      const std::vector <bool> diagFlagVector =
+        profileOriginal.get<bool>(diagFlagNameRH);
+      diagFlagVectorsRH[diagFlagNameRH] = diagFlagVector;
+    }
+
     // Optional: vector of sonde instrument types.
     const std::vector <int> &InstrType =
-      profileOriginal.get<int>(ufo::VariableNames::InstrType);
+      profileOriginal.get<int>(ufo::ProfileVariableNames::InstrType);
     std::vector <int> &NumGapsRH =
-      profileOriginal.get<int>(ufo::VariableNames::counter_NumGapsRH);
+      profileOriginal.get<int>(ufo::ProfileVariableNames::counter_NumGapsRH);
 
-    if (!oops::allVectorsSameNonZeroSize(rhObs, rhPGE, rhFlags)) {
+    if (!oops::allVectorsSameNonZeroSize(rhObs, rhPGE)) {
       std::stringstream errorMessage;
       errorMessage << "At least one vector is the wrong size. "
                    << "Relative humidity averaging will not be performed." << std::endl;
       errorMessage << "Vector sizes: "
                    << oops::listOfVectorSizes(rhObs,
-                                              rhPGE,
-                                              rhFlags)
+                                              rhPGE)
                    << std::endl;
       throw eckit::BadValue(errorMessage.str(), Here());
     }
 
     // Obtain GeoVaLs.
     std::vector <float> &geovals_relative_humidity =
-      profileOriginal.getGeoVaLVector(oops::Variable
-                                                   {ufo::VariableNames::geovals_relative_humidity});
+      profileOriginal.getGeoVaLVector
+      (oops::Variable{ufo::ProfileVariableNames::geovals_relative_humidity});
     if (geovals_relative_humidity.empty())
       throw eckit::BadValue("GeoVaLs vector is empty.", Here());
 
     // Obtain vectors that were produced in the AveragePressure routine.
     const std::vector <float> &LogPA =
-      profileExtended.get<float>(ufo::VariableNames::modellevels_logP_rho_derived);
+      profileExtended.get<float>(ufo::ProfileVariableNames::modellevels_logP_rho_derived);
     const std::vector <float> &LogPB =
-      profileExtended.get<float>(ufo::VariableNames::modellevels_logP_derived);
+      profileExtended.get<float>(ufo::ProfileVariableNames::modellevels_logP_derived);
     const std::vector <float> &RepLogP =
-      profileOriginal.get<float>(ufo::VariableNames::LogP_derived);
+      profileOriginal.get<float>(ufo::ProfileVariableNames::LogP_derived);
     const std::vector <float> &BigGap =
-      profileOriginal.get<float>(ufo::VariableNames::bigPgaps_derived);
+      profileOriginal.get<float>(ufo::ProfileVariableNames::bigPgaps_derived);
     if (LogPA.empty() || LogPB.empty() ||
         !oops::allVectorsSameNonZeroSize(RepLogP, BigGap)) {
       std::stringstream errorMessage;
@@ -190,8 +207,9 @@ namespace ufo {
     // Flag reported value if the probability of gross error is too large.
     // Values which have been flagged here, or previously, are not used in the averaging routines.
     for (size_t jlev = 0; jlev < numProfileLevels; ++jlev)
-      if (rhPGE[jlev] > options_.AvgRH_PGEskip.value())
-        rhFlags[jlev] |= ufo::MetOfficeQCFlags::Elem::FinalRejectFlag;
+      if (rhPGE[jlev] > options_.AvgRH_PGEskip.value()) {
+        diagFlagVectorsRH[ufo::ProfileVariableNames::diagflags_final_reject_rh][jlev] = true;
+      }
 
     // Interpolate Sonde RH onto model levels? The alternative is to perform a vertical average.
     const bool RHinterp = options_.AvgRH_Interp;
@@ -203,26 +221,36 @@ namespace ufo {
     // Average observed relative humidities onto model levels.
     int NumGaps = 0;  // Number of large gaps in reported profile.
     std::vector <float> rhModObs;
-    std::vector <int> rhFlagsModObs;
+    // Diagnostic flags associated with the averaging procedure.
+    std::map<std::string, std::vector<bool> > diagFlagVectorsRHModObs;
+    for (const auto & diagFlagNameRH : diagFlagNamesRH) {
+      diagFlagVectorsRHModObs[diagFlagNameRH] = {};
+    }
+    std::vector <bool> diagFlagsRHPartialLayerModObs;
     // Minimum fraction of a model layer that must have been covered (in the vertical coordinate)
     // by observed values in order for averaging onto that layer to be performed.
     const float SondeDZFraction = options_.AvgRH_SondeDZFraction.value();
-    calculateVerticalAverage(rhFlags,
-                             rhObs,
+
+    calculateVerticalAverage(rhObs,
                              RepLogP,
                              BigGap,
                              LogPmodel,
+                             diagFlagVectorsRH,
                              SondeDZFraction,
                              RHinterp ?
                              ProfileAveraging::Method::Interpolation :
                              ProfileAveraging::Method::Averaging,
-                             rhFlagsModObs,
                              rhModObs,
+                             diagFlagVectorsRHModObs,
+                             diagFlagsRHPartialLayerModObs,
                              NumGaps);
 
     // Ensure all vectors are the correct size to be saved to the ObsSpace.
     rhModObs.resize(numModelLevels, missingValueFloat);
-    rhFlagsModObs.resize(numModelLevels, 0);
+    for (const auto & diagFlagNameRH : diagFlagNamesRH) {
+      diagFlagVectorsRHModObs[diagFlagNameRH].resize(numModelLevels, false);
+    }
+    diagFlagsRHPartialLayerModObs.resize(numModelLevels, false);
 
     // Increment relative humidity gap counter if necessary.
     if (NumGaps > 0) NumGapsRH[0]++;
@@ -236,7 +264,7 @@ namespace ufo {
     // potentially reject further relative humidity observations.
     const std::vector <float> &tModObs =
       profileExtended.get<float>
-      (ufo::VariableNames::air_temperature_derived);
+      (ufo::ProfileVariableNames::air_temperature_derived);
     if (!tModObs.empty()) {
       // Reject the average relative humidity if the equivalent averaged temperature
       // is less than a particular threshold.
@@ -259,18 +287,25 @@ namespace ufo {
         if (tModObs[mlev] != missingValueFloat &&
             tModObs[mlev] <= ufo::Constants::t0c + SondeRHminT)
           RejectRH = true;
-        if (RejectRH && mlev != tModObs.size() - 1)
-          rhFlagsModObs[mlev] |= ufo::MetOfficeQCFlags::Elem::PermRejectFlag;
+        if (RejectRH && mlev != tModObs.size() - 1) {
+          diagFlagVectorsRHModObs[ufo::ProfileVariableNames::diagflags_perm_reject_rh][mlev] = true;
+        }
       }
     }
 
     // Store the relative humidity averaged onto model levels.
     profileExtended.set<float>
-      (ufo::VariableNames::relative_humidity_derived, std::move(rhModObs));
+      (ufo::ProfileVariableNames::relative_humidity_derived, std::move(rhModObs));
 
-    // Store the QC flags associated with the relative humidity averaging.
-    profileExtended.set<int>
-      (ufo::VariableNames::qcflags_relative_humidity, std::move(rhFlagsModObs));
+    // Store the diagnostic flags associated with the relative humidity averaging.
+    for (const auto & diagFlagNameRH : diagFlagNamesRH) {
+      profileExtended.set<bool>
+        (diagFlagNameRH,
+         std::move(diagFlagVectorsRHModObs[diagFlagNameRH]));
+    }
+    profileExtended.set<bool>
+      (ufo::ProfileVariableNames::diagflags_partial_layer_rh,
+       std::move(diagFlagsRHPartialLayerModObs));
 
     // Store the observed relative humidity in the vector of derived values.
     // The derived values are initially missing, so performing this action
@@ -279,6 +314,11 @@ namespace ufo {
     // Create a copy to avoid moving from a const vector.
     std::vector<float> rhObsToSave = rhObs;
     profileOriginal.set<float>
-      (ufo::VariableNames::relative_humidity_derived, std::move(rhObsToSave));
+      (ufo::ProfileVariableNames::relative_humidity_derived, std::move(rhObsToSave));
+
+    // Save final rejection diagnostic flag vectors, which may have been modified.
+    profileOriginal.set<bool>
+      (ufo::ProfileVariableNames::diagflags_final_reject_rh,
+       std::move(diagFlagVectorsRH[ufo::ProfileVariableNames::diagflags_final_reject_rh]));
   }
 }  // namespace ufo

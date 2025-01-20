@@ -38,7 +38,7 @@ observations:
   HofX: HofX
   passedBenchmark: 1605
   benchmarkFlag: 24
-  flaggedBenchmark: 108
+  flaggedBenchmark: 2
 # The same test wtih GeoVaLs ordered from bottom to top, throwing an exception
 - obs space:
     name: Radiosonde, GeoVaLs reversed

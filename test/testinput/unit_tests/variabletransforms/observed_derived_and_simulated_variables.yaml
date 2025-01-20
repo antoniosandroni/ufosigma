@@ -37,7 +37,7 @@ observations:
     - name: stationPressure
     where:
     - variable:
-        name: DiagnosticFlags/PermanentReject/stationPressure
+        name: DiagnosticFlags/PermanentStationRejection/stationPressure
       value: is_true
 
   - filter: BlackList
@@ -45,7 +45,7 @@ observations:
     - name: standardPressure
     where:
     - variable:
-        name: DiagnosticFlags/PermanentReject/standardPressure
+        name: DiagnosticFlags/PermanentStationRejection/standardPressure
       value: is_true
 
   - filter: BlackList
@@ -53,7 +53,7 @@ observations:
     - name: pressureReducedToMeanSeaLevel
     where:
     - variable:
-        name: DiagnosticFlags/PermanentReject/pressureReducedToMeanSeaLevel
+        name: DiagnosticFlags/PermanentStationRejection/pressureReducedToMeanSeaLevel
       value: is_true
 
   - filter: Variable Transforms
@@ -78,12 +78,12 @@ observations:
     - reference:
         name: TestReference/PmslUsedFlag
       test:
-        name: DiagnosticFlags/PmslUsed/surfacePressure
+        name: DiagnosticFlags/MeanSeaLevelPressureUsedInSurfacePressureCalculation/surfacePressure
     - reference:
         name: TestReference/PstdUsedFlag
       test:
-        name: DiagnosticFlags/PstdUsed/surfacePressure
+        name: DiagnosticFlags/StandardPressureUsedInSurfacePressureCalculation/surfacePressure
     - reference:
         name: TestReference/PstnUsedFlag
       test:
-        name: DiagnosticFlags/PstnUsed/surfacePressure
+        name: DiagnosticFlags/StationPressureUsedInSurfacePressureCalculation/surfacePressure

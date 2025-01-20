@@ -18,18 +18,17 @@
 
 #include "ufo/profile/ProfileVerticalAveraging.h"
 
-#include "ufo/utils/metoffice/MetOfficeQCFlags.h"
-
 namespace ufo {
-  void calculateVerticalAverage(const std::vector <int> &flagsIn,
-                                const std::vector <float> &valuesIn,
+  void calculateVerticalAverage(const std::vector <float> &valuesIn,
                                 const std::vector <float> &coordIn,
                                 const std::vector <float> &bigGap,
                                 const std::vector <float> &coordOut,
+                                const std::map <std::string, std::vector<bool>> & diagFlags,
                                 float DZFrac,
                                 ProfileAveraging::Method method,
-                                std::vector <int> &flagsOut,
                                 std::vector <float> &valuesOut,
+                                std::map <std::string, std::vector<bool>> & diagFlagsModObs,
+                                std::vector <bool> & diagFlagsModObsPartialLayer,
                                 int &numGaps,
                                 std::vector <float> *coordMax,
                                 std::vector <float> *coordMin)
@@ -42,6 +41,18 @@ namespace ufo {
 
     // Coordinates in ascending order?
     const bool Ascending = coordOut[0] < coordOut[numInterp - 1];
+
+    // Determine name of final QC rejection flag.
+    std::string finalQCname;
+    for (const auto & [flagname, val] : diagFlags) {
+      if (flagname.find("FinalQCRejection") != std::string::npos) {
+        finalQCname = flagname;
+      }
+    }
+    if (finalQCname == "") {
+      throw eckit::UserError("FinalQCRejection diagnostic flag has not been created.",
+                             Here());
+    }
 
     // Make local copies of the vertical coordinates in order to allow them to be reversed.
     std::vector <float> ZIn = coordIn;
@@ -73,8 +84,9 @@ namespace ufo {
     for (size_t JLev = 0; JLev < numRepLev; ++JLev) {
       // Ignore levels with missing data or pre-existing rejection flags.
       if (valuesIn[JLev] == missingValueFloat ||
-          flagsIn[JLev] & ufo::MetOfficeQCFlags::Elem::FinalRejectFlag)
+          diagFlags.at(finalQCname)[JLev]) {
         continue;
+      }
       // Ignore duplicate levels.
       if (idxUsefulLevels.size() > 0 && ZIn[JLevP] == ZIn[JLev]) continue;
       // Set bigGapWithPreviousLevel in two cases:
@@ -93,7 +105,11 @@ namespace ufo {
 
     // Loop over model levels, interpolating from useful reported levels.
 
-    std::vector <int> flagsInterp(numInterp, 0);  // Interpolation flags.
+    std::map <std::string, std::vector<bool>> diagFlagsInterp;
+    for (const auto & [flagname, vec] : diagFlags) {
+      diagFlagsInterp[flagname] = std::vector<bool>(numInterp, false);
+    }
+    std::vector<bool> diagFlagsPartialLayerInterp(numInterp, false);
     // Counter over reported levels which is incremented inside the loop over model levels.
     size_t JLev = 0;
     for (size_t MLev = 0; MLev < numInterp; ++MLev) {
@@ -117,7 +133,9 @@ namespace ufo {
         const double Interp_factor = (ZMLev - ZIn[J1]) / (ZIn[J2] - ZIn[J1]);
         // Interpolate reported level values onto model levels.
         valuesInterp[MLev] = valuesIn[J1] + (valuesIn[J2] - valuesIn[J1]) * Interp_factor;
-        flagsInterp[MLev] = flagsIn[J1] | flagsIn[J2];
+        for (const auto & [flagname, vec] : diagFlags) {
+          diagFlagsInterp[flagname][MLev] = vec[J1] || vec[J2];
+        }
       }
 
       // Loop if interpolating or at lowest model level.
@@ -132,7 +150,9 @@ namespace ufo {
             valuesInterp[MLev] != missingValueFloat) {
           // Use mean of values at model layer bounds.
           valuesInterp[MLev - 1] = (valuesInterp[MLev - 1] + valuesInterp[MLev]) * 0.5;
-          flagsInterp[MLev - 1] |= flagsInterp[MLev];
+          for (auto & [flagname, vec] : diagFlagsInterp) {
+            vec[MLev - 1] = vec[MLev - 1] || vec[MLev];
+          }
           if (coordMax) (*coordMax)[MLev - 1] = ZOut[MLev - 1];
           if (coordMin) (*coordMin)[MLev - 1] = ZOut[MLev];
         }
@@ -167,7 +187,9 @@ namespace ufo {
           const double DZ = ZIn[J1] - ZOut[MLev];
           valuesInterp[MLev - 1] += (valuesInterp[MLev] + valuesIn[J1]) * DZ;
           DZSum += DZ;
-          flagsInterp[MLev - 1] |= flagsInterp[MLev];
+          for (auto & [flagname, vec] : diagFlagsInterp) {
+            vec[MLev - 1] = vec[MLev - 1] || vec[MLev];
+          }
           if (coordMin) (*coordMin)[MLev - 1] = ZOut[MLev];
         } else {
           if (coordMin) (*coordMin)[MLev - 1] = ZIn[J1];
@@ -181,10 +203,14 @@ namespace ufo {
           const double DZ = ZIn[J1] - ZIn[J2];
           valuesInterp[MLev - 1] += (valuesIn[J1] + valuesIn[J2]) * DZ;
           DZSum += DZ;
-          flagsInterp[MLev - 1] |= flagsIn[J1];
+          for (auto & [flagname, vec] : diagFlags) {
+            diagFlagsInterp[flagname][MLev - 1] = diagFlagsInterp[flagname][MLev - 1] || vec[J1];
+          }
         }
         J1 = idxUsefulLevels[JLev - 1];
-        flagsInterp[MLev - 1] |= flagsIn[J1];
+        for (auto & [flagname, vec] : diagFlags) {
+          diagFlagsInterp[flagname][MLev - 1] = diagFlagsInterp[flagname][MLev - 1] || vec[J1];
+        }
 
         // Calculate layer mean values.
 
@@ -195,7 +221,7 @@ namespace ufo {
         if (DZSum > DZFrac * DZMod) {
           // Set partial layer flag if the layer is between DZFrac and 99.5% full.
           if (DZSum <= 0.995 * DZMod)
-            flagsInterp[MLev - 1] |= ufo::MetOfficeQCFlags::Profile::PartialLayerFlag;
+            diagFlagsPartialLayerInterp[MLev - 1] = true;
           // Divide the weighted sum by sum of the weights
           // (the factor of 0.5 ensures correct normalisation).
           valuesInterp[MLev - 1] *= 0.5 / DZSum;
@@ -216,7 +242,11 @@ namespace ufo {
     }
 
     // Fill output arrays.
-    flagsOut = {flagsInterp.begin(), flagsInterp.begin() + numOut};
     valuesOut = {valuesInterp.begin(), valuesInterp.begin() + numOut};
+    for (const auto & [flagname, vec] : diagFlagsInterp) {
+      diagFlagsModObs[flagname] = {vec.begin(), vec.begin() + numOut};
+    }
+    diagFlagsModObsPartialLayer = {diagFlagsPartialLayerInterp.begin(),
+                                   diagFlagsPartialLayerInterp.begin() + numOut};
   }
 }  // namespace ufo

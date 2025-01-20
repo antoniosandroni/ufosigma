@@ -23,30 +23,44 @@ namespace ufo {
 
     const size_t numProfileLevels = profileDataHandler.getNumProfileLevels();
     const std::vector <float> &rhObs =
-      profileDataHandler.get<float>(ufo::VariableNames::obs_relative_humidity);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::obs_relative_humidity);
     const std::vector <float> &rhObsErr =
-      profileDataHandler.get<float>(ufo::VariableNames::obserr_relative_humidity);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::obserr_relative_humidity);
     const std::vector <float> &rhBkg =
-      profileDataHandler.get<float>(ufo::VariableNames::hofx_relative_humidity);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::hofx_relative_humidity);
     const std::vector <float> &rhBkgErr =
       profileDataHandler.get<float>
       (options_.bkgErrGroup.value() + "/" + options_.bkgErrName_relative_humidity.value());
     std::vector <float> &rhPGE =
-      profileDataHandler.get<float>(ufo::VariableNames::pge_relative_humidity);
-    std::vector <int> &rhFlags =
-      profileDataHandler.get<int>(ufo::VariableNames::qcflags_relative_humidity);
+      profileDataHandler.get<float>(ufo::ProfileVariableNames::pge_relative_humidity);
+    std::vector <bool> &diagFlagsRHBackPerf =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_back_perf_rh);
+    std::vector <bool> &diagFlagsRHBackReject =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_back_reject_rh);
+    std::vector <bool> &diagFlagsRHPermReject =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_perm_reject_rh);
+    std::vector <bool> &diagFlagsRHFinalReject =
+      profileDataHandler.get<bool>(ufo::ProfileVariableNames::diagflags_final_reject_rh);
     const std::vector <int> &extended_obs_space =
-      profileDataHandler.get<int>(ufo::VariableNames::extended_obs_space);
+      profileDataHandler.get<int>(ufo::ProfileVariableNames::extended_obs_space);
     const bool ModelLevels = std::find(extended_obs_space.begin(), extended_obs_space.end(), 1)
       != extended_obs_space.end();
 
     if (!oops::allVectorsSameNonZeroSize(rhObs, rhObsErr, rhBkg, rhBkgErr,
-                                         rhPGE, rhFlags)) {
+                                         rhPGE,
+                                         diagFlagsRHBackPerf,
+                                         diagFlagsRHBackReject,
+                                         diagFlagsRHPermReject,
+                                         diagFlagsRHFinalReject)) {
       oops::Log::debug() << "At least one vector is the wrong size. "
                          << "Check will not be performed." << std::endl;
       oops::Log::debug() << "Vector sizes: "
                          << oops::listOfVectorSizes(rhObs, rhObsErr, rhBkg, rhBkgErr,
-                                                    rhPGE, rhFlags)
+                                                    rhPGE,
+                                                    diagFlagsRHBackPerf,
+                                                    diagFlagsRHBackReject,
+                                                    diagFlagsRHPermReject,
+                                                    diagFlagsRHFinalReject)
                          << std::endl;
       return;
     }
@@ -77,7 +91,10 @@ namespace ufo {
                            BackgrErrRH,  // Used instead of rhBkgErr.
                            PdBad,
                            ModelLevels,
-                           rhFlags,
+                           diagFlagsRHBackPerf,
+                           diagFlagsRHBackReject,
+                           diagFlagsRHPermReject,
+                           diagFlagsRHFinalReject,
                            rhPGE,
                            options_.BkCheck_ErrVarMax_rh.value());
   }

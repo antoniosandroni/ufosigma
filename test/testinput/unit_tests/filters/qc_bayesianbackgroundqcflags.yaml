@@ -20,21 +20,37 @@ observations:
   passedBenchmark: 1830
   compareVariables:
     - reference:
-        name: QCFlags/OPS_airTemperature
+        name: DiagnosticFlags/FinalQCRejection/OPS_airTemperature
       test:
-        name: QCFlags/airTemperature
+        name: DiagnosticFlags/FinalQCRejection/airTemperature
     - reference:
-        name: QCFlags/OPS_windEastward
+        name: DiagnosticFlags/FinalQCRejection/OPS_windEastward
       test:
-        name: QCFlags/windEastward
+        name: DiagnosticFlags/FinalQCRejection/windEastward
     - reference:
-        name: QCFlags/OPS_windNorthward
+        name: DiagnosticFlags/FinalQCRejection/OPS_windNorthward
       test:
-        name: QCFlags/windNorthward
+        name: DiagnosticFlags/FinalQCRejection/windNorthward
     - reference:
-        name: QCFlags/OPS_geopotentialHeight
+        name: DiagnosticFlags/FinalQCRejection/OPS_geopotentialHeight
       test:
-        name: QCFlags/geopotentialHeight
+        name: DiagnosticFlags/FinalQCRejection/geopotentialHeight
+    - reference:
+        name: DiagnosticFlags/BuddyCheckRejection/OPS_airTemperature
+      test:
+        name: DiagnosticFlags/BuddyCheckRejection/airTemperature
+    - reference:
+        name: DiagnosticFlags/BuddyCheckRejection/OPS_windEastward
+      test:
+        name: DiagnosticFlags/BuddyCheckRejection/windEastward
+    - reference:
+        name: DiagnosticFlags/BuddyCheckRejection/OPS_windNorthward
+      test:
+        name: DiagnosticFlags/BuddyCheckRejection/windNorthward
+    - reference:
+        name: DiagnosticFlags/BuddyCheckRejection/OPS_geopotentialHeight
+      test:
+        name: DiagnosticFlags/BuddyCheckRejection/geopotentialHeight
 - obs space:
     name: Missing QC flags
     obsdatain:
@@ -46,8 +62,7 @@ observations:
   - filter: Bayesian Background QC Flags
     filter variables:
     - name: airTemperature
-  expectExceptionWithMessage: QCFlags/airTemperature not present
-  passedBenchmark: 0
+  expectExceptionWithMessage: DiagnosticFlags/BuddyCheckRejection/airTemperature not present
 - obs space:
     name: Missing PGE
     obsdatain:
@@ -78,3 +93,4 @@ observations:
         name: MetaData/latitude
       maxvalue: 0.0
   passedBenchmark: 93
+
