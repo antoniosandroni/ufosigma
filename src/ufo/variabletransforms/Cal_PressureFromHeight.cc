@@ -286,10 +286,9 @@ void Cal_PressureFromHeightForICAO::methodDEFAULT(const std::vector<bool> &apply
 
   // 2. making sure what we need is here
   // -------------------------------------------------------------------------------
-  if (oops::anyVectorEmpty(geopotentialHeight)) {
-    oops::Log::warning() << "GeopotentialHeight vector is empty. "
-                         << "Check will not be performed." << std::endl;
-    throw eckit::BadValue("GeopotentialHeight vector is the wrong size or empty ", Here());
+
+  if (geopotentialHeight.size() != nlocs_) {
+    throw eckit::BadValue("GeopotentialHeight vector is the wrong size ", Here());
   }
 
   // 3. Loop over each record
