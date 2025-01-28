@@ -1,0 +1,40 @@
+#
+#=== Profile processing with one profile for use on more than one MPI rank ===#
+#
+
+time window:
+  begin: 2000-01-01T00:00:00Z
+  end: 2030-01-01T00:00:00Z
+
+observations:
+- obs space:
+    name: Radiosonde
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/ufo/testinput_tier_1/met_office_conversion_height2pressure_1ob.nc4
+      obsgrouping:
+        group variables: [ "stationIdentification" ]
+        sort variable: "pressure"
+        sort order: "descending"
+    simulated variables: [airTemperature]
+    observed variables: [airTemperature]
+#   obsdataout:
+#     engine:
+#       type: H5File
+#       obsfile: Data/met_office_conventional_profile_processing_monolithic_filter_out.nc4
+  # geovals:
+  #  filename: Data/ufo/testinput_tier_1/met_office_conventional_profile_processing_geovals.nc4
+  obs filters:
+  - filter: Conventional Profile Processing
+    filter variables:
+    - name: airTemperature
+    Checks: ["Basic", "UInterp"]
+    maxlev: 10000
+    compareWithOPS: false
+    flagBasicChecksFail: true
+    PrintStationID: true
+    SCheck_CorrectT: true
+    HCheck_CorrectZ: true
+  # HofX: HofX
+  passedBenchmark: 0

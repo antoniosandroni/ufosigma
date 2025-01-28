@@ -79,7 +79,8 @@ namespace ufo {
   }
 
   void ProfileChecker::runChecks(ProfileDataHandler &profileDataHandler,
-                                 const CheckSubgroup &subGroupChecks)
+                                 const CheckSubgroup &subGroupChecks,
+                                 const bool earlyReturnOnBasicFailed)
   {
     // Run all checks requested
     for (const auto& check : subGroupChecks.checkNames) {
@@ -101,7 +102,9 @@ namespace ufo {
             if (options_.compareWithOPS.value())
               profileCheck->fillValidationData(profileDataHandler);
             // Do not proceed if basic checks failed
-            if (!profileCheck->getResult() && check == "Basic") {
+            if (earlyReturnOnBasicFailed &&
+                !profileCheck->getResult() &&
+                check == "Basic") {
               oops::Log::debug() << "Basic checks failed" << std::endl;
               setBasicCheckResult(false);
               break;

@@ -15,6 +15,7 @@
 #include "ioda/ObsDataVector.h"
 #include "ioda/ObsSpace.h"
 
+#include "oops/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 
@@ -78,6 +79,53 @@ namespace ufo {
   // -----------------------------------------------------------------------------
 
   ConventionalProfileProcessing::~ConventionalProfileProcessing() {}
+
+  // -----------------------------------------------------------------------------
+
+  void ConventionalProfileProcessing::emptyObsSpaceChecks
+  (ProfileDataHandler &profileDataHandler,
+   ProfileChecker &profileChecker,
+   const CheckSubgroup &subGroupChecks,
+   const bool earlyReturnOnBasicFailed) const
+  {
+    oops::Log::debug() << "Empty ObsSpace checks" << std::endl;
+
+    profileChecker.runChecks(profileDataHandler, subGroupChecks, earlyReturnOnBasicFailed);
+    profileDataHandler.writeQuantitiesToObsdb();
+  }
+
+  // -----------------------------------------------------------------------------
+
+  bool ConventionalProfileProcessing::basicProfileChecks
+  (ProfileDataHandler &profileDataHandler,
+   ProfileChecker &profileChecker) const
+  {
+    oops::Log::debug() << "Basic profile checks" << std::endl;
+
+    const CheckSubgroup basicChecks{false, {"Basic"}};
+
+    // Logical `or` of Basic checks performed on all profiles on this rank.
+    bool resultLogicalOr = false;
+
+    // Reset profile indices prior to looping through entire sample.
+    profileDataHandler.resetProfileIndices();
+
+    for (size_t jprof = 0; jprof < obsdb_.nrecs(); ++jprof) {
+      // Initialise the next profile prior to applying checks.
+      profileDataHandler.initialiseNextProfile();
+
+      // Run checks.
+      profileChecker.runChecks(profileDataHandler, basicChecks);
+
+      // Update the logical `or` of the Basic checks.
+      resultLogicalOr = resultLogicalOr || profileChecker.getBasicCheckResult();
+
+      // Update information, including the 'flagged' vector, for this profile.
+      profileDataHandler.updateProfileInformation();
+    }
+
+    return resultLogicalOr;
+  }
 
   // -----------------------------------------------------------------------------
 
@@ -168,10 +216,34 @@ namespace ufo {
     // Applies checks to each profile
     ProfileChecker profileChecker(options_);
 
+    // In order to ensure this code works for MPI ranks without any observations,
+    // run the Basic checks for all profiles on this rank.
+    // Aggregate the results for this rank.
+    const bool basicResultLogicalOr = basicProfileChecks(profileDataHandler,
+                                                         profileChecker);
+
+    // Gather the results from all ranks onto this rank.
+    std::vector<int> vBasicCheckResult{static_cast<int>(basicResultLogicalOr)};
+    oops::mpi::allGatherv(obsdb_.comm(), vBasicCheckResult);
+
+    // If any of the Basic checks passed, a failing Basic check for an empty ObsSpace
+    // does not result in the remaining checks being skipped.
+    const bool earlyReturnOnBasicFailed =
+      std::all_of(vBasicCheckResult.cbegin(), vBasicCheckResult.cend(),
+                  [](int i){return i == 0;});
+
     // Loop over each check subgroup in turn.
     const auto checkSubgroups = profileChecker.getCheckSubgroups();
     for (const auto& checkSubgroup : checkSubgroups) {
-      if (checkSubgroup.runOnEntireSample) {
+      if (obsdb_.nlocs() == 0) {
+        // Run checks on MPI ranks with zero ObsSpace locations.
+        // The behaviour when the Basic check is failed depends on whether
+        // any of the Basic checks (for all profiles on all ranks) passed.
+        emptyObsSpaceChecks(profileDataHandler,
+                            profileChecker,
+                            checkSubgroup,
+                            earlyReturnOnBasicFailed);
+      } else if (checkSubgroup.runOnEntireSample) {
         // Run checks that use all of the profiles at once.
         entireSampleChecks(profileDataHandler,
                            profileCheckValidator,

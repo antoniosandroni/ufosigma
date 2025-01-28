@@ -135,9 +135,6 @@ namespace ufo {
       void putDataVector(const std::string &fullname,
                          const std::vector <T> &datavec)
       {
-        // Do not store the vector if it is empty.
-        if (datavec.empty()) return;
-
         std::string varname;
         std::string groupname;
         ufo::splitVarGroup(fullname, varname, groupname);
