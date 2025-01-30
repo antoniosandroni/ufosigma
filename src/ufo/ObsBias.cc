@@ -338,7 +338,7 @@ void ObsBias::print(std::ostream & os) const {
     // map bias coeffs to eigen matrix
     Eigen::Map<const Eigen::MatrixXd>
       coeffs(biascoeffs_.data(), numVariablePredictors_, nrecs_ * vars_.size());
-    os << "Obs bias coefficients: " << std::endl;
+    os << std::endl << "Obs bias coefficients: " << std::endl;
     os << "---------------------------------------------------------------" << std::endl;
     for (std::size_t p = 0; p < numStaticPredictors_; ++p) {
       os << std::fixed << std::setw(20) << prednames_[p]
