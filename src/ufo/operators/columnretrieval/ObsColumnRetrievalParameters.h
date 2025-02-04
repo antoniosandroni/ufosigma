@@ -62,6 +62,12 @@ class ObsColumnRetrievalParameters : public ObsOperatorParametersBase {
      "Total column calculation without AK and apriori (no vertices needed)",
      false,
      this};
+
+  oops::Parameter <double> tropopause
+    {"tropopause pressure",
+     "Force tropopause pressure value",
+     0.0,
+     this};
 };
 
 }  // namespace ufo

@@ -29,7 +29,7 @@ module ufo_columnretrieval_tlad_mod
    character(kind=c_char,len=:), allocatable :: obskernelvar, obspressurevar
    character(kind=c_char,len=:), allocatable :: tracervars, stretch
    logical :: isaveragingkernel, totalnovertice
-   real(kind_real) :: convert_factor_model
+   real(kind_real) :: convert_factor_model, tropopause
    real(kind_real), allocatable, dimension(:,:) :: avgkernel_obs, prsi_obs
    real(kind_real), allocatable, dimension(:,:) :: prsi
  contains
@@ -70,6 +70,9 @@ subroutine columnretrieval_tlad_setup_(self, f_conf)
 
   ! perform a simple total column calculation using model whole profile
   call f_conf%get_or_die("totalNoVertice", self%totalnovertice)
+
+  ! force tropopause level
+  call f_conf%get_or_die("tropopause pressure", self%tropopause)
 
   ! add variables to geovars that are needed
   ! specified tracers
@@ -180,7 +183,7 @@ subroutine columnretrieval_simobs_tl_(self, geovals_in, obss, nvars, nlocs, hofx
                                  self%avgkernel_obs(:,iobs), &
                                  self%prsi_obs(:,iobs), self%prsi(:,iobs),&
                                  tracer%vals(:,iobs)*self%convert_factor_model, &
-                                 hofx_tmp, self%stretch)
+                                 hofx_tmp, self%stretch, self%tropopause)
       hofx(nvars,iobs) = hofx_tmp
     else
       hofx(nvars,iobs) = missing
@@ -221,7 +224,8 @@ subroutine columnretrieval_simobs_ad_(self, geovals_in, obss, nvars, nlocs, hofx
       call simulate_column_ob_ad(self%nlayers_retrieval, tracer%nval, &
                                  self%avgkernel_obs(:,iobs), &
                                  self%prsi_obs(:,iobs), self%prsi(:,iobs),&
-                                 tracer%vals(:,iobs), hofx_tmp, self%stretch)
+                                 tracer%vals(:,iobs), hofx_tmp, self%stretch, & 
+                                 self%tropopause)
       tracer%vals(:,iobs) = tracer%vals(:,iobs) * self%convert_factor_model
     end if
   end do

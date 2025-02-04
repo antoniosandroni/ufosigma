@@ -21,13 +21,14 @@ observations:
     isAveragingKernel: true
     stretchVertices: topbottom #options: top, bottom, topbottom, none
     model units coeff: 1e-6 # ppmv to 1/1
+    tropopause pressure: 25000
   linear obs operator test:
     coef TL: 1.0e-8
     tolerance TL: 1.0e-12
     tolerance AD: 1.0e-13
   geovals:
     filename: Data/ufo/testinput_tier_1/tempo_no2_geovals.nc4
-  rms ref: 1.0757342508807481e-11
+  rms ref: 8.8868698941106699e-12
   tolerance: 1.0e-7
 - obs space:
     name: NO2

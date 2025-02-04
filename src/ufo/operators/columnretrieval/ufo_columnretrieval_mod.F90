@@ -27,7 +27,7 @@ module ufo_columnretrieval_mod
    character(kind=c_char,len=:), allocatable :: obskernelvar, obspressurevar
    character(kind=c_char,len=:), allocatable :: tracervars, stretch
    logical :: isapriori, isaveragingkernel, totalnovertice
-   real(kind_real) :: convert_factor_model
+   real(kind_real) :: convert_factor_model, tropopause
  contains
    procedure :: setup  => ufo_columnretrieval_setup
    procedure :: simobs => ufo_columnretrieval_simobs
@@ -65,6 +65,9 @@ subroutine ufo_columnretrieval_setup(self, f_conf)
 
   ! perform a simple total column calculation using model whole profile
   call f_conf%get_or_die("totalNoVertice", self%totalnovertice)
+
+  ! force the tropopause
+  call f_conf%get_or_die("tropopause pressure", self%tropopause)
 
   ! add variables to geovars that are needed
   ! specified tracers
@@ -168,7 +171,7 @@ subroutine ufo_columnretrieval_simobs(self, geovals_in, obss, nvars, nlocs, hofx
                               prsi_obs(:,iobs), &
                               prsi%vals(:,iobs), &
                               tracer%vals(:,iobs)*self%convert_factor_model, &
-                              hofx_tmp, self%stretch)
+                              hofx_tmp, self%stretch, self%tropopause)
       hofx(nvars,iobs) = hofx_tmp + apriori_term(iobs)
     else
       hofx(nvars,iobs) = missing ! default if we are unable to compute averaging kernel
