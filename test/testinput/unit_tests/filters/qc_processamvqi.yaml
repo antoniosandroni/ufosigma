@@ -52,3 +52,40 @@ observations:
         name: MetaData/windPercentConfidence4
       test:
         name: MetaData/qiWeightedMixtureWithoutForecast
+# Test one observation with 2 MPI ranks
+- obs space:
+    name: Satwind, one observation
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/ufo/testinput_tier_1/satwind_obs_1d_2020100106_noinv_qiODB_1ob.nc4
+    simulated variables: [windDirection]
+  obs filters:
+  - filter: Variable Assignment
+    assignments:
+    - name: MetaData/temporary_input_QI_recursive_filter_function
+      type: float
+      source variable: MetaData/qiRecursiveFilterFunction
+  - filter: Process AMV QI
+    number of generating apps: 4
+  compareVariables:
+    - reference:
+        name: MetaData/temporary_input_QI_recursive_filter_function
+      test:
+        name: MetaData/qiRecursiveFilterFunction
+    - reference:
+        name: TestReference/dummy_input_QI_with_forecast
+      test:
+        name: MetaData/qiWithForecast
+    - reference:
+        name: TestReference/dummy_input_QI_without_forecast
+      test:
+        name: MetaData/qiWithoutForecast
+    - reference:
+        name: MetaData/windPercentConfidence3
+      test:
+        name: MetaData/qiCommon
+    - reference:
+        name: MetaData/windPercentConfidence4
+      test:
+        name: MetaData/qiWeightedMixtureWithoutForecast

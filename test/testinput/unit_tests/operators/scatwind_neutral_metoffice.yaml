@@ -36,20 +36,6 @@ observations:
   geovals:
     filename: Data/ufo/testinput_tier_1/scatwind_geoval_small_20201001T0600Z.nc4
   expect simulateObs to throw exception with message: HofX should have 2 variables windEastward and windNorthward
-- obs operator:
-    name: ScatwindNeutralMetOffice
-    surface_type_check: false
-  obs space:
-    name: GeoVaLs are in the wrong order, throwing an exception
-    obsdatain:
-      engine:
-        type: H5File
-        obsfile: Data/ufo/testinput_tier_1/scatwind_obs_1d_small_2020100106.nc4
-    simulated variables: [windEastward, windNorthward]
-    observed variables: [windEastward, windNorthward]
-  geovals:
-    filename: Data/ufo/testinput_tier_1/scatwind_geoval_small_reversed_20201001T0600Z.nc4
-  expect simulateObs to throw exception with message: GeoVaLs are not ordered from model top to bottom
 #  Test case for channels
 #  In the 2d input file, the second dimension is given the label "nchans" even though they are
 #  used to store ambiguities and not channels. This will be changed in future.

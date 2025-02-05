@@ -14,6 +14,7 @@
 #include "ioda/distribution/Accumulator.h"
 #include "ioda/ObsSpace.h"
 
+#include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
 
 #include "ufo/filters/processWhere.h"
@@ -74,7 +75,7 @@ void ProcessAMVQI::doFilter() {
   // 5 = QI without forecast
   // 6 = QI with forecast
   // 7 = Estimated Error (EE) in m/s converted to a percent confidence
-  std::vector<std::string> new_variables = {
+  const std::vector<std::string> new_variables = {
     "qiWeightedMixtureFull",
     "qiWeightedMixtureWithoutForecast",
     "qiRecursiveFilterFunction",
@@ -83,6 +84,9 @@ void ProcessAMVQI::doFilter() {
     "qiWithForecast",
     "qiEstimatedError" };
   const size_t total_variables = new_variables.size();
+
+  // Vector signifying whether each variable has been filled
+  std::vector<bool> new_var_filled(total_variables, false);
 
   // create variable to write to obsdb
   std::vector<std::vector<float>> new_percent_confidence(total_variables,
@@ -132,6 +136,8 @@ void ProcessAMVQI::doFilter() {
     if (std::any_of(new_percent_confidence[inum].begin(),
                     new_percent_confidence[inum].end(),
                     [missing] (float elem) {return elem != missing;})) {
+      // Mark this variable as being non-empty
+      new_var_filled[inum] = true;
       // Check if new_variable already exists in obsdb
       std::vector<float> existing_new_percent_confidence(nlocs, missing);
       if (obsdb_.has("MetaData",
@@ -162,7 +168,21 @@ void ProcessAMVQI::doFilter() {
           }
         }
       }
-      // write to new or existing QI vectors
+    }
+  }
+  // Write out new variable if any MPI rank has non-empty values.
+  // Ensures this works for MPI ranks without any observations
+  for (size_t inum = 0; inum < total_variables; ++inum) {
+    // Gather the results from all ranks
+    std::vector<int> global_new_var_filled{static_cast<int>(new_var_filled[inum])};
+    oops::mpi::allGatherv(obsdb_.comm(), global_new_var_filled);
+    // Check if variable has been filled on any MPI rank
+    const bool var_present_globally =
+      std::any_of(global_new_var_filled.cbegin(), global_new_var_filled.cend(),
+                  [](int i){return i != 0;});
+
+    // write to new or existing QI vectors
+    if (var_present_globally) {
       obsdb_.put_db("MetaData",
                     new_variables[inum],
                     new_percent_confidence[inum]);

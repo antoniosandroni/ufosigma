@@ -137,12 +137,6 @@ subroutine ufo_scatwind_neutralmetoffice_tlad_settraj(self, geovals, obss)
   self%nval = cx_za%nval
   self%nlocs = obsspace_get_nlocs(obss)
 
-  ! check GeoVaLs are in correct vertical order (top to bottom)
-  if (cx_za % vals(1,1) .lt. cx_za % vals(cx_za % nval,1) ) then
-    write(err_msg,*) "GeoVaLs are not ordered from model top to bottom", cx_za % vals(1,1), cx_za % vals(cx_za % nval,1)
-    call fckit_exception%throw(err_msg)
-  end if
-
   ! Allocate arrays for interpolation index and weight
   allocate(self%wi(self%nlocs))
   allocate(self%wf(self%nlocs))

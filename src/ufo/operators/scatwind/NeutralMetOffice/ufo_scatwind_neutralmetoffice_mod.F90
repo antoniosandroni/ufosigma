@@ -173,11 +173,6 @@ subroutine ufo_scatwind_neutralmetoffice_simobs(self, geovals, obss, nvars, &
   call ufo_geovals_get_var(geovals, var_sea_fric_vel, cx_friction_vel)  ! Friction velocity
   call ufo_geovals_get_var(geovals, var_obk_length, cx_obukhov_length)  ! Obukhov length
 
-  ! check GeoVaLs are in correct vertical order (top to bottom)
-  if (cx_za % vals(1,1) .lt. cx_za % vals(cx_za % nval,1) ) then
-    call fckit_exception%throw("GeoVaLs are not ordered from model top to bottom")
-  end if
-
   ! Allocate arrays for interpolation weights and initialise to missing data
   allocate(CDR10(nlocs))
   CDR10(:) = missing_value(CDR10(1))
