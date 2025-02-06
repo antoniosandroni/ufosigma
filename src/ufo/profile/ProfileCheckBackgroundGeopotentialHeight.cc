@@ -94,7 +94,7 @@ namespace ufo {
         // Permanently reject any levels at/below surface
         if (diagFlagsTSurfaceLevel[jlev] ||
             zObsFinal[jlev] <= Zstation[jlev]) {
-          diagFlagsZPermReject[jlev];
+          diagFlagsZPermReject[jlev] = true;
         }
         const float Plevel = pressures[jlev] / 100.0;  // hPa
         const std::vector<float> zBkgErrs = options_.BkCheck_zBkgErrs.value();
