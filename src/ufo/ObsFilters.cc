@@ -30,7 +30,7 @@ ObsFilters::ObsFilters(ioda::ObsSpace & os,
   oops::Log::trace() << "ObsFilters::ObsFilters starting";
 
   ObsFiltersParameters params;
-  params.deserialize(config);
+  params.validateAndDeserialize(config);
 
   const FilterParams_ & autoFiltersParams = params.obsFilters;
   const FilterParams_ & preFiltersParams = params.obsPreFilters;
@@ -59,7 +59,7 @@ ObsFilters::ObsFilters(ioda::ObsSpace & os,
     eckit::LocalConfiguration conf;
     conf.set("filter", "QCmanager");
     ObsFilterParametersWrapper filterParams;
-    filterParams.deserialize(conf);
+    filterParams.validateAndDeserialize(conf);
     if (atLeastOneAutoFilterConfigured)
       autoFilters_.emplace_back(os, filterParams.filterParameters, qcflags_, obserrfilter_);
     else
@@ -80,7 +80,7 @@ ObsFilters::ObsFilters(ioda::ObsSpace & os,
     eckit::LocalConfiguration conf;
     conf.set("filter", "Final Check");
     ObsFilterParametersWrapper filterParams;
-    filterParams.deserialize(conf);
+    filterParams.validateAndDeserialize(conf);
     if (atLeastOneAutoFilterConfigured)
       autoFilters_.emplace_back(os, filterParams.filterParameters, qcflags_, obserrfilter_);
     else

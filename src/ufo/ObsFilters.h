@@ -106,7 +106,7 @@ class ObsFilters : public util::Printable,
   oops::Variables geovars_;
   oops::ObsVariables diagvars_;
   ObsDataPtr_<int> qcflags_;
-  ObsDataPtr_<float> & obserrfilter_;
+  ObsDataPtr_<float> obserrfilter_;
   const int iteration_;
 };
 
