@@ -113,6 +113,14 @@ observations:
     - variable:
         name: MetaData/surfaceQualifier
       is_in: 0
+### Save ozone to the ObsSpace to
+### show the rttov ObsDiags works
+  - filter: Variable Assignment
+    assignments:
+    - name: MetaData/ozoneTotal
+      type: float
+      source variable:
+        name: ObsDiag/ozoneTotal
 ### 1D-Var check ###
   - filter: RTTOV OneDVar Check
     ModOptions:

@@ -1193,10 +1193,6 @@ contains
             end do
             call self % calculate_tc_ozone(obss)
           end if
-          
-          if(.not. present(ob_info)) then
-            call obsspace_put_db(obss, "MetaData", "ozoneTotal", self % tc_ozone)
-          end if
         end if
       case (var_co2)
         call ufo_geovals_get_var(geovals, conf%Absorbers(jspec), geoval)
@@ -2182,7 +2178,7 @@ contains
     integer                            :: prof, all_prof_index, iprof, jvar
     integer                            :: start_chan, end_chan
     integer                            :: errorstatus
-    real(kind_real), allocatable       :: RTTOV_Atlas_Emissivity(:), tmp(:,:) ! RTTOV atlas emissivity
+    real(kind_real), allocatable       :: RTTOV_Atlas_Emissivity(:) ! RTTOV atlas emissivity
     character(len=max_string)          :: var
 
     include 'rttov_get_emis.interface'
@@ -2197,14 +2193,6 @@ contains
         conf % rttov_coef_array(1),          & ! in
         conf % rttov_emissivity_atlas,       & ! in
         RTTOV_Atlas_Emissivity(:))             ! out
-
-      allocate (tmp(self % nchan_inst, size(self % profiles)))
-      tmp(:, :) = reshape(RTTOV_Atlas_Emissivity(:), (/self % nchan_inst, size(self % profiles)/))
-      do jvar = 1, self % nchan_inst
-        write(var,"(A11,I0)") "emissivity_", channels(jvar)
-        call obsspace_put_db(obss, "AtlasEmiss", var, tmp(jvar,:))
-      end do
-      deallocate(tmp)
     end if
 
 !Emissivity and calcemis are only set for used channels.
@@ -2601,6 +2589,14 @@ contains
             end if
           end do
 
+        case ("ozoneTotal")
+          hofxdiags % geovals(jvar) % nval = 1
+          if(.not. allocated(hofxdiags % geovals(jvar) % vals)) then
+            allocate(hofxdiags % geovals(jvar) % vals(hofxdiags % geovals(jvar) % nval, nprofiles))
+            hofxdiags % geovals(jvar) % vals = missing
+          end if
+          hofxdiags % geovals(jvar) % vals(1,:) = RTProf % tc_ozone(:)
+
         case default
           ! not a supported obsdiag but we allocate and initialise here anyway for use later on
           hofxdiags%geovals(jvar)%nval = 1
@@ -2778,11 +2774,13 @@ contains
            self % xstr_diags(jvar)(str_pos(4)+1:) = ""
          else !null
            !Diagnostic is a dependent variable (y)
-
            self % xstr_diags(jvar) = ""
-           self % ystr_diags(jvar)(1:str_pos(3)-1) = varstr(1:str_pos(3)-1)
-           self % ystr_diags(jvar)(str_pos(3):) = ""
-           if (self % ch_diags(jvar) < 0) self % ystr_diags(jvar) = varstr
+           if (self % ch_diags(jvar) < 0) then
+             self % ystr_diags(jvar) = varstr
+           else
+             self % ystr_diags(jvar)(1:str_pos(3)-1) = varstr(1:str_pos(3)-1)
+             self % ystr_diags(jvar)(str_pos(3):) = ""
+           end if
          end if
        end do
      end if

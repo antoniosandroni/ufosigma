@@ -489,6 +489,7 @@ void GeoVaLs::get(std::vector<float> & vals, const oops::Variable & var, GeoVaLF
                      << " in " << explicitFormat(format) << " starting" << std::endl;
   /// Call method to get double values (Fortran data structure stores data in double)
   /// and convert to floats
+  if (vals.size() == 0) return;
   std::vector<double> doubleVals(vals.size());
   this->get(doubleVals, var, format);
   this->cast(doubleVals, vals);
@@ -500,6 +501,7 @@ void GeoVaLs::getAtLevel(std::vector<double> & vals, const oops::Variable & var,
                          GeoVaLFormat format) const {
   oops::Log::trace() << "GeoVaLs::getAtLevel(double) for " << var
                      << " in " << explicitFormat(format) << " starting" << std::endl;
+  if (vals.size() == 0) return;
   size_t nprofiles;
   ufo_geovals_nprofiles_f90(keyGVL_, var.name().size(), var.name().c_str(),
                             explicitFormatAsInt(format), nprofiles);
@@ -515,6 +517,7 @@ void GeoVaLs::getAtLevel(std::vector<float> & vals, const oops::Variable & var, 
                          GeoVaLFormat format) const {
   oops::Log::trace() << "GeoVaLs::getAtLevel(float) for " << var
                      << " in " << explicitFormat(format) << " starting" << std::endl;
+  if (vals.size() == 0) return;
   std::vector<double> doubleVals(vals.size());
   this->getAtLevel(doubleVals, var, lev, format);
   this->cast(doubleVals, vals);
@@ -526,6 +529,7 @@ void GeoVaLs::getAtLevel(std::vector<int> & vals, const oops::Variable & var, co
                          GeoVaLFormat format) const {
   oops::Log::trace() << "GeoVaLs::getAtLevel(int) for " << var
                      << " in " << explicitFormat(format) << " starting" << std::endl;
+  if (vals.size() == 0) return;
   std::vector<double> doubleVals(vals.size());
   this->getAtLevel(doubleVals, var, lev, format);
   this->cast(doubleVals, vals);
@@ -537,6 +541,7 @@ void GeoVaLs::get(std::vector<double> & vals, const oops::Variable & var,
                   GeoVaLFormat format) const {
   oops::Log::trace() << "GeoVaLs::get 2D for " << var
                      << " in " << explicitFormat(format) << " starting" << std::endl;
+  if (vals.size() == 0) return;
   const size_t nprofiles = this->nprofiles(var, format);
   ASSERT(vals.size() == nprofiles);
   ufo_geovals_get2d_f90(keyGVL_, var.name().size(), var.name().c_str(),
@@ -549,6 +554,7 @@ void GeoVaLs::get(std::vector<int> & vals, const oops::Variable & var,
                   GeoVaLFormat format) const {
   oops::Log::trace() << "GeoVaLs::get 2D for " << var
                      << " in " << explicitFormat(format) << " starting" << std::endl;
+  if (vals.size() == 0) return;
   /// Call method to get double values (Fortran data structure stores data in double)
   /// and convert to ints
   std::vector<double> doubleVals(vals.size());
@@ -561,6 +567,7 @@ void GeoVaLs::getProfile(std::vector<double> & vals,
                          const oops::Variable & var,
                          const int profileIndex,
                          GeoVaLFormat format) const {
+  if (vals.size() == 0) return;
   const size_t nlevs = this->nlevs(var, format);
   ASSERT(vals.size() == nlevs);
   ASSERT(profileIndex >= 0 && profileIndex < this->nprofiles(var, format));
@@ -572,6 +579,7 @@ void GeoVaLs::getProfile(std::vector<float> & vals,
                          const oops::Variable & var,
                          const int profileIndex,
                          GeoVaLFormat format) const {
+  if (vals.size() == 0) return;
   std::vector <double> doubleVals(vals.size());
   this->getProfile(doubleVals, var, profileIndex, format);
   this->cast(doubleVals, vals);
@@ -581,6 +589,7 @@ void GeoVaLs::getProfile(std::vector<int> & vals,
                          const oops::Variable & var,
                          const int profileIndex,
                          GeoVaLFormat format) const {
+  if (vals.size() == 0) return;
   std::vector <double> doubleVals(vals.size());
   this->getProfile(doubleVals, var, profileIndex, format);
   this->cast(doubleVals, vals);
@@ -591,6 +600,7 @@ void GeoVaLs::getAtLocation(std::vector<double> & vals,
                             const oops::Variable & var,
                             const int loc,
                             GeoVaLFormat format) const {
+  if (vals.size() == 0) return;
   ASSERT(this->nprofiles(var, format) == this->nlocs());
   getProfile(vals, var, loc);
 }
@@ -600,6 +610,7 @@ void GeoVaLs::getAtLocation(std::vector<float> & vals,
                             const oops::Variable & var,
                             const int loc,
                             GeoVaLFormat format) const {
+  if (vals.size() == 0) return;
   ASSERT(this->nprofiles(var, format) == this->nlocs());
   getProfile(vals, var, loc);
 }
@@ -609,6 +620,7 @@ void GeoVaLs::getAtLocation(std::vector<int> & vals,
                             const oops::Variable & var,
                             const int loc,
                             GeoVaLFormat format) const {
+  if (vals.size() == 0) return;
   ASSERT(this->nprofiles(var, format) == this->nlocs());
   getProfile(vals, var, loc);
 }

@@ -63,8 +63,8 @@ class CloudFirstGuessMinimumResidual : public ObsFunctionBase<float> {
   const ufo::Variables & requiredVariables() const override {return invars_;}
  private:
   CloudFirstGuessMinimumResidualParameters options_;
-  std::vector<int> channels_;
   ufo::Variables invars_;
+  std::vector<int> channels_;
 };
 
 // -----------------------------------------------------------------------------

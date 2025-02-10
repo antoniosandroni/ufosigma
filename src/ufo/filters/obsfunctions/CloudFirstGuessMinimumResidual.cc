@@ -66,7 +66,17 @@ void CloudFirstGuessMinimumResidual::compute(const ObsFilterData & in,
   const size_t nlocs = in.nlocs();
   const size_t nlevs = in.nlevs(Variable(btOvercastName, channels_)[0]);
   const size_t nchans = channels_.size();
-  if (nlocs == 0) return;
+
+  // Create output array.  If zero locations save and exit early.
+  const std::vector<std::string> firstGuessNames = {options_.cloudTopPressureName.value(),
+                                                    options_.cloudFractionName.value()};
+  ioda::ObsDataVector<float> firstGuessValues(in.obsspace(), oops::ObsVariables(firstGuessNames));
+  if (nlocs == 0) {
+    firstGuessValues.save(options_.outputGroup.value());
+    oops::Log::trace() << "CloudFirstGuessMinimumResidual (with zero observations) compute end"
+                       << std::endl;
+    return;
+  }
 
   /// Create variables needed throughtout
   std::vector<std::vector<float>> cloudFraction(nlevs, std::vector<float>(nlocs, missing));
@@ -110,8 +120,8 @@ void CloudFirstGuessMinimumResidual::compute(const ObsFilterData & in,
       in.get(Variable(btOvercastName, channels_)[ichan], ilev, obsCloudyVal[ichan]);
 
       for (size_t iloc = 0; iloc < nlocs; ++iloc) {
-        if (obsError[ichan][iloc] == missing | obsBias[ichan][iloc] == missing |
-            obsVal[ichan][iloc] == missing | obsClearVal[ichan][iloc] == missing) {
+        if (obsError[ichan][iloc] == missing || obsBias[ichan][iloc] == missing ||
+            obsVal[ichan][iloc] == missing || obsClearVal[ichan][iloc] == missing) {
             writeoutdata[iloc] = false;
             continue;
         }
@@ -157,9 +167,6 @@ void CloudFirstGuessMinimumResidual::compute(const ObsFilterData & in,
 
   /// Use the minimum cost in a profile to evaluate the first guess cloud top pressure
   /// and effective cloud amount and save these to the ObsSpace.
-  const std::vector<std::string> firstGuessNames = {options_.cloudTopPressureName.value(),
-                                                    options_.cloudFractionName.value()};
-  ioda::ObsDataVector<float> firstGuessValues(in.obsspace(), oops::ObsVariables(firstGuessNames));
   for (size_t iloc = 0; iloc < nlocs; ++iloc) {
     if (writeoutdata[iloc]) {
       size_t MinLevelIndex = std::min_element(costFunction[iloc].begin(), costFunction[iloc].end())
