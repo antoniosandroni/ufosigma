@@ -67,6 +67,9 @@ namespace ufo {
     oops::Log::debug() << " Pressure transformation" << std::endl;
 
     // Produce vector of profiles containing data for the pressure transformation.
+    std::vector <std::string> variableNamesInt =
+      {ufo::ProfileVariableNames::ObsType,
+       ufo::ProfileVariableNames::extended_obs_space};
     std::vector <std::string> variableNamesFloat =
       {ufo::ProfileVariableNames::obs_air_pressure,
        ufo::ProfileVariableNames::LogP_derived,
@@ -75,6 +78,9 @@ namespace ufo {
        ufo::ProfileVariableNames::modellevels_logP_derived,
        ufo::ProfileVariableNames::modellevels_ExnerP_rho_derived,
        ufo::ProfileVariableNames::modellevels_ExnerP_derived};
+    std::vector <std::string> variableNamesBool =
+      {ufo::ProfileVariableNames::diagflags_final_reject_report,
+       ufo::ProfileVariableNames::diagflags_out_of_area_report};
     oops::Variables variableNamesGeoVaLs{{oops::Variable
                                              {ufo::ProfileVariableNames::geovals_pressure},
        oops::Variable{ufo::ProfileVariableNames::geovals_pressure_rho_minus_one}}};
@@ -96,15 +102,26 @@ namespace ufo {
                                      {ufo::ProfileVariableNames::geovals_testreference_ExnerP});
     }
 
+    // In order to correctly handle MPI ranks with zero entries,
+    // ensure that all of the variables defined above have been added to the ObsSpace
+    // on each rank. This prevents a hang when saving the ObsSpace.
+    for (const auto variableInt : variableNamesInt) {
+      const auto & vectorInt = profileDataHandler.get<int>(variableInt);
+    }
+    for (const auto variableFloat : variableNamesFloat) {
+      const auto & vectorFloat = profileDataHandler.get<float>(variableFloat);
+    }
+    for (const auto variableBool : variableNamesBool) {
+      const auto & vectorBool = profileDataHandler.get<bool>(variableBool);
+    }
+
     std::vector <ProfileDataHolder> profiles =
       profileDataHandler.produceProfileVector
-      ({ufo::ProfileVariableNames::ObsType,
-        ufo::ProfileVariableNames::extended_obs_space},
-        variableNamesFloat,
-        {},
-        {ufo::ProfileVariableNames::diagflags_final_reject_report,
-         ufo::ProfileVariableNames::diagflags_out_of_area_report},
-        variableNamesGeoVaLs);
+      (variableNamesInt,
+       variableNamesFloat,
+       {},
+       variableNamesBool,
+       variableNamesGeoVaLs);
 
     // Run pressure transformation on each profile in the original ObsSpace,
     // saving transformed output to the equivalent extended profile.

@@ -48,6 +48,18 @@ namespace ufo {
        ufo::ProfileVariableNames::modellevels_logP_derived,
        ufo::ProfileVariableNames::modellevels_air_temperature_derived,
        ufo::ProfileVariableNames::air_temperature_derived};
+    std::vector <std::string> variableNamesBool =
+      {ufo::ProfileVariableNames::diagflags_final_reject_t,
+       ufo::ProfileVariableNames::diagflags_perm_reject_t,
+       ufo::ProfileVariableNames::diagflags_back_reject_t,
+       ufo::ProfileVariableNames::diagflags_interpolation_t,
+       ufo::ProfileVariableNames::diagflags_hydro_t,
+       ufo::ProfileVariableNames::diagflags_superadiabat_t,
+       ufo::ProfileVariableNames::diagflags_partial_layer_t,
+       ufo::ProfileVariableNames::diagflags_final_reject_rh,
+       ufo::ProfileVariableNames::diagflags_perm_reject_rh,
+       ufo::ProfileVariableNames::diagflags_back_reject_rh,
+       ufo::ProfileVariableNames::diagflags_interpolation_rh};
     oops::Variables variableNamesGeoVaLs{
       {oops::Variable{ufo::ProfileVariableNames::geovals_air_potential_temperature}}};
 
@@ -64,22 +76,25 @@ namespace ufo {
         (oops::Variable{ufo::ProfileVariableNames::geovals_testreference_air_temperature_qcflags});
     }
 
+    // In order to correctly handle MPI ranks with zero entries,
+    // ensure that all of the variables defined above have been added to the ObsSpace
+    // on each rank. This prevents a hang when saving the ObsSpace.
+    for (const auto variableInt : variableNamesInt) {
+      const auto & vectorInt = profileDataHandler.get<int>(variableInt);
+    }
+    for (const auto variableFloat : variableNamesFloat) {
+      const auto & vectorFloat = profileDataHandler.get<float>(variableFloat);
+    }
+    for (const auto variableBool : variableNamesBool) {
+      const auto & vectorBool = profileDataHandler.get<bool>(variableBool);
+    }
+
     std::vector <ProfileDataHolder> profiles =
       profileDataHandler.produceProfileVector
       (variableNamesInt,
        variableNamesFloat,
        {},
-       {ufo::ProfileVariableNames::diagflags_final_reject_t,
-        ufo::ProfileVariableNames::diagflags_perm_reject_t,
-        ufo::ProfileVariableNames::diagflags_back_reject_t,
-        ufo::ProfileVariableNames::diagflags_interpolation_t,
-        ufo::ProfileVariableNames::diagflags_hydro_t,
-        ufo::ProfileVariableNames::diagflags_superadiabat_t,
-        ufo::ProfileVariableNames::diagflags_partial_layer_t,
-        ufo::ProfileVariableNames::diagflags_final_reject_rh,
-        ufo::ProfileVariableNames::diagflags_perm_reject_rh,
-        ufo::ProfileVariableNames::diagflags_back_reject_rh,
-        ufo::ProfileVariableNames::diagflags_interpolation_rh},
+       variableNamesBool,
        variableNamesGeoVaLs);
 
     // Run temperature averaging on each profile in the original ObsSpace,

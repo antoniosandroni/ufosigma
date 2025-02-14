@@ -96,6 +96,16 @@ ufo_add_test( NAME    test_ufo_conventionalprofileprocessing_average_single_leve
               LABELS  unit_tests profile
               WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../../ )
 #
+ufo_add_test( NAME    test_ufo_conventionalprofileprocessing_average_single_level_profile_MPI_obsfilter
+              TIER    1
+              ECBUILD
+              COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsFilters.x
+              ARGS    "${CMAKE_CURRENT_SOURCE_DIR}/conventionalprofileprocessing_average_single_level_profile_MPI_obsfilter.yaml"
+              MPI     2
+              LIBS    ufo
+              LABELS  unit_tests profile
+              WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../../ )
+#
 ufo_add_test( NAME    test_ufo_conventionalprofileprocessing_average_temperature_obsfilter
               TIER    1
               ECBUILD

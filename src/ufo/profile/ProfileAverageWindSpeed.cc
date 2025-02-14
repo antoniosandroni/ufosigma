@@ -47,6 +47,17 @@ namespace ufo {
        ufo::ProfileVariableNames::modellevels_logP_derived,
        ufo::ProfileVariableNames::eastward_wind_derived,
        ufo::ProfileVariableNames::northward_wind_derived};
+    std::vector <std::string> variableNamesBool =
+      {ufo::ProfileVariableNames::diagflags_final_reject_u,
+       ufo::ProfileVariableNames::diagflags_perm_reject_u,
+       ufo::ProfileVariableNames::diagflags_back_reject_u,
+       ufo::ProfileVariableNames::diagflags_interpolation_u,
+       ufo::ProfileVariableNames::diagflags_partial_layer_u,
+       ufo::ProfileVariableNames::diagflags_final_reject_v,
+       ufo::ProfileVariableNames::diagflags_perm_reject_v,
+       ufo::ProfileVariableNames::diagflags_back_reject_v,
+       ufo::ProfileVariableNames::diagflags_interpolation_v,
+       ufo::ProfileVariableNames::diagflags_partial_layer_v};
     oops::Variables variableNamesGeoVaLs{
       {oops::Variable{ufo::ProfileVariableNames::geovals_air_pressure_at_surface}}};
 
@@ -65,21 +76,25 @@ namespace ufo {
         (oops::Variable{ufo::ProfileVariableNames::geovals_testreference_northward_wind_qcflags});
     }
 
+    // In order to correctly handle MPI ranks with zero entries,
+    // ensure that all of the variables defined above have been added to the ObsSpace
+    // on each rank. This prevents a hang when saving the ObsSpace.
+    for (const auto variableInt : variableNamesInt) {
+      const auto & vectorInt = profileDataHandler.get<int>(variableInt);
+    }
+    for (const auto variableFloat : variableNamesFloat) {
+      const auto & vectorFloat = profileDataHandler.get<float>(variableFloat);
+    }
+    for (const auto variableBool : variableNamesBool) {
+      const auto & vectorBool = profileDataHandler.get<bool>(variableBool);
+    }
+
     std::vector <ProfileDataHolder> profiles =
       profileDataHandler.produceProfileVector
       (variableNamesInt,
        variableNamesFloat,
        {},
-       {ufo::ProfileVariableNames::diagflags_final_reject_u,
-        ufo::ProfileVariableNames::diagflags_perm_reject_u,
-        ufo::ProfileVariableNames::diagflags_back_reject_u,
-        ufo::ProfileVariableNames::diagflags_interpolation_u,
-        ufo::ProfileVariableNames::diagflags_partial_layer_u,
-        ufo::ProfileVariableNames::diagflags_final_reject_v,
-        ufo::ProfileVariableNames::diagflags_perm_reject_v,
-        ufo::ProfileVariableNames::diagflags_back_reject_v,
-        ufo::ProfileVariableNames::diagflags_interpolation_v,
-        ufo::ProfileVariableNames::diagflags_partial_layer_v},
+       variableNamesBool,
        variableNamesGeoVaLs);
 
     // Run wind speed averaging on each profile in the original ObsSpace,

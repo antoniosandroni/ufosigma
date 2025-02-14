@@ -1,0 +1,106 @@
+#
+#=== Averaging procedures for profile with a single level ===#
+#
+# In each case a profile with a single observation is processed.
+# The averaging is not performed, and the averaged profile is filled with missing values.
+
+time window:
+  begin: 2019-06-14T20:30:00Z
+  end: 2019-06-15T03:30:00Z
+
+observations:
+# Temperature
+- obs space:
+    name: Radiosonde
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/ufo/testinput_tier_1/met_office_conventional_profile_processing_average_single_profile_obs.nc4
+      obsgrouping:
+        group variables: [ "stationIdentification" ]
+        sort variable: "pressure"
+        sort order: "descending"
+    simulated variables: [airTemperature]
+    extension:
+      allocate companion records with length: 71
+#   obsdataout:
+#     engine:
+#       type: H5File
+#       obsfile: Data/met_office_conventional_profile_processing_average_single_profile_temperature_out.nc4
+  geovals:
+    filename: Data/ufo/testinput_tier_1/met_office_conventional_profile_processing_average_single_profile_geovals.nc4
+  obs filters:
+  - filter: Conventional Profile Processing
+    filter variables:
+    - name: airTemperature
+    Checks: ["Basic", "AveragePressure", "AverageTemperature"]
+    compareWithOPS: false
+    flagBasicChecksFail: true
+    PrintStationID: true
+    alternativeVerticalCoordinate: {"air_pressure_levels_minus_one": "air_pressure_levels_minus_one"}
+  HofX: HofX
+  passedBenchmark: 0
+# Wind speed
+- obs space:
+    name: Radiosonde
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/ufo/testinput_tier_1/met_office_conventional_profile_processing_average_single_profile_obs.nc4
+      obsgrouping:
+        group variables: [ "stationIdentification" ]
+        sort variable: "pressure"
+        sort order: "descending"
+    simulated variables: [windEastward, windNorthward]
+    extension:
+      allocate companion records with length: 71
+#   obsdataout:
+#     engine:
+#       type: H5File
+#       obsfile: Data/met_office_conventional_profile_processing_average_single_profile_windspeed_out.nc4
+  geovals:
+    filename: Data/ufo/testinput_tier_1/met_office_conventional_profile_processing_average_single_profile_geovals.nc4
+  obs filters:
+  - filter: Conventional Profile Processing
+    filter variables:
+    - name: windEastward
+    - name: windNorthward
+    Checks: ["Basic", "AveragePressure", "AverageWindSpeed"]
+    compareWithOPS: false
+    flagBasicChecksFail: true
+    PrintStationID: true
+    alternativeVerticalCoordinate: {"air_pressure_levels_minus_one": "air_pressure_levels_minus_one"}
+  HofX: HofX
+  passedBenchmark: 0
+# Relative humidity
+- obs space:
+    name: Radiosonde
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/ufo/testinput_tier_1/met_office_conventional_profile_processing_average_single_profile_obs.nc4
+      obsgrouping:
+        group variables: [ "stationIdentification" ]
+        sort variable: "pressure"
+        sort order: "descending"
+    simulated variables: [airTemperature, relativeHumidity]
+    extension:
+      allocate companion records with length: 71
+#   obsdataout:
+#     engine:
+#       type: H5File
+#       obsfile: Data/met_office_conventional_profile_processing_average_single_profile_humidity_out.nc4
+  geovals:
+    filename: Data/ufo/testinput_tier_1/met_office_conventional_profile_processing_average_single_profile_geovals.nc4
+  obs filters:
+  - filter: Conventional Profile Processing
+    filter variables:
+    - name: airTemperature
+    - name: relativeHumidity
+    Checks: ["Basic", "AveragePressure", "AverageTemperature", "AverageRelativeHumidity"]
+    compareWithOPS: false
+    flagBasicChecksFail: true
+    PrintStationID: true
+    alternativeVerticalCoordinate: {"air_pressure_levels_minus_one": "air_pressure_levels_minus_one"}
+  HofX: HofX
+  passedBenchmark: 0

@@ -46,6 +46,12 @@ namespace ufo {
        ufo::ProfileVariableNames::modellevels_logP_rho_derived,
        ufo::ProfileVariableNames::air_temperature_derived,
        ufo::ProfileVariableNames::relative_humidity_derived};
+    std::vector <std::string> variableNamesBool =
+      {ufo::ProfileVariableNames::diagflags_final_reject_rh,
+       ufo::ProfileVariableNames::diagflags_perm_reject_rh,
+       ufo::ProfileVariableNames::diagflags_back_reject_rh,
+       ufo::ProfileVariableNames::diagflags_interpolation_rh};
+
     oops::Variables variableNamesGeoVaLs{
       {oops::Variable{ufo::ProfileVariableNames::geovals_relative_humidity}}};
 
@@ -60,15 +66,25 @@ namespace ufo {
          {ufo::ProfileVariableNames::geovals_testreference_relative_humidity_qcflags});
     }
 
+    // In order to correctly handle MPI ranks with zero entries,
+    // ensure that all of the variables defined above have been added to the ObsSpace
+    // on each rank. This prevents a hang when saving the ObsSpace.
+    for (const auto variableInt : variableNamesInt) {
+      const auto & vectorInt = profileDataHandler.get<int>(variableInt);
+    }
+    for (const auto variableFloat : variableNamesFloat) {
+      const auto & vectorFloat = profileDataHandler.get<float>(variableFloat);
+    }
+    for (const auto variableBool : variableNamesBool) {
+      const auto & vectorBool = profileDataHandler.get<bool>(variableBool);
+    }
+
     std::vector <ProfileDataHolder> profiles =
       profileDataHandler.produceProfileVector
       (variableNamesInt,
        variableNamesFloat,
        {},
-       {ufo::ProfileVariableNames::diagflags_final_reject_rh,
-        ufo::ProfileVariableNames::diagflags_perm_reject_rh,
-        ufo::ProfileVariableNames::diagflags_back_reject_rh,
-        ufo::ProfileVariableNames::diagflags_interpolation_rh},
+       variableNamesBool,
        variableNamesGeoVaLs);
 
     // Run relative humidity averaging on each profile in the original ObsSpace,
