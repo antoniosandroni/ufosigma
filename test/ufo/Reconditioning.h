@@ -103,8 +103,9 @@ void compareKnownOutput() {
     std::vector<double> refVec = TestParams.refVec.value().value();
     R.recondition(Params, mask);
     R.multiply(sample);
-    Eigen::VectorXd sampleVec = sample.packEigen(sample);
-    oops::Log::info() << "R times sample vector: " << sampleVec.transpose() << std::endl;
+    std::vector<double> sampleVec;
+    sample.maskAndSerialize(sample, sampleVec);
+    oops::Log::info() << "R times sample vector: " << sampleVec << std::endl;
     oops::Log::info() << "Reference vector: " << refVec << std::endl << std::endl;
 
     for (size_t i = 0; i < sampleVec.size(); ++i) {
