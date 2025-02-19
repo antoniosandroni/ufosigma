@@ -352,10 +352,10 @@ do jvar = 1, hofxdiags%nvar
             deallocate(Wfunc)
 
          case default
-            write(err_msg,*) 'ufo_radiancecrtm_simobs: //&
-                              & ObsDiagnostic is unsupported, ', &
-                              & hofxdiags%variables(jvar)
-            call fckit_log%info(err_msg)
+!           write(err_msg,*) 'ufo_radiancecrtm_simobs: //&
+!                             & ObsDiagnostic is unsupported, ', &
+!                             & hofxdiags%variables(jvar)
+!           call fckit_log%info(err_msg)
             ! call abor1_ftn(err_msg)
             hofxdiags%geovals(jvar)%nval = 1
             allocate(hofxdiags%geovals(jvar)%vals(hofxdiags%geovals(jvar)%nval,n_Profiles))

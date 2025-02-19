@@ -201,10 +201,10 @@ do jvar = 1, hofxdiags%nvar
             end do
 
          case default
-            write(err_msg,*) 'ufo_crtm_active_diags: //&
-                              & ObsDiagnostic is unsupported, ', &
-                              & hofxdiags%variables(jvar)
-            call fckit_log%info(err_msg)
+!           write(err_msg,*) 'ufo_crtm_active_diags: //&
+!                             & ObsDiagnostic is unsupported, ', &
+!                             & hofxdiags%variables(jvar)
+!           call fckit_log%info(err_msg)
             ! SET n_Layers = 1 => hofxdiags%geovals(jvar)%nval
             hofxdiags%geovals(jvar)%nval = 1
             allocate(hofxdiags%geovals(jvar)%vals(hofxdiags%geovals(jvar)%nval, n_Profiles))
