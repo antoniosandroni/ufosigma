@@ -2,8 +2,8 @@
 #
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
-if( ${ROPP-UFO_FOUND} )
-set (  groundgnssropp_src_files 
+if( ${ropp-ufo_FOUND} )
+set (  groundgnssropp_src_files
        ObsGroundgnssROPP.h
        ObsGroundgnssROPP.cc
        ObsGroundgnssROPP.interface.h
@@ -12,8 +12,8 @@ set (  groundgnssropp_src_files
        ufo_groundgnss_ropp_utils_mod.F90
 PARENT_SCOPE
 )
-else( ${ROPP-UFO_FOUND} )
-set (  groundgnssropp_src_files 
+else( ${ropp-ufo_FOUND} )
+set (  groundgnssropp_src_files
        ObsGroundgnssROPP.h
        ObsGroundgnssROPP.cc
        ObsGroundgnssROPP.interface.h
@@ -21,4 +21,4 @@ set (  groundgnssropp_src_files
        ufo_groundgnss_ropp_mod_stub.F90
 PARENT_SCOPE
 )
-endif( ${ROPP-UFO_FOUND} )
+endif( ${ropp-ufo_FOUND} )
