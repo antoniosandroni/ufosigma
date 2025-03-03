@@ -335,6 +335,8 @@ set ( filters_files
       obsfunctions/SunGlintAngle.h
       obsfunctions/SurfTypeCheckRad.cc
       obsfunctions/SurfTypeCheckRad.h
+      obsfunctions/GeoCloudCreateCloudColumn.cc
+      obsfunctions/GeoCloudCreateCloudColumn.h
       obsfunctions/SurfaceCloudCreateCloudColumn.cc
       obsfunctions/SurfaceCloudCreateCloudColumn.h
       obsfunctions/SurfaceCloudModelLevelCBH.cc

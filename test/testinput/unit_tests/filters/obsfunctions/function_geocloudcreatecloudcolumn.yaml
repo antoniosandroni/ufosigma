@@ -1,0 +1,263 @@
+time window:
+  begin: 2020-01-14T21:00:00Z
+  end: 2025-01-15T03:00:00Z
+
+observations:
+- obs space: &ObsSpace
+    name: GeoCloud
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/ufo/testinput_tier_1/geocloudcreatecloudcolumn_obs.nc4
+    simulated variables: [brightnessTemperature]
+    channels: 5, 6, 7, 9, 10, 11
+#   obsdataout:
+#     engine:
+#       type: H5File
+#       obsfile: Data/ufo/testinput_tier_1/geocloudcreatecloudcolumn_out.nc4  
+  geovals: &GeoVaLs
+    filename: Data/ufo/testinput_tier_1/geocloudcreatecloudcolumn_geovals.nc4
+  obs filters:
+  - filter: Variable Assignment
+    assignments:
+    - name: DerivedObsValue/cloudAmount
+      channels: 1-70
+      type: float
+      function:
+        name: ObsFunction/GeoCloudCreateCloudColumn
+        options:
+          channels: 1-70
+          cloud top pressure: OneDVar/pressureAtTopOfCloud
+          cloud amount: OneDVar/cloudAmount
+          cloud optical thickness: MetaData/cloudOpticalThickness
+          spatial coherence test: MetaData/autosat_spatial_test
+          error for cloudy scene clear levels: 0.3
+          error for cloudy levels: 0.1
+          error for clear scenes: 0.5
+          clear altitude limit: 40000.0
+          cloudy altitude limit: 40000.0
+          tau denominator: 5.0
+          tau offset: -5.0
+          ndepth array: [1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 0]
+          maximum zdepth layers: 24
+          use cloud optical thickness: true
+          tau lower height limit array: [25.0, 50.0, 75.0, 100.0, 150.0, 200.0, 250.0, 375.0, 450.0, 600.0, 750.0, 1000.0, 1300.0, 1500.0, 2000.0, 2500.0, 3000.0, 3500.0, 4500.0, 5000.0, 6000.0, 8500.0, 9000.0, -999.99]
+          tau upper height limit array: [50.0, 75.0, 100.0, 150.0, 200.0, 250.0, 375.0, 450.0, 600.0, 750.0, 1000.0, 1300.0, 1500.0, 2000.0, 2500.0, 3000.0, 3500.0, 4500.0, 5000.0, 6000.0, 8500.0, 9000.0, 12000.0, -999.99]
+          tau gradient array: [250.0, 260.0, 265.0, 180.0, 300.0, 180.0, 200.0, 175.0, 175.0, 250.0, 275.0, 350.0, 575.0, 875.0, 850.0, 2000.0, 2250.0, 1500.0, 2500.0, 7.5e+06, 6.5e+06, 7.5e+06, 5.0e+06, 0.0]
+          tau constant array: [-450.0, -475.0, -475.0, -300.0, -600.0, -250.0, -275.0, -150.0, -100.0, -200.0, -250.0, -350.0, -650.0, -1000.0, -900.0, -2250.0, -2500.0, -1000.0, -1500.0, -6.5e+06, -6.0e+06, -4.0e+06, -2.0e+06, 1.0]
+          tau maximum depth array: [45.0, 70.0, 100.0, 150.0, 200.0, 225.0, 300.0, 350.0, 400.0, 450.0,  550.0, 600.0, 650.0, 750.0, 800.0, 900.0, 950.0, 1000.0, 1250.0, 1250.0, 1000.0, 1500.0, 1000.0, 0.0]
+  compareVariables:
+  - reference:
+      name: TestReference/cloudAmount
+    test:
+      name: DerivedObsValue/cloudAmount
+    absTol: 1.0e-4
+  - reference:
+      name: TestReference/cloudErrorAmount
+    test:
+      name: DerivedObsError/cloudAmount
+    absTol: 1.0e-4
+
+- obs space:
+    <<: *ObsSpace
+    name: Provide nDepth array of size not equal to nlevs.
+  geovals:
+    <<: *GeoVaLs
+  obs filters:
+  - filter: Variable Assignment
+    assignments:
+    - name: DerivedObsValue/cloudAmount
+      channels: 1-70
+      type: float
+      function:
+        name: ObsFunction/GeoCloudCreateCloudColumn
+        options:
+          channels: 1-70
+          cloud top pressure: OneDVar/pressureAtTopOfCloud
+          cloud amount: OneDVar/cloudAmount
+          cloud optical thickness: MetaData/cloudOpticalThickness
+          spatial coherence test: MetaData/autosat_spatial_test
+          error for cloudy scene clear levels: 0.3
+          error for cloudy levels: 0.1
+          error for clear scenes: 0.5
+          clear altitude limit: 40000.0
+          cloudy altitude limit: 40000.0
+          tau denominator: 5.0
+          tau offset: -5.0
+          ndepth array: [1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 0]
+  expectExceptionWithMessage: Size of nDepth array should be the same as the number of levels.
+
+- obs space:
+    <<: *ObsSpace
+    name: Omit Tau parameter 1.
+  geovals:
+    <<: *GeoVaLs
+  obs filters:
+  - filter: Variable Assignment
+    assignments:
+    - name: DerivedObsValue/cloudAmount
+      channels: 1-70
+      type: float
+      function:
+        name: ObsFunction/GeoCloudCreateCloudColumn
+        options:
+          channels: 1-70
+          cloud top pressure: OneDVar/pressureAtTopOfCloud
+          cloud amount: OneDVar/cloudAmount
+          cloud optical thickness: MetaData/cloudOpticalThickness
+          spatial coherence test: MetaData/autosat_spatial_test
+          error for cloudy scene clear levels: 0.3
+          error for cloudy levels: 0.1
+          error for clear scenes: 0.5
+          clear altitude limit: 40000.0
+          cloudy altitude limit: 40000.0
+          tau denominator: 5.0
+          tau offset: -5.0
+          ndepth array: [1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 0]
+          maximum zdepth layers: 24
+          use cloud optical thickness: true
+          tau upper height limit array: [50.0, 75.0, 100.0, 150.0, 200.0, 250.0, 375.0, 450.0, 600.0, 750.0, 1000.0, 1300.0, 1500.0, 2000.0, 2500.0, 3000.0, 3500.0, 4500.0, 5000.0, 6000.0, 8500.0, 9000.0, 12000.0, -999.99]
+          tau gradient array: [250.0, 260.0, 265.0, 180.0, 300.0, 180.0, 200.0, 175.0, 175.0, 250.0, 275.0, 350.0, 575.0, 875.0, 850.0, 2000.0, 2250.0, 1500.0, 2500.0, 7.5e+06, 6.5e+06, 7.5e+06, 5.0e+06, 0.0]
+          tau constant array: [-450.0, -475.0, -475.0, -300.0, -600.0, -250.0, -275.0, -150.0, -100.0, -200.0, -250.0, -350.0, -650.0, -1000.0, -900.0, -2250.0, -2500.0, -1000.0, -1500.0, -6.5e+06, -6.0e+06, -4.0e+06, -2.0e+06, 1.0]
+          tau maximum depth array: [45.0, 70.0, 100.0, 150.0, 200.0, 225.0, 300.0, 350.0, 400.0, 450.0,  550.0, 600.0, 650.0, 750.0, 800.0, 900.0, 950.0, 1000.0, 1250.0, 1250.0, 1000.0, 1500.0, 1000.0, 0.0]
+  expectExceptionWithMessage: Cloud depth from cloud optical thickness requested but no tauZDepthHtLow provided.
+
+- obs space:
+    <<: *ObsSpace
+    name: Omit Tau parameter 2.
+  geovals:
+    <<: *GeoVaLs
+  obs filters:
+  - filter: Variable Assignment
+    assignments:
+    - name: DerivedObsValue/cloudAmount
+      channels: 1-70
+      type: float
+      function:
+        name: ObsFunction/GeoCloudCreateCloudColumn
+        options:
+          channels: 1-70
+          cloud top pressure: OneDVar/pressureAtTopOfCloud
+          cloud amount: OneDVar/cloudAmount
+          cloud optical thickness: MetaData/cloudOpticalThickness
+          spatial coherence test: MetaData/autosat_spatial_test
+          error for cloudy scene clear levels: 0.3
+          error for cloudy levels: 0.1
+          error for clear scenes: 0.5
+          clear altitude limit: 40000.0
+          cloudy altitude limit: 40000.0
+          tau denominator: 5.0
+          tau offset: -5.0
+          ndepth array: [1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 0]
+          maximum zdepth layers: 24
+          use cloud optical thickness: true
+          tau lower height limit array: [25.0, 50.0, 75.0, 100.0, 150.0, 200.0, 250.0, 375.0, 450.0, 600.0, 750.0, 1000.0, 1300.0, 1500.0, 2000.0, 2500.0, 3000.0, 3500.0, 4500.0, 5000.0, 6000.0, 8500.0, 9000.0, -999.99]
+          tau gradient array: [250.0, 260.0, 265.0, 180.0, 300.0, 180.0, 200.0, 175.0, 175.0, 250.0, 275.0, 350.0, 575.0, 875.0, 850.0, 2000.0, 2250.0, 1500.0, 2500.0, 7.5e+06, 6.5e+06, 7.5e+06, 5.0e+06, 0.0]
+          tau constant array: [-450.0, -475.0, -475.0, -300.0, -600.0, -250.0, -275.0, -150.0, -100.0, -200.0, -250.0, -350.0, -650.0, -1000.0, -900.0, -2250.0, -2500.0, -1000.0, -1500.0, -6.5e+06, -6.0e+06, -4.0e+06, -2.0e+06, 1.0]
+          tau maximum depth array: [45.0, 70.0, 100.0, 150.0, 200.0, 225.0, 300.0, 350.0, 400.0, 450.0,  550.0, 600.0, 650.0, 750.0, 800.0, 900.0, 950.0, 1000.0, 1250.0, 1250.0, 1000.0, 1500.0, 1000.0, 0.0]
+  expectExceptionWithMessage: Cloud depth from cloud optical thickness requested but no tauZDepthHtUpp provided.
+
+- obs space:
+    <<: *ObsSpace
+    name: Omit Tau parameter 3.
+  geovals:
+    <<: *GeoVaLs
+  obs filters:
+  - filter: Variable Assignment
+    assignments:
+    - name: DerivedObsValue/cloudAmount
+      channels: 1-70
+      type: float
+      function:
+        name: ObsFunction/GeoCloudCreateCloudColumn
+        options:
+          channels: 1-70
+          cloud top pressure: OneDVar/pressureAtTopOfCloud
+          cloud amount: OneDVar/cloudAmount
+          cloud optical thickness: MetaData/cloudOpticalThickness
+          spatial coherence test: MetaData/autosat_spatial_test
+          error for cloudy scene clear levels: 0.3
+          error for cloudy levels: 0.1
+          error for clear scenes: 0.5
+          clear altitude limit: 40000.0
+          cloudy altitude limit: 40000.0
+          tau denominator: 5.0
+          tau offset: -5.0
+          ndepth array: [1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 0]
+          maximum zdepth layers: 24
+          use cloud optical thickness: true
+          tau lower height limit array: [25.0, 50.0, 75.0, 100.0, 150.0, 200.0, 250.0, 375.0, 450.0, 600.0, 750.0, 1000.0, 1300.0, 1500.0, 2000.0, 2500.0, 3000.0, 3500.0, 4500.0, 5000.0, 6000.0, 8500.0, 9000.0, -999.99]
+          tau upper height limit array: [50.0, 75.0, 100.0, 150.0, 200.0, 250.0, 375.0, 450.0, 600.0, 750.0, 1000.0, 1300.0, 1500.0, 2000.0, 2500.0, 3000.0, 3500.0, 4500.0, 5000.0, 6000.0, 8500.0, 9000.0, 12000.0, -999.99]
+          tau constant array: [-450.0, -475.0, -475.0, -300.0, -600.0, -250.0, -275.0, -150.0, -100.0, -200.0, -250.0, -350.0, -650.0, -1000.0, -900.0, -2250.0, -2500.0, -1000.0, -1500.0, -6.5e+06, -6.0e+06, -4.0e+06, -2.0e+06, 1.0]
+          tau maximum depth array: [45.0, 70.0, 100.0, 150.0, 200.0, 225.0, 300.0, 350.0, 400.0, 450.0,  550.0, 600.0, 650.0, 750.0, 800.0, 900.0, 950.0, 1000.0, 1250.0, 1250.0, 1000.0, 1500.0, 1000.0, 0.0]
+  expectExceptionWithMessage: Cloud depth from cloud optical thickness requested but no tauZDepthGrad provided.
+
+- obs space:
+    <<: *ObsSpace
+    name: Omit Tau parameter 4.
+  geovals:
+    <<: *GeoVaLs
+  obs filters:
+  - filter: Variable Assignment
+    assignments:
+    - name: DerivedObsValue/cloudAmount
+      channels: 1-70
+      type: float
+      function:
+        name: ObsFunction/GeoCloudCreateCloudColumn
+        options:
+          channels: 1-70
+          cloud top pressure: OneDVar/pressureAtTopOfCloud
+          cloud amount: OneDVar/cloudAmount
+          cloud optical thickness: MetaData/cloudOpticalThickness
+          spatial coherence test: MetaData/autosat_spatial_test
+          error for cloudy scene clear levels: 0.3
+          error for cloudy levels: 0.1
+          error for clear scenes: 0.5
+          clear altitude limit: 40000.0
+          cloudy altitude limit: 40000.0
+          tau denominator: 5.0
+          tau offset: -5.0
+          ndepth array: [1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 0]
+          maximum zdepth layers: 24
+          use cloud optical thickness: true
+          tau lower height limit array: [25.0, 50.0, 75.0, 100.0, 150.0, 200.0, 250.0, 375.0, 450.0, 600.0, 750.0, 1000.0, 1300.0, 1500.0, 2000.0, 2500.0, 3000.0, 3500.0, 4500.0, 5000.0, 6000.0, 8500.0, 9000.0, -999.99]
+          tau upper height limit array: [50.0, 75.0, 100.0, 150.0, 200.0, 250.0, 375.0, 450.0, 600.0, 750.0, 1000.0, 1300.0, 1500.0, 2000.0, 2500.0, 3000.0, 3500.0, 4500.0, 5000.0, 6000.0, 8500.0, 9000.0, 12000.0, -999.99]
+          tau gradient array: [250.0, 260.0, 265.0, 180.0, 300.0, 180.0, 200.0, 175.0, 175.0, 250.0, 275.0, 350.0, 575.0, 875.0, 850.0, 2000.0, 2250.0, 1500.0, 2500.0, 7.5e+06, 6.5e+06, 7.5e+06, 5.0e+06, 0.0]
+          tau maximum depth array: [45.0, 70.0, 100.0, 150.0, 200.0, 225.0, 300.0, 350.0, 400.0, 450.0,  550.0, 600.0, 650.0, 750.0, 800.0, 900.0, 950.0, 1000.0, 1250.0, 1250.0, 1000.0, 1500.0, 1000.0, 0.0]
+  expectExceptionWithMessage: Cloud depth from cloud optical thickness requested but no tauZDepthConst provided.
+
+- obs space:
+    <<: *ObsSpace
+    name: Omit Tau parameter 5.
+  geovals:
+    <<: *GeoVaLs
+  obs filters:
+  - filter: Variable Assignment
+    assignments:
+    - name: DerivedObsValue/cloudAmount
+      channels: 1-70
+      type: float
+      function:
+        name: ObsFunction/GeoCloudCreateCloudColumn
+        options:
+          channels: 1-70
+          cloud top pressure: OneDVar/pressureAtTopOfCloud
+          cloud amount: OneDVar/cloudAmount
+          cloud optical thickness: MetaData/cloudOpticalThickness
+          spatial coherence test: MetaData/autosat_spatial_test
+          error for cloudy scene clear levels: 0.3
+          error for cloudy levels: 0.1
+          error for clear scenes: 0.5
+          clear altitude limit: 40000.0
+          cloudy altitude limit: 40000.0
+          tau denominator: 5.0
+          tau offset: -5.0
+          ndepth array: [1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 0]
+          maximum zdepth layers: 24
+          use cloud optical thickness: true
+          tau lower height limit array: [25.0, 50.0, 75.0, 100.0, 150.0, 200.0, 250.0, 375.0, 450.0, 600.0, 750.0, 1000.0, 1300.0, 1500.0, 2000.0, 2500.0, 3000.0, 3500.0, 4500.0, 5000.0, 6000.0, 8500.0, 9000.0, -999.99]
+          tau upper height limit array: [50.0, 75.0, 100.0, 150.0, 200.0, 250.0, 375.0, 450.0, 600.0, 750.0, 1000.0, 1300.0, 1500.0, 2000.0, 2500.0, 3000.0, 3500.0, 4500.0, 5000.0, 6000.0, 8500.0, 9000.0, 12000.0, -999.99]
+          tau gradient array: [250.0, 260.0, 265.0, 180.0, 300.0, 180.0, 200.0, 175.0, 175.0, 250.0, 275.0, 350.0, 575.0, 875.0, 850.0, 2000.0, 2250.0, 1500.0, 2500.0, 7.5e+06, 6.5e+06, 7.5e+06, 5.0e+06, 0.0]
+          tau constant array: [-450.0, -475.0, -475.0, -300.0, -600.0, -250.0, -275.0, -150.0, -100.0, -200.0, -250.0, -350.0, -650.0, -1000.0, -900.0, -2250.0, -2500.0, -1000.0, -1500.0, -6.5e+06, -6.0e+06, -4.0e+06, -2.0e+06, 1.0]
+  expectExceptionWithMessage: Cloud depth from cloud optical thickness requested but no tauMaxZDepth provided.
