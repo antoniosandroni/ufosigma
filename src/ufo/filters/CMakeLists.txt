@@ -295,6 +295,8 @@ set ( filters_files
       obsfunctions/ObsErrorFactorSfcPressure.h
       obsfunctions/ObsErrorFactorConventional.cc
       obsfunctions/ObsErrorFactorConventional.h
+      obsfunctions/PotentialTemperatureFromTemperature.cc
+      obsfunctions/PotentialTemperatureFromTemperature.h
       obsfunctions/NearSSTRetCheckIR.cc
       obsfunctions/NearSSTRetCheckIR.h
       obsfunctions/ObsFunctionElementMultiply.cc
