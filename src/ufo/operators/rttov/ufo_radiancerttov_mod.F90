@@ -194,6 +194,7 @@ contains
     logical                                 :: jacobian_needed, skip_profile
     logical                                 :: do_profile_diagnostics
     real(kind_real), allocatable            :: sfc_emiss(:,:)
+    real(kind_real), allocatable            :: RTTOV_Atlas_Emissivity(:)
     type(obsdatavector_int)                 :: qc_flags
 
     include 'rttov_direct.interface'
@@ -285,6 +286,10 @@ contains
 
     ! Used for keeping track of profiles for setting emissivity
     allocate(self % RTprof % chanprof ( nprofiles * self % RTprof % nchan_inst ))
+
+    if (self % conf % use_emissivity_atlas) then
+      allocate (RTTOV_Atlas_Emissivity(size(self % RTprof % chanprof)))
+    end if
 
     prof_start = 1; prof_end = nprofiles
     nchan_total = 0
@@ -408,8 +413,11 @@ contains
               end if
             end do
           end do outerloop
+        else if (self % conf % use_emissivity_atlas) then
+          call self % RTProf % init_atlas_emissivity(self % conf, RTTOV_Atlas_Emissivity(1:nchan_sim), chanprof(1:nchan_sim), &
+                                                     prof_start, nprof_sim, prof_list)
         else
-          call self % RTProf % init_default_emissivity(self % conf, prof_list, self % channels, obss)
+          call self % RTProf % init_default_emissivity(self % conf, prof_list)
         end if
       end if
 
@@ -567,6 +575,9 @@ contains
 
     message = 'Deallocating resource for RTTOV...'
     call fckit_log%debug(message)
+
+    if (allocated(sfc_emiss)) deallocate(sfc_emiss)
+    if (allocated(RTTOV_Atlas_Emissivity)) deallocate (RTTOV_Atlas_Emissivity)
 
     ! Deallocate structures for rttov_direct
     if(jacobian_needed) then

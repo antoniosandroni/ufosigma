@@ -168,6 +168,7 @@ contains
 
     logical                                      :: jacobian_needed, do_profile_diagnostics
     real(kind_real), allocatable                 :: sfc_emiss(:,:)
+    real(kind_real), allocatable                 :: RTTOV_Atlas_Emissivity(:)
     character(len = MAXVARLEN)                   :: varname
 
     include 'rttov_k.interface'
@@ -225,6 +226,10 @@ contains
 
     ! Used for keeping track of profiles for setting emissivity
     allocate(self % RTprof_K % chanprof ( self % nprofiles * self % RTprof_K % nchan_inst ))
+
+    if (self % conf % use_emissivity_atlas) then
+      allocate (RTTOV_Atlas_Emissivity(size(self % RTprof_K % chanprof)))
+    end if
 
     ! Maximum number of profiles to be processed by RTTOV per pass
     if(self % conf % prof_by_prof) then
@@ -338,8 +343,11 @@ contains
             end if
           end do
         end do outerloop
+      else if (self % conf % use_emissivity_atlas) then
+        call self % RTProf_K % init_atlas_emissivity(self % conf, RTTOV_Atlas_Emissivity(1:nchan_sim), chanprof(1:nchan_sim), &
+                                                     prof_start, nprof_sim, prof_list)
       else
-        call self % RTProf_K % init_default_emissivity(self % conf, prof_list, self % channels, obss)
+        call self % RTProf_K % init_default_emissivity(self % conf, prof_list)
       end if
 
       ! Write out emissivity if checking profile
@@ -520,6 +528,10 @@ contains
     end do RTTOV_loop
 
     !    end do Sensor_Loop
+
+    if (allocated(sfc_emiss)) deallocate(sfc_emiss)
+    if (allocated(RTTOV_Atlas_Emissivity)) deallocate (RTTOV_Atlas_Emissivity)
+
     ! Deallocate structures for rttov_direct
     call self % RTprof_K % alloc_k(errorstatus, self % conf, -1, -1, -1, asw=0)
     call self % RTprof_K % alloc_direct(errorstatus, self % conf, -1, -1, -1, asw=0)

@@ -158,6 +158,7 @@ module ufo_radiancerttov_utils_mod
     procedure :: alloc_profiles          => ufo_rttov_alloc_profiles
     procedure :: alloc_profiles_k        => ufo_rttov_alloc_profiles_k
     procedure :: zero_k                  => ufo_rttov_zero_k
+    procedure :: init_atlas_emissivity   => ufo_rttov_init_atlas_emissivity
     procedure :: init_default_emissivity => ufo_rttov_init_default_emissivity 
     procedure :: setup_rtprof            => ufo_rttov_setup_rtprof
     procedure :: check_rtprof            => ufo_rttov_check_rtprof
@@ -427,14 +428,14 @@ contains
 
     ! Set up the RTTOV emissivity atlas options
     conf % use_emissivity_atlas = .false.
-    if (f_confOpts % has("UseEmissivityAtlas")) then
-       call f_confOpts % get_or_die("UseEmissivityAtlas", conf % use_emissivity_atlas)
+    if (f_confOpts % has("UseSurfaceEmissivityAtlas")) then
+       call f_confOpts % get_or_die("UseSurfaceEmissivityAtlas", conf % use_emissivity_atlas)
     end if
 
     if (conf % use_emissivity_atlas) then
-       call f_confOpts % get_or_die("EmissivityAtlasPath", str)
+       call f_confOpts % get_or_die("SurfaceEmissivityAtlasPath", str)
        conf % emissivity_atlas_path = trim(str)
-       call f_confOpts % get_or_die("EmissivityAtlasName", str)
+       call f_confOpts % get_or_die("SurfaceEmissivityAtlasName", str)
        conf % emissivity_atlas_name = trim(str)
     end if
 
@@ -2165,36 +2166,77 @@ contains
 
   end subroutine ufo_rttov_zero_k
 
-  subroutine ufo_rttov_init_default_emissivity(self, conf, prof_list, channels, obss)
+  subroutine ufo_rttov_init_atlas_emissivity(self, conf, RTTOV_Atlas_Emissivity, chanprof, &
+                                             prof_start, nprof_sim, prof_list)
+
+    implicit none
+
+    class(ufo_rttov_io),  intent(inout) :: self
+    real(kind=kind_real), intent(inout) :: RTTOV_Atlas_Emissivity(:)
+    type(rttov_conf),     intent(in)    :: conf
+    type(rttov_chanprof), intent(in)    :: chanprof(:)
+    integer,              intent(in)    :: prof_start
+    integer,              intent(in)    :: nprof_sim
+
+    integer,              intent(in)    :: prof_list(:,:)
+
+    integer                             :: start_chan, end_chan, iprof, all_prof_index
+    integer                             :: errorstatus
+
+    include 'rttov_get_emis.interface'
+
+    call rttov_get_emis (errorstatus,                      & ! out
+    conf % rttov_opts,                                     & ! in
+    chanprof(:),                                           & ! in
+    self % profiles(prof_start:prof_start + nprof_sim -1), & ! in
+    conf % rttov_coef_array(1),                            & ! in
+    conf % rttov_emissivity_atlas,                         & ! in
+    RTTOV_Atlas_Emissivity(:))                               ! out
+    
+    start_chan = 0
+    end_chan = 0
+
+    !Emissivity and calcemis are only set for used channels.
+    !emissivity is already initialised to zero (so RTTOV doesn't complain)
+    !cycle through the list of good profiles
+
+    do iprof=1, size(prof_list, dim=1)
+      if (prof_list(iprof,1) > 0) then
+        all_prof_index = prof_list(iprof,2)
+        start_chan = end_chan + 1
+        end_chan = end_chan + self % nchan_inst
+      else
+        cycle
+      end if
+
+      if (self % profiles(all_prof_index) % skin % surftype == surftype_sea) then
+
+        ! Calculate by RTTOV
+        self % emissivity(start_chan:end_chan) % emis_in = 0.0_kind_real
+        self % calcemis(start_chan:end_chan) = .true.
+
+      else
+        
+        ! Use atlas emissivity
+        self % emissivity(start_chan:end_chan) % emis_in = RTTOV_Atlas_Emissivity(start_chan:end_chan)
+        self % calcemis(start_chan:end_chan) = .false.
+
+      end if
+    end do
+   
+  end subroutine ufo_rttov_init_atlas_emissivity
+
+  subroutine ufo_rttov_init_default_emissivity(self, conf, prof_list)
 
     implicit none
 
     class(ufo_rttov_io), intent(inout) :: self
     type(rttov_conf),    intent(in)    :: conf
     integer,             intent(in)    :: prof_list(:,:)
-    integer,             intent(in)    :: channels(:)
-    type(c_ptr), value,  intent(in)    :: obss
 
-    integer                            :: prof, all_prof_index, iprof, jvar
+    integer                            :: all_prof_index, iprof
     integer                            :: start_chan, end_chan
-    integer                            :: errorstatus
-    real(kind_real), allocatable       :: RTTOV_Atlas_Emissivity(:) ! RTTOV atlas emissivity
-    character(len=max_string)          :: var
-
-    include 'rttov_get_emis.interface'
-
-    if (conf % use_emissivity_atlas) then
-      allocate (RTTOV_Atlas_Emissivity(size(self % chanprof)))
-
-      call rttov_get_emis (errorstatus,      & ! out
-        conf % rttov_opts,                   & ! in
-        self % chanprof(:),                  & ! in
-        self % profiles(:),                  & ! in
-        conf % rttov_coef_array(1),          & ! in
-        conf % rttov_emissivity_atlas,       & ! in
-        RTTOV_Atlas_Emissivity(:))             ! out
-    end if
-
+    
 !Emissivity and calcemis are only set for used channels.
 !emissivity is already initialised to zero (so RTTOV doesn't complain)
 !cycle through the list of good profiles
@@ -2204,7 +2246,6 @@ contains
 
     do iprof=1, size(prof_list, dim=1)
       if (prof_list(iprof,1) > 0) then
-        prof = prof_list(iprof,1)
         all_prof_index = prof_list(iprof,2)
         start_chan = end_chan + 1
         end_chan = end_chan + self % nchan_inst
@@ -2220,29 +2261,24 @@ contains
 
       else
 
-        if (conf % use_emissivity_atlas) then
-           self % emissivity(start_chan:end_chan) % emis_in = RTTOV_Atlas_Emissivity(start_chan:end_chan)
-        else
-           
-           if (conf % rttov_coef_array(1) % coef % id_sensor == sensor_id_mw) then
-             if (self % profiles(all_prof_index) % skin % surftype == surftype_land) then
-                 self % emissivity(start_chan:end_chan) % emis_in = 0.95_kind_real
-             elseif (self % profiles(all_prof_index) % skin % surftype == surftype_seaice) then
-                 self % emissivity(start_chan:end_chan) % emis_in = 0.92_kind_real
-             end if
+        if (conf % rttov_coef_array(1) % coef % id_sensor == sensor_id_mw) then
 
-           elseif (conf % rttov_coef_array(1) % coef % id_sensor == sensor_id_ir .or. &
-                   conf % rttov_coef_array(1) % coef % id_sensor == sensor_id_hi) then
-              self % emissivity(start_chan:end_chan) % emis_in = 0.98_kind_real
-           end if
+          if (self % profiles(all_prof_index) % skin % surftype == surftype_land) then
+            self % emissivity(start_chan:end_chan) % emis_in = 0.95_kind_real
+          elseif (self % profiles(all_prof_index) % skin % surftype == surftype_seaice) then
+            self % emissivity(start_chan:end_chan) % emis_in = 0.92_kind_real
+          end if
+
+        elseif ( conf % rttov_coef_array(1) % coef % id_sensor == sensor_id_ir .or. &
+                 conf % rttov_coef_array(1) % coef % id_sensor == sensor_id_hi) then
+          self % emissivity(start_chan:end_chan) % emis_in = 0.98_kind_real
+
         end if
 
         self % calcemis(start_chan:end_chan) = .false.
 
       end if
     enddo
-
-   if (allocated(RTTOV_Atlas_Emissivity)) deallocate (RTTOV_Atlas_Emissivity)
    
   end subroutine ufo_rttov_init_default_emissivity
 

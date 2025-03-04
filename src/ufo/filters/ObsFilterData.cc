@@ -90,7 +90,13 @@ bool ObsFilterData::has(const Variable & varname) const {
   } else if (grp == ObsFunctionTraits<util::DateTime>::groupName) {
     return ObsFunctionFactory<util::DateTime>::functionExists(var);
   } else if (grp == "ObsDiag" || grp == "ObsBiasTerm") {
-    return (diags_ && diags_->has(var));
+    const std::vector<int> channels = varname.channels();
+    std::string localvar = var;
+    if (channels.size() > 0) {
+      localvar += "_";
+      localvar += std::to_string(channels[0]);
+    }
+    return (diags_ && diags_->has(localvar));
   } else {
     return this->hasVector(grp, var) ||
            this->hasDataVector(grp, var) ||
@@ -249,9 +255,19 @@ void ObsFilterData::get(const Variable & varname, ioda::ObsDataVector<float> & v
 ///  For ObsDiag or ObsBiasTerm,  get it from ObsDiagnostics
   } else if (grp == "ObsDiag" || grp == "ObsBiasTerm") {
     ASSERT(diags_);
-    std::vector<float> vec(obsdb_.nlocs());
-    diags_->get(vec, var);
-    values[var] = vec;
+    std::vector<int> channels = varname.channels();
+    if (channels.size() > 0) {
+      for (size_t ichan = 0; ichan < channels.size(); ++ichan) {
+        const std::string localvar = varname.variable(ichan);
+        std::vector<float> vec(obsdb_.nlocs());
+        diags_->get(vec, localvar);
+        values[localvar] = vec;
+      }
+    } else {
+      std::vector<float> vec(obsdb_.nlocs());
+      diags_->get(vec, var);
+      values[var] = vec;
+    }
 ///  For ObsDataVector
   } else if (this->hasDataVector(grp, var)) {
     std::map<std::string, const ioda::ObsDataVector<float> *>::const_iterator

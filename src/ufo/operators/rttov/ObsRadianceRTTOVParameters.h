@@ -123,13 +123,15 @@ class RTTOVObsOptionsParameters : public oops::Parameters {
      "skip profiles if no channels are passed or passivated in the qc flag", false, this};
 
   /// if true, initialise and read emissivity atlas
-  oops::OptionalParameter<bool> UseEmissivityAtlas{"UseEmissivityAtlas", this};
+  oops::OptionalParameter<bool> UseSurfaceEmissivityAtlas{"UseSurfaceEmissivityAtlas", this};
 
   /// Emissivity atlas name, valid options are: UWIREmis, CAMEL, CAMELClim, TELSEM2, CNRM
-  oops::OptionalParameter<std::string> EmissivityAtlasName{"EmissivityAtlasName", this};
+  oops::OptionalParameter<std::string> SurfaceEmissivityAtlasName{"SurfaceEmissivityAtlasName",
+                                                                  this};
 
   /// Emissivity atlas path
-  oops::OptionalParameter<std::string> EmissivityAtlasPath{"EmissivityAtlasPath", this};
+  oops::OptionalParameter<std::string> SurfaceEmissivityAtlasPath{"SurfaceEmissivityAtlasPath",
+                                                                   this};
 
   /// Specify the profiles where further diagnostics are needed
   /// for debugging e.g. [1, 2, 3]
