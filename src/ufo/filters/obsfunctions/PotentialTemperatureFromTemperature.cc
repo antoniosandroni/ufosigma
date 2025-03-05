@@ -20,11 +20,12 @@
 
 namespace ufo {
 
-static ObsFunctionMaker<PotentialTemperatureFromTemperature> makerPotentialTemperatureFromTemperature_
-                   ("PotentialTemperatureFromTemperature");
+static ObsFunctionMaker<PotentialTemperatureFromTemperature>
+  makerPotentialTemperatureFromTemperature_("PotentialTemperatureFromTemperature");
 
-PotentialTemperatureFromTemperature::PotentialTemperatureFromTemperature(const eckit::LocalConfiguration & conf)
-  : invars_() {
+PotentialTemperatureFromTemperature::PotentialTemperatureFromTemperature(
+  const eckit::LocalConfiguration & conf
+): invars_() {
   // Initialize options
   options_.deserialize(conf);
   std::ostringstream errString;
