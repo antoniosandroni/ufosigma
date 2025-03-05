@@ -1436,13 +1436,15 @@ integer :: max_val                        ! The maximum value in the input list
 nfound = 0
 allocate(unique_vals(1:size(input)))
 
-cur_val = minval(input) - 1
-max_val = maxval(input)
-do while (cur_val < max_val)
-    nfound = nfound + 1
-    cur_val = minval(input, mask=input>cur_val)
-    unique_vals(nfound) = cur_val
-end do
+if (size(input) > 0) then
+    cur_val = minval(input) - 1
+    max_val = maxval(input)
+    do while (cur_val < max_val)
+        nfound = nfound + 1
+        cur_val = minval(input, mask=input>cur_val)
+        unique_vals(nfound) = cur_val
+    end do
+end if
 allocate(output(nfound))
 output = unique_vals(1:nfound)
 

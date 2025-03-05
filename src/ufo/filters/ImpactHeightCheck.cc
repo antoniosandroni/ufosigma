@@ -74,6 +74,9 @@ void ImpactHeightCheck::applyFilter(const std::vector<bool> & apply,
     oops::Log::debug() << "ImpactHeightCheck: nvars = " << filtervars.nvars() << std::endl;
   }
 
+  // Get the total number of observations
+  const size_t nlocs = obsdb_.nlocs();
+
   // Get the refractivity from the obs diagnostics, including the number of
   // vertical levels on which the refractivity has been calculated (nRefLevels)
   Variable refractivityVariable = Variable("ObsDiag/atmosphericRefractivity_model");
@@ -89,11 +92,13 @@ void ImpactHeightCheck::applyFilter(const std::vector<bool> & apply,
 
   // For the benefits of debugging, output the refractivity for the first
   // observation
-  oops::Log::debug() << "Refractivity(first ob) ";
-  for (size_t iLevel = 0; iLevel < nRefLevels; ++iLevel) {
-    oops::Log::debug() << refractivity[iLevel][0] << " ";
+  if (nlocs > 0) {
+    oops::Log::debug() << "Refractivity(first ob) ";
+    for (size_t iLevel = 0; iLevel < nRefLevels; ++iLevel) {
+      oops::Log::debug() << refractivity[iLevel][0] << " ";
+    }
+    oops::Log::debug() << std::endl;
   }
-  oops::Log::debug() << std::endl;
 
   // Get the height of the levels on which the refractivity has been calculated.
   // Must be the same length as the array defining the refractivity.
@@ -114,11 +119,13 @@ void ImpactHeightCheck::applyFilter(const std::vector<bool> & apply,
 
   // For debugging, output the heights of the refractivity levels for the first
   // observation.
-  oops::Log::debug() << "Model heights (first ob) ";
-  for (size_t iLevel = 0; iLevel < nRefLevels; ++iLevel) {
-    oops::Log::debug() << modelHeights[iLevel][0] << " ";
+  if (nlocs > 0) {
+    oops::Log::debug() << "Model heights (first ob) ";
+    for (size_t iLevel = 0; iLevel < nRefLevels; ++iLevel) {
+      oops::Log::debug() << modelHeights[iLevel][0] << " ";
+    }
+    oops::Log::debug() << std::endl;
   }
-  oops::Log::debug() << std::endl;
 
   // Read in the observation impact parameter for each observation and level
   std::vector<std::vector<float>> impactParameter;
@@ -129,11 +136,15 @@ void ImpactHeightCheck::applyFilter(const std::vector<bool> & apply,
       data_.get(impactVariable, tempVar);
       impactParameter.push_back(tempVar);
   }
-  oops::Log::debug() << "Impact parameter for first observation..." << std::endl;
-  for (size_t ichan=0; ichan < nchans; ++ichan) {
-    oops::Log::debug() << impactParameter[ichan][0] << "  ";
+
+  // For debugging, output the impact parameter for the first observation
+  if (nlocs > 0) {
+    oops::Log::debug() << "Impact parameter for first observation..." << std::endl;
+    for (size_t ichan=0; ichan < nchans; ++ichan) {
+      oops::Log::debug() << impactParameter[ichan][0] << "  ";
+    }
+    oops::Log::debug() << std::endl;
   }
-  oops::Log::debug() << std::endl;
 
   // Read in the earth's radius of curvature for each observation
   Variable radiusCurvatureParameter = Variable("MetaData/earthRadiusCurvature");

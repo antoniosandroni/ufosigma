@@ -181,11 +181,6 @@ subroutine ufo_gnssro_bendmetoffice_simobs(self, geovals, obss, nlevels, nlocs, 
     call fckit_exception%throw(err_msg)
   end if
 
-  if (prs%vals(1,1) .gt. prs%vals(prs%nval,1) ) then
-    write(err_msg,'(a)') 'Geovals should be ordered top to bottom'
-    call fckit_exception%throw(err_msg)
-  end if
-
   allocate(obsLat(nlocs))
   allocate(obsLon(nlocs))
   allocate(impact_param(nlevels * nlocs))

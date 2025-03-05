@@ -145,12 +145,6 @@ subroutine ufo_gnssro_bendmetoffice_tlad_settraj(self, geovals, obss)
   call ufo_geovals_get_var(geovals, var_z,    theta_heights) ! Geopotential height of the normal model levels
   call ufo_geovals_get_var(geovals, var_zi,   rho_heights)   ! Geopotential height of the pressure levels
 
-! make sure that the geovals are in the correct vertical order (top-to-bottom)
-  if( prs%vals(1,1) > prs%vals(prs%nval,1) ) then 
-    write(err_msg,'(a)') 'Geovals should be ordered top to bottom'
-    call fckit_exception%throw(err_msg)
-  endif
-
 ! Keep copy of dimensions
   self % nlevp = prs % nval
   self % nlevq = q % nval
