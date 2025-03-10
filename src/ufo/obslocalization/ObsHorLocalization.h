@@ -210,7 +210,7 @@ ObsHorLocalization<MODEL>::getLocalObs(const GeometryIterator_ & i,
       }
     }
     const boost::optional<int> & maxnobs = options_.maxnobs;
-    if ( (maxnobs != boost::none) && (localobs.index.size() > *maxnobs ) ) {
+    if ( (maxnobs != boost::none) && (static_cast<int>(localobs.index.size()) > *maxnobs ) ) {
       for (unsigned int jj = 0; jj < localobs.index.size(); ++jj) {
           oops::Log::debug() << "Before sort [i, d]: " << localobs.index[jj]
               << " , " << localobs.distance[jj] << std::endl;
@@ -266,7 +266,7 @@ ObsHorLocalization<MODEL>::getLocalObs(const GeometryIterator_ & i,
 
     // The obs are sorted in the kdtree call
     const boost::optional<int> & maxnobs = options_.maxnobs;
-    if ( (maxnobs != boost::none) && (localobs.index.size() > *maxnobs ) ) {
+    if ( (maxnobs != boost::none) && (static_cast<int>(localobs.index.size()) > *maxnobs ) ) {
       // Truncate to maxNobs length
       localobs.index.resize(*maxnobs);
       localobs.distance.resize(*maxnobs);
