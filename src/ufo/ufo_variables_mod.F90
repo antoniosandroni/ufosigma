@@ -20,6 +20,7 @@ character(len=MAXVARLEN), public, parameter :: var_tv   = "virtual_temperature"
 character(len=MAXVARLEN), public, parameter :: var_ts   = "air_temperature"
 character(len=MAXVARLEN), public, parameter :: var_mixr = "water_vapor_mixing_ratio_wrt_dry_air"   ! kg/kg
 character(len=MAXVARLEN), public, parameter :: var_q    = "water_vapor_mixing_ratio_wrt_moist_air" ! kg/kg
+character(len=MAXVARLEN), public, parameter :: var_qsat = "saturation_water_vapor_mixing_ratio_wrt_moist_air"     ! kg/kg
 character(len=MAXVARLEN), public, parameter :: var_u    = "eastward_wind"
 character(len=MAXVARLEN), public, parameter :: var_v    = "northward_wind"
 character(len=MAXVARLEN), public, parameter :: var_prs  = "air_pressure"

@@ -104,6 +104,15 @@ namespace ufo
     oops::OptionalParameter<float> Cloud_Fraction{"Cloud_Fraction", this};
     /// Cloud_Seeding
     oops::OptionalParameter<bool> Cloud_Seeding{"Cloud_Seeding", this};
+    /// Method to calculate cloud fraction within fov: thompson, Thompson, or none
+    oops::OptionalParameter<std::string> cloud_fract_method{"method for cloud fraction within fov",
+          this};
+    /// Scale-aware mass-flux deep conv scheme flag
+    oops::OptionalParameter<bool> flag_deep_conv_mass_flux{
+          "convection_mass_flux_flag", this};
+    /// Method to calculate hydrometeor effective radii within fov: thompson, Thompson, or none
+    oops::OptionalParameter<std::string> cloud_reff_method{
+          "method for hydrometeor effective radii within fov", this};
     /// Salinity
     oops::OptionalParameter<bool> Salinity{"Salinity", this};
     /// Obs Options

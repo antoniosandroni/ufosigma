@@ -52,6 +52,8 @@ REAL(kind_real), PARAMETER :: &
      &zvir =  rv_rd - 1_kind_real,&
      &tice = 273.15_kind_real,&
      &grav = 9.81_kind_real,&
+     &qsmall = 1.0e-6_kind_real, &
+     &cloudfractionsmall = 1.001e-12_kind_real, &
      &aerosol_concentration_minvalue=1.e-16_kind_real,&
      &aerosol_concentration_minvalue_layer=tiny(rdgas),&
      &ozone_default_value=1.e-3_kind_real ! in ppmv in crtm
@@ -90,6 +92,10 @@ type crtm_conf
  character(len=MAXVARLEN) :: sfc_wind_geovars
  real(kind_real) :: unit_coef = 1.0_kind_real
  logical :: Cloud_Seeding = .false.
+ logical :: cal_cloud_frac_in_fov = .false.
+ logical :: cal_cloud_reff_in_fov  = .false.
+ logical :: precip_hydro = .false. 
+ logical :: flag_deep_conv_mass_flux = .true.
 end type crtm_conf
 
 
@@ -191,6 +197,19 @@ END INTERFACE qsmith
            IceSphere                     , &
            LiquidSphere                  ]
 
+! Clouds used in the Thompson microphysics scheme to calculate cloud fraction or particle radius 
+ integer, parameter :: &
+      thompson_Cloud_Id(5) = &
+         [ WATER_CLOUD                   , &
+           ICE_CLOUD                     , &
+           RAIN_CLOUD                    , &
+           SNOW_CLOUD                    , &
+           GRAUPEL_CLOUD                 ]
+ character(len=MAXVARLEN), parameter :: &
+      thompson_Cloud_var(5) = &
+         [ var_qc, var_qi, var_qr, var_qs, var_qg ]
+! A prameter for mass flux deep convection in the Thompson microphysics scheme to calculate cloud fraction
+ real(kind_real) :: xrc3 = 200.0_kind_real
 
 ! Surface Variables
 
@@ -233,6 +252,8 @@ character(len=:), allocatable :: str_array(:)
 
 CHARACTER(len=MAXVARLEN), ALLOCATABLE :: var_aerosols(:)
 logical :: message_flag = .true.
+character(max_string) :: cloud_fract_method
+character(max_string) :: cloud_reff_method
 
  !Some config needs to come from user
  !-----------------------------------
@@ -295,6 +316,37 @@ logical :: message_flag = .true.
  allocate( conf%Clouds  ( conf%n_Clouds,2), &
            conf%Cloud_Id( conf%n_Clouds ) )
  if (conf%n_Clouds > 0) then
+   if (f_confOper%has("method for cloud fraction within fov")) then
+     call f_confOper%get_or_die("method for cloud fraction within fov",str)
+     cloud_fract_method = str
+     if (cmp_strings(cloud_fract_method,'thompson') .or. &
+             cmp_strings(cloud_fract_method,'Thompson')) then
+       conf%cal_cloud_frac_in_fov = .true.
+       !  Get scale-aware mass-flux deep conv scheme flag used in calculating 
+       !  cloud fraction by the Thompson method
+       if (f_confOper%has("convection_mass_flux_flag")) then
+         call f_confOper%get_or_die("convection_mass_flux_flag",conf%flag_deep_conv_mass_flux)
+       end if
+     else if (.not. cmp_strings(cloud_fract_method,'none')) then
+       write(message,*) trim(ROUTINE_NAME),' error: ' // &
+                        ' "method for cloud fraction within fov"' // &
+                        ' can only be "thompson", "Thompson", or "none".'
+       call abor1_ftn(message)
+     end if
+   end if
+   if (f_confOper%has("method for hydrometeor effective radii within fov")) then
+     call f_confOper%get_or_die("method for hydrometeor effective radii within fov",str)
+     cloud_reff_method = str
+     if (cmp_strings(cloud_reff_method,'thompson') .or. &
+             cmp_strings(cloud_reff_method,'Thompson')) then
+       conf%cal_cloud_reff_in_fov = .true.
+     else if (.not. cmp_strings(cloud_reff_method,'none')) then
+       write(message,*) trim(ROUTINE_NAME),' error: ' // &
+                        ' "method for hydrometeor effective radii within fov"' // &
+                        ' can only be "thompson", "Thompson", or "none".'
+       call abor1_ftn(message)
+     end if
+   end if
    call f_confOper%get_or_die("Clouds",str_array)
    conf%Clouds(1:conf%n_Clouds,1) = str_array
 
@@ -313,6 +365,18 @@ logical :: message_flag = .true.
              ': Cloud_Fraction is not provided in conf.' // &
              ' Will request as a geoval.'
      if (message_flag) CALL Display_Message(ROUTINE_NAME, TRIM(message), WARNING )
+   end if
+   if (conf%cal_cloud_frac_in_fov) then
+     message = trim(ROUTINE_NAME) // &
+           ': Using the "method for cloud fraction within fov: "' // &
+           trim(cloud_fract_method)// '" in areas where clouds are not zeroed-out.'
+     if (message_flag) CALL Display_Message(ROUTINE_NAME, TRIM(message), WARNING )
+     if (conf%flag_deep_conv_mass_flux) then
+       message = trim(ROUTINE_NAME) // &
+           ': convection_mass_flux_flag is TRUE for '// &
+           '"method for cloud fraction within fov: "' // trim(cloud_fract_method)// '".'
+       if (message_flag) CALL Display_Message(ROUTINE_NAME, TRIM(message), WARNING )
+     end if
    end if
    if (f_confOper%has("Cloud_Seeding")) then
      call f_confOper%get_or_die("Cloud_Seeding",conf%Cloud_Seeding)
@@ -343,6 +407,10 @@ logical :: message_flag = .true.
 
    conf%Clouds(jspec,1:2) = UFO_Clouds(ivar,1:2)
    conf%Cloud_Id(jspec)   = CRTM_Cloud_Id(ivar)
+   if (conf%Cloud_Id(jspec) == RAIN_CLOUD .or. conf%Cloud_Id(jspec) == SNOW_CLOUD .or. & 
+        conf%Cloud_Id(jspec) == GRAUPEL_CLOUD) then
+     conf%precip_hydro = .true. 
+   end if  
  end do
 
  ! Aerosols
@@ -717,6 +785,14 @@ character(max_string) :: err_msg
 logical :: IsActiveSensor
 real(kind_real) :: geoval_unit_rescale
 
+real(kind_real), allocatable :: geoval_qsat(:,:), airdens(:,:)
+real(kind_real), allocatable :: specific_humidity(:,:)
+real(kind_real), allocatable :: relative_humidity(:,:)
+real(kind_real), allocatable :: rain_number(:,:), cloud_ice_number(:,:)
+real(kind_real), allocatable :: clouds_mixingratio(:,:)
+real(kind_real), allocatable :: cloudmxr_sum(:,:)
+real(kind_real), allocatable :: pressure_KPa(:)
+integer  :: id_cld(1)
   if (present(Is_Active_Sensor)) then
      IsActiveSensor = Is_Active_Sensor
   else
@@ -792,28 +868,19 @@ real(kind_real) :: geoval_unit_rescale
     end do
 
     ! effective radius
-    CALL ufo_geovals_get_var(geovals, conf%Clouds(jspec,2), geoval)
-    do k1 = 1, n_Profiles
-      atm(k1)%Cloud(jspec)%Effective_Radius = geoval%vals(:, k1)
-    end do
+    if (.not. conf%cal_cloud_reff_in_fov) then
+      CALL ufo_geovals_get_var(geovals, conf%Clouds(jspec,2), geoval)
+      do k1 = 1, n_Profiles
+        atm(k1)%Cloud(jspec)%Effective_Radius = geoval%vals(:, k1)
+      end do
+    end if
   end do
-  if (present(zeroCloudInCRTM)) then
-    do k1 = 1, n_Profiles
-      if (zeroCloudInCRTM(k1) == 1) then
-        ! Set Water_Content and Effective_Radius = 0 when zeroCloudInCRTM = 1 (true)
-        do jspec = 1, conf%n_Clouds
-          atm(k1)%Cloud(jspec)%Water_Content = zero
-          atm(k1)%Cloud(jspec)%Effective_Radius = zero
-        end do
-      endif
-    end do
-  endif
 
   ! When n_Clouds>0, Cloud_Fraction must either be provided as geoval or in conf
   ! If Cloud_Fraction is provided in conf,then use the Cloud_Fraction in conf
   ! If Cloud_Fraction is not provided in conf , then use the Cloud_Fraction in geoval
   ! and make sure the cloud fraction interpolated from background is in the valid range [0.0,1.0]
-  if (conf%n_Clouds > 0) then
+  if (conf%n_Clouds > 0 .and. (.not. conf%cal_cloud_frac_in_fov)) then
     if ( conf%Cloud_Fraction >= 0.0  ) then
       do k1 = 1, n_Profiles
         atm(k1)%Cloud_Fraction(:) = conf%Cloud_Fraction
@@ -829,8 +896,129 @@ real(kind_real) :: geoval_unit_rescale
       end if
     end if
   end if
+  !
+  if (conf%n_Clouds > 0 .and. (conf%cal_cloud_frac_in_fov .or. conf%cal_cloud_reff_in_fov)) then
+    ! get "saturation_water_vapor_mixing_ratio_wrt_moist_air"
+    CALL ufo_geovals_get_var(geovals, var_qsat, geoval)
+    allocate(geoval_qsat(n_Layers,n_profiles))
+    do k1 = 1, n_Profiles
+      geoval_qsat(:, k1)=geoval%vals(:, k1)
+    end do
 
+    ! get "moist_air_density"      
+    call ufo_geovals_get_var(geovals, var_airdens, geoval)
+    allocate(airdens(n_Layers,n_profiles))
+    do k1 = 1, n_Profiles
+      airdens(:, k1)=geoval%vals(:, k1)
+    end do
 
+    ! get specific_humidity and relative_humidity which can be 
+    ! different from atm(k1)%Relative_Humidity.
+    call ufo_geovals_get_var(geovals, var_q, geoval)
+    allocate(specific_humidity(n_Layers,n_profiles))
+    allocate(relative_humidity(n_Layers,n_profiles))
+    do k1 = 1, n_Profiles
+      specific_humidity(:, k1)=geoval%vals(:, k1)
+    end do
+    where(specific_humidity < qsmall) specific_humidity=qsmall
+    relative_humidity=specific_humidity/geoval_qsat 
+
+    ! get cloud_ice_number_concentration
+    call ufo_geovals_get_var(geovals, var_ni, geoval)
+    allocate(cloud_ice_number(n_Layers,n_profiles))
+    do k1 = 1, n_Profiles
+      cloud_ice_number(:, k1)=geoval%vals(:, k1)
+    end do
+    where(cloud_ice_number < 0.0_kind_real) cloud_ice_number = 0.0_kind_real
+
+    ! get rain_number_concentration
+    call ufo_geovals_get_var(geovals, var_nr, geoval)
+    allocate(rain_number(n_Layers,n_profiles))
+    do k1 = 1, n_Profiles
+      rain_number(:, k1)=geoval%vals(:, k1)
+    end do
+    where(rain_number < 0.0_kind_real) rain_number = 0.0_kind_real
+
+    ! get cloud mixing ratios
+    allocate(clouds_mixingratio(n_Layers, n_profiles))
+    allocate(cloudmxr_sum(n_Layers, n_Profiles))
+    cloudmxr_sum = 0.0_kind_real
+    jclouds_loop: do jspec = 1, conf%n_Clouds
+      id_cld = findloc(thompson_Cloud_Id, conf%Cloud_Id(jspec))
+      if (id_cld(1) > 0) then
+        call ufo_geovals_get_var(geovals, trim(thompson_Cloud_var(id_cld(1))), geoval)
+        profile_loop_reff: do k1 = 1, n_Profiles
+          clouds_mixingratio(:,k1) = geoval%vals(:, k1)
+          where(clouds_mixingratio(:,k1) < 0.0_kind_real) clouds_mixingratio(:,k1) = 0.0_kind_real
+          if (conf%cal_cloud_frac_in_fov) then
+            cloudmxr_sum(:,k1) = cloudmxr_sum(:,k1) +  clouds_mixingratio(:, k1)
+          end if
+
+          if (present(zeroCloudInCRTM)) then
+             if (zeroCloudInCRTM(k1) == 1) then
+               ! skip 'call calc_thompson_reff' if clouds are zeroed-out.
+               cycle profile_loop_reff
+             end if
+          end if 
+          if (conf%cal_cloud_reff_in_fov) then
+            call calc_thompson_reff(airdens(:,k1),atm(k1)%Temperature,clouds_mixingratio(:,k1), &
+                  conf%Cloud_Id(jspec), cloud_ice_number(:,k1), rain_number(:,k1), &
+                  n_Layers,atm(k1)%Cloud(jspec)%Effective_Radius)
+          end if
+        end do profile_loop_reff
+      end if
+    end do jclouds_loop
+    allocate(pressure_KPa(n_Layers))
+    if (conf%cal_cloud_frac_in_fov) then
+      profile_loop_cloudfrac: do k1 = 1, n_Profiles
+        if (present(zeroCloudInCRTM)) then
+           if (zeroCloudInCRTM(k1) == 1) then
+             ! skip 'call calc_thompson_cloudfrac' if clouds are zeroed-out.
+             cycle profile_loop_cloudfrac
+           end if
+        end if 
+        pressure_KPa = atm(k1)%Pressure * 0.1_kind_real
+        call calc_thompson_cloudfrac(n_Layers, conf%flag_deep_conv_mass_flux, pressure_KPa, &
+                cloudmxr_sum(:,k1), relative_humidity(:,k1), geoval_qsat(:, k1), &
+                atm(k1)%Cloud_Fraction(:))
+      end do profile_loop_cloudfrac
+    end if
+  end if
+  !
+  if (present(zeroCloudInCRTM)) then
+    do k1 = 1, n_Profiles
+      if (zeroCloudInCRTM(k1) == 1) then
+        ! Set Water_Content and Effective_Radius = 0 when zeroCloudInCRTM = 1 (true)
+        do jspec = 1, conf%n_Clouds
+          atm(k1)%Cloud(jspec)%Water_Content = zero
+          atm(k1)%Cloud(jspec)%Effective_Radius = zero
+        end do
+        atm(k1)%Cloud_Fraction(:) = zero
+      endif
+    end do
+  endif
+
+  if ( (conf%n_Clouds > 0) .and. conf%precip_hydro) then
+    do k1 = 1, n_Profiles
+      ! set Effective_Radius = zero where Water_Content <= 1.0e-6
+      do jspec = 1, conf%n_Clouds
+         where(atm(k1)%Cloud(jspec)%Water_Content <= 1.0e-6_kind_real) &
+                         atm(k1)%Cloud(jspec)%Effective_Radius = zero
+      end do
+      ! set minimum cloud_fraction
+      do jlevel = 1, atm(k1)%n_layers
+        if (atm(k1)%Cloud_Fraction(jlevel) < 1.0e-12_kind_real) then
+          do jspec = 1, conf%n_Clouds
+            if (atm(k1)%Cloud(jspec)%Water_Content(jlevel) > 1.0e-6_kind_real) then
+              atm(k1)%Cloud_Fraction(jlevel) = cloudfractionsmall
+              exit
+            end if
+          end do
+        end if
+      end do
+    end do
+  end if
+          
   if ( (conf%n_Clouds > 0) .and. (.NOT. IsActiveSensor) ) then
     if ( conf%Cloud_Seeding ) then 
       profile_loop_cs: do k1 = 1, n_Profiles
@@ -880,7 +1068,15 @@ real(kind_real) :: geoval_unit_rescale
   if (IsActiveSensor) then
        Atm%Add_Extra_Layers = .FALSE.
   end if
-
+  if (allocated(geoval_qsat)) deallocate(geoval_qsat)
+  if (allocated(airdens)) deallocate(airdens)
+  if (allocated(specific_humidity)) deallocate(specific_humidity)
+  if (allocated(relative_humidity)) deallocate(relative_humidity)
+  if (allocated(cloud_ice_number)) deallocate(cloud_ice_number)
+  if (allocated(rain_number)) deallocate(rain_number)
+  if (allocated(cloudmxr_sum)) deallocate(cloudmxr_sum)
+  if (allocated(clouds_mixingratio)) deallocate(clouds_mixingratio)
+  if (allocated(pressure_KPa)) deallocate(pressure_KPa)
 end subroutine Load_Atm_Data
 
 ! ------------------------------------------------------------------------------
@@ -1975,4 +2171,261 @@ end function uv_to_wdir
 
    END SUBROUTINE qs_table
 
+  subroutine calc_thompson_reff(rho_air,tsen,qxmr,cloud_type_Id,ni,nr,n_Layers,reff)
+!$$$  subprogram documentation block
+!                .      .    .                                       .
+! subprogram:    calc_thompson_reff:  calculate effective radius based on Thompson scheme
+!   prgmmr:      Azadeh.Gholoubi
+!
+! program history log:
+!
+!   2023-01-24
+!
+!   language: f90
+!
+!$$$
+!--------
+  use ufo_constants_mod, only: zero, pi
+  implicit none
+
+! Declare passed variables
+  integer                              ,intent(in   ) :: cloud_type_Id
+  integer                              ,intent(in   ) :: n_Layers
+  real(kind_real), dimension(n_Layers) ,intent(in   ) :: rho_air   ! [ kg/m3  ]
+  real(kind_real), dimension(n_Layers) ,intent(in   ) :: tsen      ! [ K      ]
+  real(kind_real), dimension(n_Layers) ,intent(in   ) :: qxmr      ! [ kg/kg  ]
+  real(kind_real), dimension(n_Layers) ,intent(in   ) :: ni        ! cloud_ice_number_concentration
+  real(kind_real), dimension(n_Layers) ,intent(in   ) :: nr        ! rain_number_concentration
+  real(kind_real), dimension(n_Layers) ,intent(inout) :: reff      ! [ micron ]
+
+! Declare local variables
+  character(len=*), parameter :: myname_ = 'calc_thompson_reff'
+  integer(c_int) :: k
+  integer(c_int) :: mu_w
+  real(kind_real)    :: qx
+  real(kind_real)    :: reff_min, reff_max
+  real(kind_real):: lam_i,lam_w,lam_r, lam_g,lam_exp, am_r,am_w,am_i,am_g
+  
+  ! Parameters
+  real(kind_real), parameter :: qmin = 1.0e-12_kind_real          ! [kg/kg ]
+  !.. droplet number concentration.
+  real, parameter :: Nt_c = 100.E6_kind_real  ![m-3]
+
+  ! Parameters for water cloud
+  real(kind_real), parameter :: ccn        =  1.0e8_kind_real
+  real(kind_real), parameter :: rho_w      = 1000.0_kind_real     ! [kg/m3 ]
+  real(kind_real), parameter :: reff_w_min =    2.0_kind_real     ! previous value was 5.0_kind_real
+  real(kind_real), parameter :: reff_w_max =   25.0_kind_real     ! previous value was 10.0_kind_real
+
+  ! Parameters for ice cloud (Hemisfield and mcFarquhar 1996)
+  real(kind_real), parameter :: rho_i      = 890.0_kind_real      ! [kg/m3 ]
+  real(kind_real), parameter :: reff_i_min =    2.5_kind_real     ! previous value was 10_kind_real
+  real(kind_real), parameter :: reff_i_max = 250.0_kind_real      ! previous value was 150_kind_real
+  real(kind_real), parameter:: mu_i = 0.0_kind_real
+  real(kind_real), parameter:: ni_min = 1.0e-6_kind_real          ! minimum number concentration (ccpp-physics)
+
+  ! Parameters for  rain (Lin 1983)
+  real(kind_real), parameter :: rho_r      =    1000.0_kind_real  ! [kg/m3 ]
+  real(kind_real), parameter :: reff_r_min =       50.0_kind_real ! [micron] ! previous value was 0.0_kind_real
+  real(kind_real), parameter :: reff_r_max =   1000.0_kind_real   ! [micron] ! previous value was 10000.0_kind_real
+  real(kind_real), parameter:: mu_r = 0.0_kind_real
+  ! Parameters for snow
+  real(kind_real), parameter :: reff_s_min =       5.0_kind_real  ! [micron] ! previous value was 0.0_kind_real
+  real(kind_real), parameter :: reff_s_max =   5000.0_kind_real   ! [micron] ! previous value was 10000.0_kind_real
+  real(kind_real), parameter:: nr_min = 1.0e-6_kind_real          ! minimum number concentration (ccpp-physics)
+
+!For snow moments conversions  (from Field et al. 2005)
+  real(kind_real), dimension(10), parameter:: &
+      sa = (/ 5.065339_kind_real, -0.062659_kind_real, -3.032362_kind_real, 0.029469_kind_real, -0.000285_kind_real,      &
+     &        0.31255_kind_real,   0.000204_kind_real,  0.003199_kind_real, 0.0_kind_real,      -0.015952_kind_real/)
+      real(kind_real), dimension(10), parameter:: &
+      sb = (/ 0.476221_kind_real, -0.015896_kind_real,  0.165977_kind_real, 0.007468_kind_real, -0.000141_kind_real,      &
+     &        0.060366_kind_real,  0.000079_kind_real,  0.000594_kind_real, 0.0_kind_real,      -0.003577_kind_real/)
+  real(kind_real), parameter :: am_s      =     0.069_kind_real
+  real(kind_real), parameter :: bm_s = 2.0_kind_real
+  real(kind_real), dimension(1), parameter :: cse = (/ bm_s + 1.0_kind_real /)
+  real(kind_real) :: tc0, smob, smoc, a_, b_, loga_
+
+  ! Parameters for graupel  (Lin 1983)
+  real(kind_real), parameter :: rho_g      =    500.0_kind_real  ! [kg/m3 ]
+  real(kind_real), parameter :: reff_g_min =    150.0_kind_real  ! [micron] ! previous value was 0.0_kind_real
+  real(kind_real), parameter :: reff_g_max =   5000.0_kind_real  ! [micron] ! previous value was 10000.0_kind_real
+  real(kind_real), parameter:: mu_g = 0.0_kind_real
+  real(kind_real), parameter :: no_exp     =  10.0_kind_real
+
+!cloud water
+  if (cloud_type_Id==WATER_CLOUD) then
+     am_w = rho_w*pi/6.0_kind_real
+     reff_min = reff_w_min
+     reff_max = reff_w_max
+     do k = n_Layers, 1, -1
+        qx = qxmr(k) * rho_air(k)  ! convert mixing ratio (kg/kg) to water content (kg/m3)
+        if (qx > qmin) then
+           mu_w = MAX(2, MIN((NINT(1000.E6_kind_real/Nt_c) + 2), 15))
+           lam_w=exp(1.0_kind_real / 3.0_kind_real * log ((am_w*Nt_c *gamma(mu_w + 3.0_kind_real &
+                   + 1.0_kind_real))/(qx*gamma(mu_w+1.0_kind_real))))
+
+           reff(k) = 0.5_kind_real * ((3.0_kind_real+mu_w)/lam_w)*1.0e6_kind_real
+           reff(k) = max(reff_min, min(reff_max, reff(k)))
+        else
+           reff(k) = zero
+        endif
+     enddo
+
+  ! Cloud Ice
+  else if (cloud_type_Id==ICE_CLOUD) then
+     am_i = rho_i*pi/6.0_kind_real
+     reff_min = reff_i_min
+     reff_max = reff_i_max
+     do k = n_Layers, 1, -1
+        qx = qxmr(k) * rho_air(k)  ! convert mixing ratio (kg/kg) to water content (kg/m3)
+        if (qx > qmin .and. ni(k)>ni_min) then
+           lam_i=exp(1.0_kind_real / 3.0_kind_real * log((am_i*ni(k) *gamma(mu_i + 3.0_kind_real &
+                   + 1.0_kind_real))/(qx*gamma(mu_i+1.0_kind_real))))
+           reff(k) = 0.5_kind_real * (3.0_kind_real /lam_i)*1.0e6_kind_real
+           reff(k) = max(reff_min, min(reff_max, reff(k)))
+        else
+           reff(k) = zero
+        endif
+     enddo
+  !Rain
+  else if (cloud_type_Id==RAIN_CLOUD) then
+     am_r = rho_r*pi/6.0_kind_real
+     reff_min = reff_r_min
+     reff_max = reff_r_max
+     do k = n_Layers, 1, -1
+        qx = qxmr(k) * rho_air(k)  ! convert mixing ratio (kg/kg) to water content (kg/m3)
+        if (qx > qmin .and. nr(k)>nr_min) then
+           lam_r=exp(1.0_kind_real / 3.0_kind_real * log ((am_r*nr(k) *gamma(mu_r + 3.0_kind_real &
+                   + 1.0_kind_real))/(qx*gamma(mu_r + 1.0_kind_real))))
+           reff(k) = 0.5_kind_real *(3.0_kind_real/lam_r)*1.0e6_kind_real
+           reff(k) = max(reff_min, min(reff_max, reff(k)))
+        else
+           reff(k) = zero
+        endif
+     enddo
+
+! Snow (Field et al. 2005)
+
+  else if (cloud_type_Id==SNOW_CLOUD) then
+     reff_min = reff_s_min
+     reff_max = reff_s_max
+     do k = n_Layers, 1, -1
+!..Calculate bm_s+1 (th) moment, smoc.  Useful for diameter calcs.
+        tc0 = MIN(-0.1_kind_real, tsen(k)-273.15_kind_real)
+        qx = qxmr(k) * rho_air(k)  ! convert mixing ratio (kg/kg) to water content (kg/m3)
+        if (qx > qmin) then
+           smob =qx/am_s
+           loga_ = sa(1) + sa(2)*tc0 + sa(3)*cse(1) &
+                 + sa(4)*tc0*cse(1) + sa(5)*tc0*tc0 &
+                 + sa(6)*cse(1)*cse(1) + sa(7)*tc0*tc0*cse(1) &
+                 + sa(8)*tc0*cse(1)*cse(1) + sa(9)*tc0*tc0*tc0 &
+                 + sa(10)*cse(1)*cse(1)*cse(1)
+           a_ = 10.0_kind_real**loga_
+           b_ = sb(1)+ sb(2)*tc0 + sb(3)*cse(1) + sb(4)*tc0*cse(1) &
+              + sb(5)*tc0*tc0 + sb(6)*cse(1)*cse(1) &
+              + sb(7)*tc0*tc0*cse(1) + sb(8)*tc0*cse(1)*cse(1) &
+              + sb(9)*tc0*tc0*tc0 + sb(10)*cse(1)*cse(1)*cse(1)
+           smoc = a_ * smob**b_
+           reff(k) = MAX(2.51E-6_kind_real, MIN(0.5_kind_real*(smoc/smob), 1999.E-6_kind_real))
+           reff(k) = max(reff_min, min(reff_max, reff(k)*1.0e6_kind_real))
+        else
+           reff(k) = zero
+        endif
+     enddo
+
+  ! Graupel
+  else if (cloud_type_Id==GRAUPEL_CLOUD) then
+     reff_min = reff_g_min
+     reff_max = reff_g_max
+     am_g = rho_g*pi/6.0_kind_real
+     do k = n_Layers, 1, -1
+        qx = qxmr(k)*rho_air(k)    ! convert mixing ratio (kg/kg) to water content (kg/m3)
+        if (qx > qmin) then
+           lam_exp = no_exp* exp(1.0_kind_real/(3.0_kind_real+1.0_kind_real) * &
+                   log ((am_g*gamma(3.0_kind_real +1.0_kind_real))/qx))
+           lam_g=lam_exp*exp(1/3.0_kind_real*log(gamma(3.0_kind_real+mu_g+1.0_kind_real) &
+                   /((3.0_kind_real+mu_g+1.0_kind_real)*(mu_g+1.0_kind_real))))
+           reff(k) = 0.5_kind_real *(3.0_kind_real/ lam_g)*1.0e6_kind_real
+           reff(k) = max(reff_min, min(reff_max, reff(k)))
+        else
+           reff(k) = zero
+        endif
+     enddo
+
+  endif
+
+  end subroutine calc_thompson_reff
+
+  subroutine calc_thompson_cloudfrac(n_Layers, lmfdeep2, prsl, clwf, rhly, qstl,cldtot)
+!$$$  subprogram documentation block
+!                .      .    .                                       .
+! subprogram:    calc_thompson_cloudfrac  calculate cloud fractions from cloud using Thompson scheme
+!
+!   prgmmr:      Azadeh.Gholoubi
+!
+! abstract:
+!
+! program history log:
+!
+!   2023-01-24  
+!
+!   language: f90
+!   
+!  ====================  definition of variables  ====================  !
+! input variables:                                                      !
+!   prsl  (msig) : model layer mean pressure in cb (1000 Pa)            !
+!   qstl  (n_Layers) : layer saturate humidity in gm/gm                 !
+!   rhly  (n_Layers) : layer relative humidity (=qlyr/qstl)             !
+!   n_Layers         : vertical layer/level dimensions                  !
+!   clwf         : sum of the all 5 Hydrometeors                        !
+!   lmfdeep2     : scale-aware mass-flux deep conv scheme flag          !                                                        !
+! output variables:                                                     !
+!   cldtot (n_Layers) - layer total cloud fraction                      !
+!  ====================    end of description    =====================  !
+!$$$
+!--------
+  use ufo_constants_mod
+  implicit none
+
+!  ---  inputs:
+  integer(c_int), intent(in) :: n_Layers
+  real(kind_real) , dimension(n_Layers), intent(in) :: prsl, clwf, rhly, qstl  
+  logical, intent(in) :: lmfdeep2
+
+!  ---  outputs
+  real(kind_real) , dimension(n_Layers), intent(inout) :: cldtot
+
+!  ---  local variables:
+  real(kind_real)  :: clwmin, clwm, clwt, onemrh, value, tem1, tem2
+  integer(c_int) :: k
+ 
+!> - Compute layer cloud fraction.
+  clwmin = 0.0_kind_real
+  do k = n_Layers, 2, -1  ! Layer numbers are top-down in UFO.
+! converting prsl from cb (1000Pa) to bar (100,000 Pa)
+     clwt = 1.0e-10_kind_real * (prsl(k)*0.01_kind_real)
+     if (clwf(k) > clwt) then
+        if(rhly(k) > 0.99_kind_real) then
+           cldtot(k) = 1.0_kind_real
+        else
+           onemrh= max( 1.e-10_kind_real, 1.0_kind_real-rhly(k) )
+           clwm  = clwmin / max( 0.01_kind_real, prsl(k)*0.01_kind_real )
+           tem1  = min(max((onemrh*qstl(k))**0.49_kind_real,0.0001_kind_real),1.0_kind_real) 
+           if (lmfdeep2) then
+              tem1  = xrc3 / tem1
+           else
+              tem1  = 100.0_kind_real / tem1
+           endif 
+           value = max( min( tem1*(clwf(k)-clwm), 50.0_kind_real ), 0.0_kind_real )
+           tem2  = sqrt( sqrt(rhly(k)) )
+           cldtot(k) = max( tem2*(1.0_kind_real-exp(-value)), 0.0_kind_real )
+        endif
+     else
+        cldtot(k) = 0.0_kind_real
+     endif
+  enddo
+  where(cldtot < 0.0_kind_real) cldtot = 0.0_kind_real
+  where(cldtot > 1.0_kind_real) cldtot = 1.0_kind_real
+  end subroutine calc_thompson_cloudfrac
 END MODULE ufo_crtm_utils_mod

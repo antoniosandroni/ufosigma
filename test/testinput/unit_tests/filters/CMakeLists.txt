@@ -936,6 +936,16 @@ if( crtm_FOUND )
                   LABELS  crtm filters
                   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../../ )
 #
+    ufo_add_test( NAME    test_ufo_amsua_allsky_gfs_gsi_qc
+                  TIER    1
+                  ECBUILD
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsFilters.x
+                  ARGS    "${CMAKE_CURRENT_SOURCE_DIR}/amsua_allsky_gfs_gsi_qc.yaml"
+                  MPI     1
+                  LIBS    ufo
+                  LABELS  crtm filters
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../../ )
+#
     ufo_add_test( NAME    test_ufo_amsua_allsky_gsi_qc
                   TIER    1
                   ECBUILD

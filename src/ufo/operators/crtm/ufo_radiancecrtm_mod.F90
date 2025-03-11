@@ -69,7 +69,11 @@ character(len=max_string) :: err_msg
 type(fckit_configuration) :: f_confOpts
 logical :: request_mw_vegtyp_soiltyp_data, request_visir_landtyp_data
 logical :: request_cldfrac, request_salinity
-
+logical :: request_more_hydrometeors = .false.
+integer :: ind0, nvars_more_hydros
+character(len=maxvarlen), dimension(10), parameter :: more_hydrometeors = &
+                            (/var_qsat, var_airdens, var_q,  var_ni, var_nr, &
+                              var_qc,   var_qi,      var_qr, var_qs, var_qg/)
 
  call f_confOper%get_or_die("obs options",f_confOpts)
  call f_confOper%get_or_die("UseQCFlagsToSkipHofX",self%use_qc_flags)  
@@ -119,6 +123,8 @@ logical :: request_cldfrac, request_salinity
 
  request_salinity = cmp_strings(self%conf%salinity_option, "on")
 
+ request_more_hydrometeors = self%conf%cal_cloud_frac_in_fov .or. self%conf%cal_cloud_reff_in_fov
+
  ! request from the model all the hardcoded atmospheric & surface variables +
  ! 1-3 surface classification variables (depending on the instrument wavelength)
  ! 1 * n_Absorbers
@@ -137,6 +143,10 @@ logical :: request_cldfrac, request_salinity
  end if
  if (request_salinity) then
    nvars_in = nvars_in + 1
+ end if
+ if (request_more_hydrometeors) then
+   nvars_more_hydros = size(more_hydrometeors)
+   nvars_in = nvars_in + nvars_more_hydros
  end if
 
  allocate(self%varin(nvars_in))
@@ -199,6 +209,10 @@ logical :: request_cldfrac, request_salinity
    ind = ind + 1
  end if
 
+ if (request_more_hydrometeors) then
+   self%varin(ind:(ind+nvars_more_hydros-1)) =  more_hydrometeors
+   ind = ind + nvars_more_hydros
+ endif
  ! save channels
  allocate(self%channels(size(channels)))
  self%channels(:) = channels(:)

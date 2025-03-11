@@ -1,0 +1,562 @@
+time window:
+  begin: '2024-02-18T21:00:00Z'
+  length: PT6H
+  bound to include: begin
+observations:
+- obs space:
+    name: AMSUA N19
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/ufo/testinput_tier_1/amsua_n19_obs_2024021900m.nc4
+#   obsdataout:
+#     engine:
+#       type: H5File
+#       obsfile: Data/ufo/testinput_tier_1/diag_amsua_n19_2024021900.nc
+    io pool:
+      max pool size: 1
+    simulated variables:
+    - brightnessTemperature
+    channels: 1-15
+  # Observation Operator
+  # --------------------
+  obs operator:
+    name: CRTM
+    Absorbers: [H2O, O3, CO2]
+    Clouds: &id001
+    - Water
+    - Ice
+    - Rain
+    - Snow
+    - Graupel
+#   Cloud_Fraction: 1.0
+#   ---methods for cloud fraction and radii in fov: thompson, or none
+    method for cloud fraction within fov: thompson
+    method for hydrometeor effective radii within fov: thompson
+    Cloud_Seeding: true
+    obs options:
+      Sensor_ID: amsua_n19
+      EndianType: little_endian
+      CoefficientPath: Data/
+  # Observation Bias Correction (VarBC)
+  # -----------------------------------
+  obs bias:
+    input file: Data/ufo/testinput_tier_1/amsua_n19.satbias.2024021900.nc
+    variables without bc:
+    - brightnessTemperature
+    channels: 14
+    variational bc:
+      predictors:
+      - name: constant
+      - name: lapseRate
+        order: 2
+        tlapse: Data/ufo/testinput_tier_1/amsua_n19_tlapmean.2024021900.txt
+      - name: lapseRate
+        tlapse: Data/ufo/testinput_tier_1/amsua_n19_tlapmean.2024021900.txt
+      - name: emissivityJacobian
+      - name: sensorScanAngle
+        order: 4
+      - name: sensorScanAngle
+        order: 3
+      - name: sensorScanAngle
+        order: 2
+      - name: sensorScanAngle
+  # Observation Filters (QC)
+  # ------------------------
+  obs prior filters:
+  # Zero Atmospheric clouds in CRTM where water_area_fraction < 0.99
+  - filter: Variable Assignment
+    assignments:
+    - name: MetaData/zeroCloudInCRTM
+      type: int
+      function:
+        name: ObsFunction/Conditional
+        options:
+#         firstmatchingcase: false
+          defaultvalue: 0 # Will not zero clouds by default
+          cases:
+          - where:
+            - variable:
+                name: GeoVaLs/water_area_fraction
+              maxvalue: 0.99
+            value: 1 # Will zero clouds by default
+
+  obs post filters:
+  - filter: BlackList
+    filter variables:
+    - name: brightnessTemperature
+      channels: 1-15
+    action:
+      name: assign error
+      error function:
+        name: ObsFunction/ObsErrorModelRamp
+        channels: 1-15
+        options:
+          channels: 1-15
+          xvar:
+            name: ObsFunction/CLWRetSymmetricMW
+            options:
+              clwret_ch238: 1
+              clwret_ch314: 2
+              clwret_types:
+              - ObsValue
+              - HofX
+          x0: &id003
+          - 0.05
+          - 0.03
+          - 0.03
+          - 0.02
+          - 0.0
+          - 0.1
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.03
+          x1: &id004
+          - 0.6
+          - 0.45
+          - 0.4
+          - 0.45
+          - 1.0
+          - 1.5
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.2
+          err0: &id002
+          - 2.5
+          - 2.2
+          - 2.0
+          - 0.55
+          - 0.3
+          - 0.23
+          - 0.23
+          - 0.25
+          - 0.25
+          - 0.35
+          - 0.4
+          - 0.55
+          - 0.8
+          - 4.0
+          - 3.5
+          err1: &id005
+          - 20.0
+          - 18.0
+          - 12.0
+          - 3.0
+          - 0.5
+          - 0.3
+          - 0.23
+          - 0.25
+          - 0.25
+          - 0.35
+          - 0.4
+          - 0.55
+          - 0.8
+          - 4.0
+          - 18.0
+  #  CLW Retrieval Check
+  - filter: Bounds Check
+    filter variables:
+    - name: brightnessTemperature
+      channels: 1-6, 15
+    test variables:
+    - name: ObsFunction/CLWRetMW
+      options:
+        clwret_ch238: 1
+        clwret_ch314: 2
+        clwret_types: [ObsValue]
+    maxvalue: 999.0
+    action:
+      name: reject
+  #  CLW Retrieval Check
+  - filter: Bounds Check
+    filter variables:
+    - name: brightnessTemperature
+      channels: 1-6, 15
+    test variables:
+    - name: ObsFunction/CLWRetMW
+      options:
+        clwret_ch238: 1
+        clwret_ch314: 2
+        clwret_types: [HofX]
+    maxvalue: 999.0
+    action:
+      name: reject
+  #  Hydrometeor Check (cloud/precipitation affected chanels)
+  - filter: Bounds Check
+    filter variables:
+    - name: brightnessTemperature
+      channels: 1-15
+    test variables:
+    - name: ObsFunction/HydrometeorCheckAMSUA
+      channels: 1-15
+      options:
+        channels: 1-15
+        Clouds: *id001
+        obserr_clearsky: *id002
+        clwret_function:
+          name: ObsFunction/CLWRetMW
+          options:
+            clwret_ch238: 1
+            clwret_ch314: 2
+            clwret_types: [ObsValue]
+        obserr_function:
+          name: ObsFunction/ObsErrorModelRamp
+          channels: 1-15
+          options:
+            channels: 1-15
+            xvar:
+              name: ObsFunction/CLWRetSymmetricMW
+              options:
+                clwret_ch238: 1
+                clwret_ch314: 2
+                clwret_types:
+                - ObsValue
+                - HofX
+            x0: *id003
+            x1: *id004
+            err0: *id002
+            err1: *id005
+    maxvalue: 0.0
+    action:
+      name: reject
+  #  Topography check
+  - filter: BlackList
+    filter variables:
+    - name: brightnessTemperature
+      channels: 1-15
+    action:
+      name: inflate error
+      inflation variable:
+        name: ObsFunction/ObsErrorFactorTopoRad
+        channels: 1-15
+        options:
+          sensor: amsua_n19
+          channels: 1-15
+  #  Transmittnace Top Check
+  - filter: BlackList
+    filter variables:
+    - name: brightnessTemperature
+      channels: 1-15
+    action:
+      name: inflate error
+      inflation variable:
+        name: ObsFunction/ObsErrorFactorTransmitTopRad
+        channels: 1-15
+        options:
+          sensor: amsua_n19
+          channels: 1-15
+  #  Surface Jacobian check
+  - filter: BlackList
+    filter variables:
+    - name: brightnessTemperature
+      channels: 1-15
+    action:
+      name: inflate error
+      inflation variable:
+        name: ObsFunction/ObsErrorFactorSurfJacobianRad
+        channels: 1-15
+        options:
+          sensor: amsua_n19
+          channels: 1-15
+          obserr_demisf: [0.010, 0.020, 0.015, 0.020, 0.200]
+          obserr_dtempf: [0.500, 2.000, 1.000, 2.000, 4.500]
+  #  Situation dependent Check
+  - filter: BlackList
+    filter variables:
+    - name: brightnessTemperature
+      channels: 1-15
+    action:
+      name: inflate error
+      inflation variable:
+        name: ObsFunction/ObsErrorFactorSituDependMW
+        channels: 1-15
+        options:
+          sensor: amsua_n19
+          channels: 1-15
+          clwobs_function:
+            name: ObsFunction/CLWRetMW
+            options:
+              clwret_ch238: 1
+              clwret_ch314: 2
+              clwret_types: [ObsValue]
+          clwbkg_function:
+            name: ObsFunction/CLWRetMW
+            options:
+              clwret_ch238: 1
+              clwret_ch314: 2
+              clwret_types: [HofX]
+              bias_application: HofX
+          scatobs_function:
+            name: ObsFunction/SCATRetMW
+            options:
+              scatret_ch238: 1
+              scatret_ch314: 2
+              scatret_ch890: 15
+              scatret_types: [ObsValue]
+              bias_application: HofX
+          clwmatchidx_function:
+            name: ObsFunction/CLWMatchIndexMW
+            channels: 1-15
+            options:
+              channels: 1-15
+              clwobs_function:
+                name: ObsFunction/CLWRetMW
+                options:
+                  clwret_ch238: 1
+                  clwret_ch314: 2
+                  clwret_types: [ObsValue]
+              clwbkg_function:
+                name: ObsFunction/CLWRetMW
+                options:
+                  clwret_ch238: 1
+                  clwret_ch314: 2
+                  clwret_types: [HofX]
+                  bias_application: HofX
+              clwret_clearsky: *id003
+          obserr_function:
+            name: ObsFunction/ObsErrorModelRamp
+            channels: 1-15
+            options:
+              channels: 1-15
+              xvar:
+                name: ObsFunction/CLWRetSymmetricMW
+                options:
+                  clwret_ch238: 1
+                  clwret_ch314: 2
+                  clwret_types:
+                  - ObsValue
+                  - HofX
+              x0: *id003
+              x1: *id004
+              err0: *id002
+              err1: *id005
+          obserr_clearsky: *id002
+  #  Gross check
+  - filter: Background Check
+    filter variables:
+    - name: brightnessTemperature
+      channels: 1-15
+    function absolute threshold:
+    - name: ObsFunction/ObsErrorBoundMW
+      channels: 1-15
+      options:
+        sensor: amsua_n19
+        channels: 1-15
+        obserr_bound_latitude:
+          name: ObsFunction/ObsErrorFactorLatRad
+          options:
+            latitude_parameters: [25.0, 0.25, 0.04, 3.0]
+        obserr_bound_transmittop:
+          name: ObsFunction/ObsErrorFactorTransmitTopRad
+          channels: 1-15
+          options:
+            channels: 1-15
+        obserr_bound_topo:
+          name: ObsFunction/ObsErrorFactorTopoRad
+          channels: 1-15
+          options:
+            channels: 1-15
+            sensor: amsua_n19
+        obserr_function:
+          name: ObsFunction/ObsErrorModelRamp
+          channels: 1-15
+          options:
+            channels: 1-15
+            xvar:
+              name: ObsFunction/CLWRetSymmetricMW
+              options:
+                clwret_ch238: 1
+                clwret_ch314: 2
+                clwret_types: [ObsValue, HofX]
+                bias_application: HofX
+            x0: *id003
+            x1: *id004
+            err0: *id002
+            err1: *id005
+        threshold: 3
+        threshold_precip: 2.5
+        obserr_bound_max:
+        - 4.5
+        - 4.5
+        - 4.5
+        - 2.5
+        - 2.0
+        - 2.0
+        - 2.0
+        - 2.0
+        - 2.0
+        - 2.0
+        - 2.5
+        - 3.5
+        - 4.5
+        - 4.5
+        - 4.5
+    action:
+      name: reject
+  #  Inter-channel check
+  - filter: Bounds Check
+    filter variables:
+    - name: brightnessTemperature
+      channels: 1-15
+    test variables:
+    - name: ObsFunction/InterChannelConsistencyCheck
+      channels: 1-15
+      options:
+        channels: 1-15
+        sensor: amsua_n19
+        use_flag: &id006
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - -1
+        - -1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+        - 1
+    maxvalue: 1.0e-12
+    action:
+      name: reject
+  #  Useflag check
+  - filter: Bounds Check
+    filter variables:
+    - name: brightnessTemperature
+      channels: 1-15
+    test variables:
+    - name: ObsFunction/ChannelUseflagCheckRad
+      channels: 1-15
+      options:
+        sensor: amsua_n19
+        channels: 1-15
+        use_flag: *id006
+    minvalue: 1.0e-12
+    action:
+      name: reject
+# Combined ColumnLiquidCloud + ColumnIceCloud
+  - filter: Variable Assignment
+    assignments:
+    - name: DerivedMetaData/ColumnLiquidIceCloud
+      type: float
+      function:
+        name: ObsFunction/Arithmetic
+        options:
+          variables:
+          - name: GeoVaLs/mass_content_of_cloud_liquid_water_in_atmosphere_column
+          - name: GeoVaLs/mass_content_of_cloud_ice_in_atmosphere_column
+          coefs: [1, 1]
+# replace zero by 9.99e-7 in DerivedMetaData/ColumnLiquidIceCloud
+  - filter: Variable Assignment
+    assignments:
+    - name: DerivedMetaData/ColumnLiquidIceCloud
+      type: float
+      value: 9.99e-07
+    where:
+    - variable:
+        name: DerivedMetaData/ColumnLiquidIceCloud
+      maxvalue: 9.99e-07
+
+# ratio of liquid /(Liquid+Ice)
+  - filter: Variable Assignment
+    assignments:
+    - name: DerivedMetaData/ColumnRatioLiquidCloud
+      type: float
+      function:
+        name: ObsFunction/ElementMultiply
+        options:
+          variables:
+          - name: GeoVaLs/mass_content_of_cloud_liquid_water_in_atmosphere_column
+          - name: DerivedMetaData/ColumnLiquidIceCloud
+          exponents: [1,-1]
+  - filter: Variable Assignment
+    assignments:
+    - name: DerivedMetaData/ColumnRatioLiquidCloud
+      type: float
+      value: 0.0
+    where:
+    - variable:
+        name: DerivedMetaData/ColumnLiquidIceCloud
+      maxvalue: 1.0e-06
+# TotalColumnVaporGuess
+  - filter: Variable Assignment
+    assignments:
+    - name: DerivedMetaData/TotalColumnVaporGuess
+      type: float
+      function:
+        name: ObsFunction/TotalColumnVaporGuess
+# potentialTemperature at surface
+  - filter: Variable Assignment
+    assignments:
+    - name: DerivedMetaData/PotentialTemperatureSurface
+      type: float
+      function:
+        name: PotentialTemperatureFromTemperature@ObsFunction
+        options:
+          use surface pressure: true
+# potentialTemperature near 700 hPa
+  - filter: Variable Assignment
+    assignments:
+    - name: DerivedMetaData/PotentialTemperatureAt700hPa
+      type: float
+      function:
+        name: PotentialTemperatureFromTemperature@ObsFunction
+        options:
+          use surface pressure: false
+          pressure to evaluate potential temperature: 70000.0
+# stability = Difference between PotentialTemperatur values
+  - filter: Variable Assignment
+    assignments:
+    - name: DerivedMetaData/PotentialTemperatureDiff
+      type: float
+      function:
+        name: ObsFunction/Arithmetic
+        options:
+          variables:
+          - name: DerivedMetaData/PotentialTemperatureAt700hPa
+          - name: DerivedMetaData/PotentialTemperatureSurface
+          coefs: [1, -1]
+#  cold-air-outbreak (cao) check for all-sky DA with Rain, Snow, or Graupel
+  - filter: BlackList
+    filter variables:
+    - name: brightnessTemperature
+      channels: 1-6, 15
+    where:
+    - variable:
+        name: ObsFunction/TotalColumnVaporGuess
+      maxvalue: 8.0
+    - variable:
+        name: DerivedMetaData/ColumnRatioLiquidCloud
+      maxvalue: 0.5
+    - variable:
+        name: DerivedMetaData/PotentialTemperatureDiff
+      maxvalue: 12.0
+    - variable:
+        name: GeoVaLs/water_area_fraction
+      minvalue: 0.99
+    action:
+      name: reject
+  # GeoVaLs for Driving Observation Operators (testing mode)
+  # --------------------------------------------------------
+  geovals:
+    filename: Data/ufo/testinput_tier_1/amsua_n19_geoval_2024021900m.nc4
+
+  # Passed benchmark for UFO testing
+  # --------------------------------
+  passedBenchmark: 72
