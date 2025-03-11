@@ -965,6 +965,16 @@ ufo_add_test( NAME    test_ufo_function_velocity
               LABELS  filters obsfunctions
               WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../../../ )
 #
+ufo_add_test( NAME    test_ufo_function_visibilitydiagnostic
+              TIER    1
+              ECBUILD
+              COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsFilters.x
+              ARGS    "${CMAKE_CURRENT_SOURCE_DIR}/function_visibilitydiagnostic.yaml"
+              MPI     3
+              LIBS    ufo
+              LABELS  filters obsfunctions
+              WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../../../ )
+#
 ufo_add_test( NAME    test_ufo_function_wdirdiff
               TIER    1
               ECBUILD

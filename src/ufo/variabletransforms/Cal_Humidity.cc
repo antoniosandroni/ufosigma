@@ -68,7 +68,12 @@ void Cal_RelativeHumidity::runTransform(const std::vector<bool> &apply) {
       methodDEFAULT(apply, formulas::Formulation::Murphy);
       break;
     case formulas::Method::GoffGratchLandoltBornsteinIceWater:
-      methodDEFAULT(apply, formulas::Formulation::GoffGratchLandoltBornsteinIceWater);
+      methodDEFAULT(apply,
+                    formulas::Formulation::GoffGratchLandoltBornsteinIceWater);
+      break;
+    case formulas::Method::GoffGratchLandoltBornsteinWater:
+      methodDEFAULT(apply,
+                    formulas::Formulation::GoffGratchLandoltBornsteinWater);
       break;
     case formulas::Method::Rogers:
       methodDEFAULT(apply, formulas::Formulation::Rogers);
@@ -455,6 +460,13 @@ void Cal_SpecificHumidity::runTransform(const std::vector<bool> &apply) {
       methodDEFAULT(apply,
                     formulas::Formulation::GoffGratchLandoltBornsteinIceWater);
       break;
+    case formulas::Method::UKMOQsatWater:
+      methodQSat(apply, formulas::Formulation::GoffGratchLandoltBornsteinWater);
+      break;
+    case formulas::Method::UKMOQsatIceWater:
+      methodQSat(apply,
+                 formulas::Formulation::GoffGratchLandoltBornsteinIceWater);
+      break;
     case formulas::Method::Sonntag:
       methodDEFAULT(apply, formulas::Formulation::Sonntag);
       break;
@@ -467,6 +479,9 @@ void Cal_SpecificHumidity::runTransform(const std::vector<bool> &apply) {
     case formulas::Method::GoffGratchLandoltBornsteinIceWater:
       methodDEFAULT(apply,
                     formulas::Formulation::GoffGratchLandoltBornsteinIceWater);
+    case formulas::Method::GoffGratchLandoltBornsteinWater:
+      methodDEFAULT(apply,
+                    formulas::Formulation::GoffGratchLandoltBornsteinWater);
       break;
     case formulas::Method::Rogers:
       methodDEFAULT(apply, formulas::Formulation::Rogers);
@@ -475,6 +490,58 @@ void Cal_SpecificHumidity::runTransform(const std::vector<bool> &apply) {
       methodDEFAULT(apply, formulas::Formulation::DEFAULT);
       break;
   }
+}
+
+/************************************************************************************/
+
+void Cal_SpecificHumidity::methodQSat(
+    const std::vector<bool> &apply,
+    formulas::Formulation SatVaporPres_fromTemp_form) {
+  const size_t nlocs = obsdb_.nlocs();
+  std::vector<float> relativeHumidity;
+  std::vector<float> airTemperature;
+  std::vector<float> pressure;
+  std::vector<float> specificHumidity(nlocs);
+  /// FUTURE: Allow dewpoint temperature to be used as an alternative to
+  /// relative humidity
+
+  getObservation("ObsValue", relativehumidityvariable_, relativeHumidity, true);
+  getObservation("ObsValue", temperaturevariable_, airTemperature, true);
+  if (obsdb_.has("ObsValue", pressureat2mvariable_)) {
+    getObservation("ObsValue", pressureat2mvariable_, pressure, true);
+  } else {
+    getObservation(pressuregroupvariable_, pressurevariable_, pressure, false);
+  }
+  if (!oops::allVectorsSameSize(relativeHumidity, airTemperature, pressure)) {
+    oops::Log::warning() << "Vector sizes: "
+                         << oops::listOfVectorSizes(relativeHumidity,
+                                                    airTemperature, pressure)
+                         << std::endl;
+    throw eckit::BadValue(
+        "At least one variable vector is the wrong size or empty out of "
+        "relative humidity, air temperature and pressure",
+        Here());
+  }
+  specificHumidity.assign(nlocs, missingValueFloat);
+
+  for (size_t jobs = 0; jobs < nlocs; ++jobs) {
+    if (!apply[jobs]) {
+      continue;  // data have been excluded by the where statement
+    }
+    if (pressure[jobs] != missingValueFloat &&
+        airTemperature[jobs] != missingValueFloat &&
+        relativeHumidity[jobs] != missingValueFloat) {
+      float esat_pure_water = formulas::SatVaporPres_fromTemp(
+          airTemperature[jobs], SatVaporPres_fromTemp_form);
+      float esat_air = formulas::SatVaporPres_correction(
+          esat_pure_water, airTemperature[jobs], pressure[jobs],
+          formulas::Formulation::Gill);
+      float qsat = formulas::Qsat_From_Psat(esat_air, pressure[jobs],
+                                            formulas::Formulation::GillUKMO);
+      specificHumidity[jobs] = qsat * relativeHumidity[jobs];
+    }
+  }
+  putObservation(specifichumidityvariable_, specificHumidity);
 }
 
 /************************************************************************************/

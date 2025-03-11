@@ -22,6 +22,10 @@ namespace formulas {
 Method resolveMethods(const std::string& method) {
   if (method == "UKMOmixingratio") {
     return Method::UKMOmixingratio;
+  } else if (method == "UKMOQsatWater") {
+    return Method::UKMOQsatWater;
+  } else if (method == "UKMOQsatIceWater") {
+    return Method::UKMOQsatIceWater;
   } else if (method == "UKMO") {
     return Method::UKMO;
   } else if (method == "NCAR") {
@@ -36,6 +40,8 @@ Method resolveMethods(const std::string& method) {
     return Method::Murphy;
   } else if (method == "GoffGratchLandoltBornsteinIceWater") {
     return Method::GoffGratchLandoltBornsteinIceWater;
+  } else if (method == "GoffGratchLandoltBornsteinWater") {
+    return Method::GoffGratchLandoltBornsteinWater;
   } else if (method == "Rogers") {
     return Method::Rogers;
   } else if (method == "default") {
@@ -80,9 +86,9 @@ float SatVaporPres_fromTemp(float temp_K, Formulation formulation) {
         float lookup_a;
         int lookup_i;
 
-        const float Low_temp_thd = 183.15;   // Lowest temperature for which look-up table is valid
-        const float High_temp_thd = 338.15;  // Highest temperature for which look-up table is valid
-        const float Delta_Temp = 0.1;        // Temperature increment of look-up table
+        const float Low_temp_thd = 183.15f;   // Lowest temperature at which look-up table is valid
+        const float High_temp_thd = 338.15f;  // Highest temperature at which look-up table is valid
+        const float Delta_Temp = 0.1f;        // Temperature increment of look-up table
 
         //  Use the lookup table to find saturated vapour pressure.
         adj_Temp = std::max(Low_temp_thd, temp_K);
@@ -91,10 +97,31 @@ float SatVaporPres_fromTemp(float temp_K, Formulation formulation) {
         lookup_a = (adj_Temp - Low_temp_thd + Delta_Temp) / Delta_Temp;
         lookup_i = static_cast<int>(lookup_a);
         lookup_a = lookup_a - lookup_i;
-        e_sub_s = (1.0 - lookup_a) *
+        e_sub_s = (1.0f - lookup_a) *
                   lookuptable::GoffGratchLandoltBornsteinIceWater[lookup_i] +
                   lookup_a *
                   lookuptable::GoffGratchLandoltBornsteinIceWater[lookup_i + 1];
+      } else {
+        e_sub_s = 0.0f;
+      }
+      break;
+    }
+    case Formulation::GoffGratchLandoltBornsteinWater: {
+      // As above but over water for all temperatures, i.e. using a different
+      // lookup table. See comments above the tables for more information.
+      if (temp_K != missingValueFloat) {
+        const float Low_temp_thd = 183.15f;
+        const float High_temp_thd = 338.15f;
+        const float Delta_Temp = 0.1f;
+        float adj_Temp = std::max(Low_temp_thd, temp_K);
+        adj_Temp = std::min(High_temp_thd, adj_Temp);
+        float lookup_a = (adj_Temp - Low_temp_thd + Delta_Temp) / Delta_Temp;
+        const int lookup_i = static_cast<int>(lookup_a);
+        lookup_a = lookup_a - lookup_i;
+        e_sub_s = (1.0f - lookup_a) *
+                  lookuptable::GoffGratchLandoltBornsteinWater[lookup_i] +
+                  lookup_a *
+                  lookuptable::GoffGratchLandoltBornsteinWater[lookup_i + 1];
       } else {
         e_sub_s = 0.0f;
       }
@@ -123,7 +150,7 @@ float SatVaporPres_fromTemp(float temp_K, Formulation formulation) {
       [[fallthrough]];
     default: {
       // Classical formula from Rogers and Yau (1989; Eq2.17)
-      e_sub_s = 1000. * 0.6112 * std::exp(17.67f * (temp_K - t0c) / (temp_K - 29.65f));
+      e_sub_s = 1000.0f * 0.6112 * std::exp(17.67f * (temp_K - t0c) / (temp_K - 29.65f));
       break;
     }
   }
@@ -232,33 +259,33 @@ float Height_To_Pressure_ICAO_atmos(float height, Formulation formulation) {
     case Formulation::ICAO: {
       float RepT_Bot, RepT_Top, ZP1, ZP2;
 
-      RepT_Bot = 1.0 / Constants::icao_temp_surface;
-      RepT_Top = 1.0 / Constants::icao_temp_isothermal_layer;
+      RepT_Bot = 1.0f / Constants::icao_temp_surface;
+      RepT_Top = 1.0f / Constants::icao_temp_isothermal_layer;
       ZP1 = Constants::g_over_rd / Constants::icao_lapse_rate_l;
       ZP2 = Constants::g_over_rd / Constants::icao_lapse_rate_u;
 
       if (height <= missingValueFloat) {
         Pressure = missingValueFloat;
-      } else if (height < -5000.0) {
+      } else if (height < -5000.0f) {
         // TODO(david simonin): The original code has this test.
         // Not sure why! Are we expecting very negative height value??
         Pressure = missingValueFloat;
       } else if (height < Constants::icao_height_l) {
         // Heights up to 11,000 geopotential heigh in meter [gpm]
         Pressure = Constants::icao_lapse_rate_l * height * RepT_Bot;
-        Pressure = std::pow((1.0 - Pressure), ZP1);
-        Pressure = 100.0 * Pressure * Constants::icao_pressure_surface;
+        Pressure = std::pow((1.0f - Pressure), ZP1);
+        Pressure = 100.0f * Pressure * Constants::icao_pressure_surface;
       } else if (height < Constants::icao_height_u) {
         // Heights between 11,000 and 20,000 geopotential heigh in meter [gpm]
         Pressure = Constants::g_over_rd * (height - Constants::icao_height_l) * RepT_Top;
         Pressure = std::log(Constants::icao_pressure_l) - Pressure;
-        Pressure = 100.0 * std::exp(Pressure);
+        Pressure = 100.0f * std::exp(Pressure);
       } else {
         // Heights above 20,000 geopotential heigh in meter [gpm]
         Pressure = Constants::icao_lapse_rate_u * RepT_Top *
                    (height - Constants::icao_height_u);
-        Pressure = 100.0 * Constants::icao_pressure_u *
-                   std::pow((1.0 - Pressure), ZP2);
+        Pressure = 100.0f * Constants::icao_pressure_u *
+                   std::pow((1.0f - Pressure), ZP2);
       }
       break;
     }
@@ -569,5 +596,248 @@ float Geopotential_to_Geometric_Height(float latitude, float geopH) {
   geomH = termr * geopH / (termrg - geopH);  // [m]
   return geomH;
 }
+
+/* ---------------------------------------------------------------------------*/
+
+float dryAerosolMassMixingRatio(const float rho_aerosol, const float rho_air,
+                                const float N_0, const float r_0,
+                                const Formulation formulation) {
+  switch (formulation) {
+    case Formulation::Clark2008: {
+      return 4.0f / 3.0f * M_PI * (rho_aerosol / rho_air) * N_0 *
+             std::pow(r_0, 3);
+    }
+    default: {
+      throw eckit::BadValue(
+          "Aborting, only Clark2008 formulation is supported for "
+          "dryAerosolMassMixingRatio");
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------*/
+
+float dryMeanParticleVolumeRadius(const float r_0, const float m,
+                                  const float m_0, const float p,
+                                  const Formulation formulation) {
+  switch (formulation) {
+    case Formulation::Clark2008: {
+      return r_0 * std::pow(m / m_0, p);
+    }
+    default: {
+      throw eckit::BadValue(
+          "Aborting, only Clark2008 formulation is supported for "
+          "dryMeanParticleVolumeRadius");
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------*/
+
+float aerosolNumberDensity(const float N_0, const float m, const float m_0,
+                           const float p, const Formulation formulation) {
+  switch (formulation) {
+    case Formulation::Clark2008: {
+      return N_0 * std::pow(m / m_0, 1.0f - 3.0f * p);
+    }
+    default: {
+      throw eckit::BadValue(
+          "Aborting, only Clark2008 formulation is supported for "
+          "aerosolNumberDensity");
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------*/
+
+float approximateActivationDropletRadius(const float A, const float B,
+                                         const float r_md,
+                                         const Formulation formulation) {
+  switch (formulation) {
+    case Formulation::Clark2008: {
+      return std::sqrt(3.0f * B * std::pow(r_md, 3) / A);
+    }
+    default: {
+      throw eckit::BadValue(
+          "Aborting, only Clark2008 formulation is supported for "
+          "approximateActivationDropletRadius");
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------*/
+
+float approximateAerosolExtinctionCoefficientFactor(
+    const float Q, const float eta, const Formulation formulation) {
+  switch (formulation) {
+    case Formulation::Clark2008: {
+      return M_PI * Q * eta;
+    }
+    default: {
+      throw eckit::BadValue(
+          "Aborting, only Clark2008 formulation is supported for "
+          "approximateAerosolExtinctionCoefficientFactor");
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------*/
+
+float cloudCoverFraction(float rh, const float rh_crit, const float ccp1,
+                         const float ccp2, const float ccp3,
+                         const Formulation formulation) {
+  switch (formulation) {
+    case Formulation::UKMOUnififiedModelOPS: {
+      const float rh_capped = std::min(rh, 1.0f);
+      if (rh_capped <= rh_crit) {
+        return 0.0f;
+      } else if (rh_capped < (5.0f + rh_crit) / 6.0f) {
+        const float to_acos = ccp1 * (rh_capped - rh_crit) / (1.0f - rh_crit);
+        const float to_cos = ccp3 + std::acos(to_acos) / 3.0f;
+        return std::pow(2.0f * std::cos(to_cos), 2);
+      } else {
+        return 1.0f - std::pow(ccp2 * (1.0f - rh_capped) / (1.0f - rh_crit),
+                               2.0f / 3.0f);
+      }
+    }
+    default: {
+      throw eckit::BadValue(
+          "Aborting, only UKMOUnififiedModelOPS formulation is supported for "
+          "cloudCoverFraction");
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------*/
+
+float totalWaterRelativeHumidity(float cc, const float rh_crit,
+                                 const float rh_tot_p1, const float rh_tot_p2,
+                                 const float rh_tot_p3,
+                                 const Formulation formulation) {
+  switch (formulation) {
+    case Formulation::UKMOUnififiedModelOPS: {
+      cc = std::min(cc, 1.0f);
+      cc = std::max(cc, 0.0f);
+      if (cc <= rh_tot_p1) {
+        return 1.0f + (1.0f - rh_crit) * (std::sqrt(rh_tot_p2 * cc) - 1.0f);
+      } else {
+        return 1.0f +
+               (1.0f - rh_crit) * (1.0f - std::sqrt(rh_tot_p3 * (1.0f - cc)));
+      }
+    }
+    default: {
+      throw eckit::BadValue(
+          "Aborting, only UKMOUnififiedModelOPS formulation is supported for "
+          "totalWaterRelativeHumidity");
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------*/
+
+float equilibriumRelativeHumidity(const float g, const float r_md,
+                                  const float A, const float B,
+                                  const Formulation formulation) {
+  switch (formulation) {
+    case Formulation::Clark2008: {
+      return std::exp(A / (r_md * g) - B / (std::pow(g, 3) - 1.0f));
+    }
+    default: {
+      throw eckit::BadValue(
+          "Aborting, only Clark2008 formulation is supported for "
+          "equilibriumRelativeHumidity");
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------*/
+
+float equilibriumRelativeHumidityDerivative(const float g, const float r_md,
+                                            const float A, const float B,
+                                            const Formulation formulation) {
+  switch (formulation) {
+    case Formulation::Clark2008: {
+      const float rh = equilibriumRelativeHumidity(g, r_md, A, B);
+      return (-A / (r_md * std::pow(g, 2)) +
+              3.0f * B * std::pow(g, 2) / std::pow(std::pow(g, 3) - 1.0f, 2)) *
+             rh;
+    }
+    default: {
+      throw eckit::BadValue(
+          "Aborting, only Clark2008 formulation is supported for "
+          "equilibriumRelativeHumidityDerivative");
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------*/
+
+float specificCloudWaterContent(const float g, const float r_md, const float N,
+                                const float rho_wat,
+                                const Formulation formulation) {
+  switch (formulation) {
+    case Formulation::Clark2008: {
+      return 4.0f / 3.0f * M_PI * rho_wat * N * std::pow(r_md, 3) *
+             (std::pow(g, 3) - 1.0f);
+    }
+    default: {
+      throw eckit::BadValue(
+          "Aborting, only Clark2008 formulation is supported for "
+          "specificCloudWaterContent");
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------*/
+
+float specificCloudWaterContentDerivative(const float g, const float r_md,
+                                          const float N, const float rho_wat,
+                                          const Formulation formulation) {
+  switch (formulation) {
+    case Formulation::Clark2008: {
+      return 4.0f / 3.0f * M_PI * rho_wat * N * std::pow(r_md, 3) * 3.0f *
+             std::pow(g, 2);
+    }
+    default: {
+      throw eckit::BadValue(
+          "Aborting, only Clark2008 formulation is supported for "
+          "specificCloudWaterContentDerivative");
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------*/
+
+float aerosolExtinctionCoefficient(const float beta_0, const float N,
+                                   const float r_m,
+                                   const Formulation formulation) {
+  switch (formulation) {
+    case Formulation::Clark2008: {
+      return beta_0 * N * std::pow(r_m, 2);
+    }
+    default: {
+      throw eckit::BadValue(
+          "Aborting, only Clark2008 formulation is supported for "
+          "aerosolExtinctionCoefficient");
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------*/
+
+float aerosolVisibility(const float epsilon, const float beta,
+                        const Formulation formulation) {
+  switch (formulation) {
+    case Formulation::Clark2008: {
+      return -std::log(epsilon) / beta;
+    }
+    default: {
+      throw eckit::BadValue(
+          "Aborting, only Clark2008 formulation is supported for "
+          "aerosolVisibility");
+    }
+  }
+}
+
 }  // namespace formulas
 }  // namespace ufo

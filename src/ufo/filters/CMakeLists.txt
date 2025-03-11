@@ -311,6 +311,8 @@ set ( filters_files
       obsfunctions/ObsFunctionStringManipulation.h
       obsfunctions/ObsFunctionVelocity.cc
       obsfunctions/ObsFunctionVelocity.h
+      obsfunctions/ObsFunctionVisibilityDiagnostic.cc
+      obsfunctions/ObsFunctionVisibilityDiagnostic.h
       obsfunctions/OceanPressureToDepth.cc
       obsfunctions/OceanPressureToDepth.h
       obsfunctions/OrbitAngle.cc

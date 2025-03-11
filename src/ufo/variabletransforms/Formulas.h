@@ -23,10 +23,22 @@ namespace ufo {
 namespace formulas {
 
 enum class Method {
-  UKMOmixingratio,  ///< UKMO mixing ratio specific methods
+  UKMOmixingratio,  ///< For humidity only: UKMO method where, for the relative
+    ///< humidity transform, the relative humidity is approximated to be the
+    ///< mixing ratio is divided by the saturation specific humidity.
   UKMO,   ///< UKMO specific methods
   NCAR,   ///< NCAR specific methods
   NOAA,   ///< NOAA specific methods
+  UKMOQsatWater,  ///< For specific humidity only: UKMO method where the
+    ///< saturation vapour pressure of pure water vapour over a plane water
+    ///< surface calculated using the GoffGratchLandoltBornsteinWater
+    ///< formulation, with other calculations the same as UKMOQSatIceWater (see
+    ///< the method implementation for details).
+  UKMOQsatIceWater,  ///< For specific humidity only: UKMO method where the
+    ///< saturation vapour pressure of pure water vapour over a plane water
+    ///< surface calculated using the GoffGratchLandoltBornsteinIceWater
+    ///< formulation, with other calculations the same as UKMOQSatIceWater (see
+    ///< the method implementation for details).
   Sonntag,  ///< For humidity only: use the default methods, calculating
      ///< saturation mixing ratio from temperature using Eqn 7, Sonntag, D.,
      ///< Advancements in the field of hygrometry, Meteorol. Zeitschrift, N. F., 3,
@@ -47,6 +59,12 @@ enum class Method {
     ///< 1987, Numerical Data and Functional relationships in Science and
     ///< Technology. Group V/Vol 4B Meteorology. Physical and Chemical properties of
     ///< Air, P35."
+  GoffGratchLandoltBornsteinWater,  ///< For humidity only: use the default
+    ///< methods, calculating saturation mixing ratio from temperature using the
+    ///< Goff-Gratch formulae over water, with calculations taken from
+    ///< "Landolt-Bornstein, 1987, Numerical Data and Functional relationships
+    ///< in Science and Technology. Group V/Vol 4B Meteorology. Physical and
+    ///< Chemical properties of Air, P35."
   Rogers,  ///< For humidity only: use the default methods, calculating
     ///< saturation mixing ratio from temperature using classical formula from
     ///< Rogers and Yau (1989; Eq2.17)
@@ -61,10 +79,13 @@ enum class Formulation {
   Murphy,
   Sonntag,
   GoffGratchLandoltBornsteinIceWater,
+  GoffGratchLandoltBornsteinWater,
   Gill,
   GillUKMO,
   Walko,
   Rogers,
+  Clark2008,
+  UKMOUnififiedModelOPS,
 
   // Other Formulations
   NCARRAL,
@@ -96,6 +117,8 @@ Method resolveMethods(const std::string& method);
 *        "Landolt-Bornstein, 1987, Numerical Data and Functional relationships
 *        in Science and Technology. Group V/Vol 4B Meteorology. Physical and
 *        Chemical properties of Air, P35."
+*      - GoffGratchLandoltBornsteinWater:
+*        As above but over water for all temperatures.
 *      - Rogers:
 *        Classical formula from Rogers and Yau (1989; Eq2.17)
 *      - DEFAULT:
@@ -423,6 +446,271 @@ float Geometric_to_Geopotential_Height(float latitude, float geomH);
 * \return geometric height (m)
 */
 float Geopotential_to_Geometric_Height(float latitude, float geopH);
+
+/**
+ * @brief Calculates the standard dry aerosol mass mixing ratio (kg kg^-1).
+ *
+ * \b Formulation \b available:
+ *    - Clark2008:
+ *      Eq. 1 in Clark et al. (2008).
+ *
+ * @param rho_aerosol The aerosol density (kg m^-3).
+ * @param rho_air The air density (kg m^-3).
+ * @param N_0 The standard aerosol number density (m^-3).
+ * @param r_0 The standard aerosol radius (m).
+ * @param formulation The formulation to use.
+ * @return The calculated standard dry aerosol mass mixing ratio m_0 (kg kg^-1).
+ */
+float dryAerosolMassMixingRatio(
+    const float rho_aerosol, const float rho_air, const float N_0,
+    const float r_0, const Formulation formulation = Formulation::Clark2008);
+
+/**
+ * @brief Calculates the mean dry aerosol radius (m) which is assumed to
+ * vary as a power of the aerosol mass concentration.
+ *
+ * \b Formulation \b available:
+ *    - Clark2008:
+ *      Eq. 2 in Clark et al. (2008).
+ *
+ * @param r_0 The standard aerosol radius (m).
+ * @param m The aerosol mass concentration (kg kg^-1).
+ * @param m_0 The standard dry aerosol mass mixing ratio (kg kg^-1).
+ * @param p The aerosol size distribution power law exponent.
+ * @param formulation The formulation to use.
+ * @return The calculated mean dry aerosol radius r_md (m).
+ */
+float dryMeanParticleVolumeRadius(
+    const float r_0, const float m, const float m_0, const float p,
+    const Formulation formulation = Formulation::Clark2008);
+
+/**
+ * @brief Calculates the aerosol number density (m^-3).
+ *
+ * \b Formulation \b available:
+ *    - Clark2008:
+ *      Eq. 3 in Clark et al. (2008).
+ *
+ * @param N_0 The standard aerosol number density (m^-3).
+ * @param m The aerosol mass concentration (kg kg^-1).
+ * @param m_0 The standard dry aerosol mass mixing ratio (kg kg^-1).
+ * @param p The aerosol size distribution power law exponent.
+ * @param formulation The formulation to use.
+ * @return The calculated aerosol number density N (m^-3).
+ */
+float aerosolNumberDensity(
+    const float N_0, const float m, const float m_0, const float p,
+    const Formulation formulation = Formulation::Clark2008);
+
+/**
+ * @brief Calculates the approximate activation droplet radius (m), which is
+ * the radius at which the peak of the Koehler curve occurs.
+ *
+ * \b Formulation \b available:
+ *    - Clark2008:
+ *      Eq. 11 in Clark et al. (2008).
+ *
+ * @param A The Koehler curve constant A (m).
+ * @param B The Koehler curve constant B (unitless).
+ * @param r_md The dry aerosol radius (m).
+ * @param formulation The formulation to use.
+ * @return The calculated approximate activation droplet radius r_act (m).
+ */
+float approximateActivationDropletRadius(
+    const float A, const float B, const float r_md,
+    const Formulation formulation = Formulation::Clark2008);
+
+/**
+ * @brief Calculates the approximate aerosol extinction coefficient factor
+ * (unitless) as a function of the extinction efficiency and particle size.
+ *
+ * \b Formulation \b available:
+ *    - Clark2008:
+ *      Eq. 18 in Clark et al. (2008).
+ *
+ * @param Q The extinction efficiency factor (unitless).
+ * @param eta The particle size weighting factor (unitless).
+ * @param formulation The formulation to use.
+ * @return The calculated approximate aerosol extinction coefficient factor
+ * beta_0 (unitless).
+ */
+float approximateAerosolExtinctionCoefficientFactor(
+    const float Q, const float eta,
+    const Formulation formulation = Formulation::Clark2008);
+
+/**
+ * @brief Calculates the cloud cover fraction (unitless) as a function of the
+ * relative humidity.
+ *
+ * \b Formulation \b available:
+ *    - UKMOUnififiedModelOPS:
+ *      Corresponds to the RH_TO_CC diagnostic taken from the UK Met Office
+ *      Unified Model, as used in the Met Office Observation Processing System
+ *      (OPS).
+ *
+ * @param rh The relative humidity (fraction).
+ * @param rh_crit The critical relative humidity (fraction).
+ * @param ccp1 The cloud cover parameter 1 (unitless) - corresponds to PC1 in
+ * RH_TO_CC.
+ * @param ccp2 The cloud cover parameter 2 (unitless) - corresponds to PC2 in
+ * RH_TO_CC.
+ * @param ccp3 The cloud cover parameter 3 (unitless) - corresponds to PC3 in
+ * RH_TO_CC.
+ * @param formulation The formulation to use.
+ * @return The calculated cloud cover fraction (unitless).
+ */
+float cloudCoverFraction(
+    float rh, const float rh_crit, const float ccp1, const float ccp2,
+    const float ccp3,
+    const Formulation formulation = Formulation::UKMOUnififiedModelOPS);
+
+/**
+ * @brief Calculates a total water relative humidity (unitless) as a
+ * function of the cloud cover fraction.
+ *
+ * \b Formulation \b available:
+ *    - UKMOUnififiedModelOPS:
+ *      Corresponds to the CC_TO_RHTOT diagnostic taken from the Met Office
+ *      Unified Model, as used in the Met Office Observation Processing System
+ *      (OPS) where total water relative humidity is associated with cloud
+ *      cover via a piecewise function, derived from a triangular distribution.
+ *      This is consistent with the Smith (1990) cloud scheme
+ *      (https://doi.org/10.1002/qj.49711649210).
+ *
+ * @param cc The cloud cover fraction (unitless).
+ * @param rh_crit The critical relative humidity: that at which liquid water
+ * droplets are considered to form (fraction).
+ * @param rh_tot_p1 The total water relative humidity parameter 1 - The
+ * cloud cover fraction at which the piecewise function transitions.
+ * @param rh_tot_p2 The scaling to apply to the cloud cover fraction within
+ * the first part of the piecewise function.
+ * @param rh_tot_p3 The scaling to apply to (1 - cc), where cc is the cloud
+ * cover fraction, within the second part of the piecewise function.
+ * @param formulation The formulation to use.
+ * @return The calculated total water relative humidity (unitless).
+ */
+float totalWaterRelativeHumidity(
+    float cc, const float rh_crit, const float rh_tot_p1, const float rh_tot_p2,
+    const float rh_tot_p3,
+    const Formulation formulation = Formulation::UKMOUnififiedModelOPS);
+
+/**
+ * @brief Calculates the equilibrium relative humidity (fraction) as a
+ * function of the normalized droplet radius, expressed as a Koehler curve.
+ *
+ * \b Formulation \b available:
+ *    - Clark2008:
+ *      Corresponds to Eq. 10 in Clark et al. (2008).
+ *
+ * @param g The normalized droplet radius (r_m / r_md) (m).
+ * @param r_md The dry aerosol radius (m).
+ * @param A The Koehler curve constant A (m).
+ * @param B The Koehler curve constant B (unitless).
+ * @param formulation The formulation to use.
+ * @return The calculated equilibrium relative humidity (fraction).
+ */
+float equilibriumRelativeHumidity(
+    const float g, const float r_md, const float A, const float B,
+    const Formulation formulation = Formulation::Clark2008);
+
+/**
+ * @brief Calculates the derivative, with respect to the normalized droplet
+ * radius, of the equilibrium relative humidity expressed as a Koehler curve.
+ *
+ * @see equilibriumRelativeHumidity
+ *
+ * \b Formulation \b available:
+ *    - Clark2008:
+ *      Corresponds to the derivative Eq. 10 in Clark et al. (2008).
+ *
+ * @param g The normalized droplet radius (r_m / r_md) (m m^-1).
+ * @param r_md The dry aerosol radius (m).
+ * @param A The Koehler curve constant A (m).
+ * @param B The Koehler curve constant B (unitless).
+ * @param formulation The formulation to use.
+ * @return The calculated derivative of the relative humidity with respect to g
+ * (m m^-1).
+ */
+float equilibriumRelativeHumidityDerivative(
+    const float g, const float r_md, const float A, const float B,
+    const Formulation formulation = Formulation::Clark2008);
+
+/**
+ * @brief Calculates the specific cloud liquid water content (kg kg^-1) as a
+ * function of the normalized droplet radius.
+ *
+ * \b Formulation \b available:
+ *    - Clark2008:
+ *      Corresponds to Eq. 13 in Clark et al. (2008).
+ *
+ * @param g The normalized droplet radius (r_m / r_md) (m m^-1).
+ * @param r_md The dry aerosol radius (m).
+ * @param N The number concentration of the aerosol particles (m^-3).
+ * @param rho_wat The density of water (kg m^-3).
+ * @param formulation The formulation to use.
+ * @return The calculated liquid water content q_l (kg kg^-1).
+ */
+float specificCloudWaterContent(
+    const float g, const float r_md, const float N, const float rho_wat,
+    const Formulation formulation = Formulation::Clark2008);
+
+/**
+ * @brief Calculates the derivative, with respect to the normalized droplet
+ * radius, of the specific cloud water content.
+ *
+ * @see specificCloudWaterContent
+ *
+ * \b Formulation \b available:
+ *    - Clark2008:
+ *      Corresponds to the derivative Eq. 13 in Clark et al. (2008).
+ *
+ * @param g The normalized droplet radius (r_m / r_md) (m m^-1).
+ * @param r_md The dry aerosol radius (m).
+ * @param N The number concentration of the aerosol particles (m^-3).
+ * @param rho_wat The density of water (kg m^-3).
+ * @param formulation The formulation to use.
+ * @return The calculated derivative of the liquid water content with respect to
+ * g (kg kg^-1).
+ */
+float specificCloudWaterContentDerivative(
+    const float g, const float r_md, const float N, const float rho_wat,
+    const Formulation formulation = Formulation::Clark2008);
+
+/**
+ * @brief Calculates an approximate aerosol extinction coefficient (m^-1) as
+ * a function of the number density and radius of (potentially wet) aerosol
+ * particles.
+ *
+ * \b Formulation \b available:
+ *    - Clark2008:
+ *      Corresponds to Eq. 17 in Clark et al. (2008).
+ *
+ * @param beta_0 An aerosol extinction coefficient factor (unitless).
+ * @param N The number density of the aerosol particles (m^-3).
+ * @param r_m The aerosol particle radius (m).
+ * @param formulation The formulation to use.
+ * @return The calculated aerosol extinction coefficient beta (m^-1).
+ */
+float aerosolExtinctionCoefficient(
+    const float beta_0, const float N, const float r_m,
+    const Formulation formulation = Formulation::Clark2008);
+
+/**
+ * @brief Calculates a visibility (m) from a liminal contrast and aerosol
+ * extinction coefficient, ignoring the effects of clean air.
+ *
+ * \b Formulation \b available:
+ *    - Clark2008:
+ *      Corresponds to Eq. 20 in Clark et al. (2008).
+ *
+ * @param epsilon The liminal contrast factor (unitless).
+ * @param beta The aerosol extinction coefficient (m^-1).
+ * @param formulation The formulation to use.
+ * @return The calculated aerosol visibility (m).
+ */
+float aerosolVisibility(const float epsilon, const float beta,
+                        const Formulation formulation = Formulation::Clark2008);
+
 }  // namespace formulas
 }  // namespace ufo
 

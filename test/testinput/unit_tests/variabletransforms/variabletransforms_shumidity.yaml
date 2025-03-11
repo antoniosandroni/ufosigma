@@ -155,6 +155,94 @@ observations:
   passedBenchmark: 3
 
 - obs space:
+    name: test_specificHumidity_UKMOQsatWater
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/ufo/testinput_tier_1/specific_humidity_UKMOQsat.nc4
+    simulated variables: [relativeHumidity, airTemperature, surfacePressure]
+  obs filters:
+  - filter: Variable Transforms
+    Transform: SpecificHumidity
+    Method: UKMOQsatWater
+    pressure group variable: "ObsValue"
+    pressure variable: "surfacePressure"
+    temperature variable: "airTemperature"
+    relative humidity variable: "relativeHumidity"
+  compareVariables:
+    - reference:
+        name: TestReference/specificHumidity_UKMOQSatWater
+      test:
+        name: ObsValue/specificHumidity
+      absTol: 1.0e-7
+
+- obs space:
+    name: test_specificHumidity_UKMOQsatIceWater
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/ufo/testinput_tier_1/specific_humidity_UKMOQsat.nc4
+    simulated variables: [relativeHumidity, airTemperature, surfacePressure]
+  obs filters:
+  - filter: Variable Transforms
+    Transform: SpecificHumidity
+    Method: UKMOQsatIceWater
+    pressure group variable: "ObsValue"
+    pressure variable: "surfacePressure"
+    temperature variable: "airTemperature"
+    relative humidity variable: "relativeHumidity"
+  compareVariables:
+    - reference:
+        name: TestReference/specificHumidity_UKMOQSatIceWater
+      test:
+        name: ObsValue/specificHumidity
+      absTol: 1.0e-7
+
+- obs space:
+    name: test_specificHumidity_UKMOQsatWater 1 ob
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/ufo/testinput_tier_1/specific_humidity_UKMOQsat_1ob.nc4
+    simulated variables: [relativeHumidity, airTemperature, surfacePressure]
+  obs filters:
+  - filter: Variable Transforms
+    Transform: SpecificHumidity
+    Method: UKMOQsatWater
+    pressure group variable: "ObsValue"
+    pressure variable: "surfacePressure"
+    temperature variable: "airTemperature"
+    relative humidity variable: "relativeHumidity"
+  compareVariables:
+    - reference:
+        name: TestReference/specificHumidity_UKMOQSatWater
+      test:
+        name: ObsValue/specificHumidity
+      absTol: 1.0e-7
+
+- obs space:
+    name: test_specificHumidity_UKMOQsatIceWater 1 ob
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/ufo/testinput_tier_1/specific_humidity_UKMOQsat_1ob.nc4
+    simulated variables: [relativeHumidity, airTemperature, surfacePressure]
+  obs filters:
+  - filter: Variable Transforms
+    Transform: SpecificHumidity
+    Method: UKMOQsatIceWater
+    pressure group variable: "ObsValue"
+    pressure variable: "surfacePressure"
+    temperature variable: "airTemperature"
+    relative humidity variable: "relativeHumidity"
+  compareVariables:
+    - reference:
+        name: TestReference/specificHumidity_UKMOQSatIceWater
+      test:
+        name: ObsValue/specificHumidity
+      absTol: 1.0e-7
+
+- obs space:
     name: test_specificHumidity_formulation_exception
     obsdatain:
       engine:

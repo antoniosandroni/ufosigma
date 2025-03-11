@@ -1,0 +1,369 @@
+time window:
+  begin: 2018-04-14T21:00:00Z
+  end: 2018-04-15T03:00:00Z
+
+observations:
+- obs space:
+    name: Test visibility diagnostic - all obs same values
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/ufo/testinput_tier_1/sondes_obs_2018041500_s.nc4
+    simulated variables: [windEastward]
+
+  obs filters:
+
+  # Case A: rh <= rh_crit, also cc <= rh_tot_p1. All parameters are used in the
+  # ObsFunction.
+
+  - filter: Variable Assignment
+    assignments:
+    - name: MetaData/relativeHumidityAt2M_A
+      type: float
+      value: 0.394038620020083
+    - name: MetaData/surfacePressure_A
+      type: float
+      value: 94607.8182807330
+    - name: MetaData/airTemperatureAt2M_A
+      type: float
+      value: 290.100006103516
+    - name: TestReference/diagnosedVisibility_A
+      type: float
+      value: 60203.668
+
+  - filter: Variable Assignment
+    assignments:
+    - name: MetaData/diagnosedVisibility_A
+      type: float
+      function:
+        name: ObsFunction/VisibilityDiagnostic
+        options:
+          aerosol mass concentration: 1E-9  # Required
+          relative humidity variable:  # Required
+            name: MetaData/relativeHumidityAt2M_A
+          pressure variable:  # Required
+            name: MetaData/surfacePressure_A
+          temperature variable: # Required
+            name: MetaData/airTemperatureAt2M_A
+          critical relative humidity: 0.940  # Required
+          cloud cover parameter 1: 1.060660172  # 3*sqrt(2)/4 - Required
+          cloud cover parameter 2: 2.121320344  # 3*sqrt(2)/2 - Required
+          cloud cover parameter 3: 1.047197551  # pi/3 - Required
+          total water relative humidity parameter 1: 0.5  # Required
+          total water relative humidity parameter 2: 2.0  # Required
+          total water relative humidity parameter 3: 2.0  # Required
+          aerosol density: 1700  # Optional - same default as paper
+          standard aerosol radius: 0.16E-6  # Optional - same default as paper
+          standard aerosol number density: 5.0E+8  # Optional - same default as paper
+          air density: 1.0  # Optional - same default as paper
+          water density: 1000. # Optional - same default as paper
+          aerosol size distribution power law exponent:  0.1666666667  # 1/6 - optional - same default as paper
+          Koehler curve constant A: 1.2E-9  # Optional - same default as paper
+          Koehler curve constant B: 0.5  # Optional - same default as paper
+          liminal contrast: 0.02  # Optional - same default as paper
+          extinction efficiency factor Q: 2.0  # Optional - same default as paper
+          particle size weighting factor eta: 0.75  # Optional - same default as paper
+          visibility limit: 100000  # Optional - same default as paper
+          minimum total water specific humidity:  0.001  # Optional
+          minimum relative humidity for first guess: 0.01  # Optional
+          maximum relative humidity for first guess: 0.999  # Optional
+          minimum allowed normalized droplet radius: 2.0  # Optional
+          maximum allowed normalized droplet radius: 10000.0  # Optional
+          maximum number of iterations: 10  # Optional
+          maximum inflation factor: 2.0  # Optional
+          minimum inflation factor: 0.5  # Optional
+          loop stopping value: 0.01  # Optional
+          droplet radius exponential smoothing factor: 0.9  # Optional
+
+  # Case B: rh_crit < rh < (ccp4 + rh_crit) / ccp5, also cc <= rh_tot_p1.
+  # Only required parameters are used in the ObsFunction.
+
+  - filter: Variable Assignment
+    assignments:
+    - name: MetaData/relativeHumidityAt2M_B
+      type: float
+      value: 0.981198552192966
+    - name: MetaData/surfacePressure_B
+      type: float
+      value: 100850.000000000
+    - name: MetaData/airTemperatureAt2M_B
+      type: float
+      value: 285.600006103516
+    - name: TestReference/diagnosedVisibility_B
+      type: float
+      value: 39501.6406 # B
+
+  - filter: Variable Assignment
+    assignments:
+    - name: MetaData/diagnosedVisibility_B
+      type: float
+      function:
+        name: ObsFunction/VisibilityDiagnostic
+        options:
+          aerosol mass concentration: 1E-9  # Required
+          relative humidity variable:  # Required
+            name: MetaData/relativeHumidityAt2M_B
+          pressure variable:  # Required
+            name: MetaData/surfacePressure_B
+          temperature variable: # Required
+            name: MetaData/airTemperatureAt2M_B
+          critical relative humidity: 0.940  # Required
+          cloud cover parameter 1: 1.060660172  # 3*sqrt(2)/4 - Required
+          cloud cover parameter 2: 2.121320344  # 3*sqrt(2)/2 - Required
+          cloud cover parameter 3: 1.047197551  # pi/3 - Required
+          cloud cover parameter 4: 5  # Required
+          cloud cover parameter 5: 6  # Required
+          cloud cover parameter 6: 2  # Required
+          cloud cover parameter 7: 3  # Required
+          cloud cover parameter 8: 0.6666666667  # 2/3 - Required
+          total water relative humidity parameter 1: 0.5  # Required
+          total water relative humidity parameter 2: 2.0  # Required
+          total water relative humidity parameter 3: 2.0  # Required
+
+  # Case C: (ccp4 + rh_crit) / ccp5 <= rh, also rh_tot_p1 < cc. Only required
+  # parameters are used in the ObsFunction.
+
+  - filter: Variable Assignment
+    assignments:
+    - name: MetaData/relativeHumidityAt2M_C
+      type: float
+      value: 0.997500000000000
+    - name: MetaData/surfacePressure_C
+      type: float
+      value: 102163.858038013
+    - name: MetaData/airTemperatureAt2M_C
+      type: float
+      value: 283.550492841782
+    - name: TestReference/diagnosedVisibility_C
+      type: float
+      value: 140.107925
+
+  - filter: Variable Assignment
+    assignments:
+    - name: MetaData/diagnosedVisibility_C
+      type: float
+      function:
+        name: ObsFunction/VisibilityDiagnostic
+        options:
+          aerosol mass concentration: 1E-9  # Required
+          relative humidity variable:  # Required
+            name: MetaData/relativeHumidityAt2M_C
+          pressure variable:  # Required
+            name: MetaData/surfacePressure_C
+          temperature variable: # Required
+            name: MetaData/airTemperatureAt2M_C
+          critical relative humidity: 0.940  # Required
+          cloud cover parameter 1: 1.060660172  # 3*sqrt(2)/4 - Required
+          cloud cover parameter 2: 2.121320344  # 3*sqrt(2)/2 - Required
+          cloud cover parameter 3: 1.047197551  # pi/3 - Required
+          cloud cover parameter 4: 5  # Required
+          cloud cover parameter 5: 6  # Required
+          cloud cover parameter 6: 2  # Required
+          cloud cover parameter 7: 3  # Required
+          cloud cover parameter 8: 0.6666666667  # 2/3 - Required
+          total water relative humidity parameter 1: 0.5  # Required
+          total water relative humidity parameter 2: 2.0  # Required
+          total water relative humidity parameter 3: 2.0  # Required
+
+  # Case D: 1 < rh, also rh_crit < rh, and rh_tot_p1 < cc. Only required
+  # parameters are used in the ObsFunction.
+
+  - filter: Variable Assignment
+    assignments:
+    - name: MetaData/relativeHumidityAt2M_D
+      type: float
+      value: 1.00085496187295
+    - name: MetaData/surfacePressure_D
+      type: float
+      value: 94341.6364620587
+    - name: MetaData/airTemperatureAt2M_D
+      type: float
+      value: 283.000000000000
+    - name: TestReference/diagnosedVisibility_D
+      type: float
+      value: 69.3069153
+
+  - filter: Variable Assignment
+    assignments:
+    - name: MetaData/diagnosedVisibility_D
+      type: float
+      function:
+        name: ObsFunction/VisibilityDiagnostic
+        options:
+          aerosol mass concentration: 1E-9  # Required
+          relative humidity variable:  # Required
+            name: MetaData/relativeHumidityAt2M_D
+          pressure variable:  # Required
+            name: MetaData/surfacePressure_D
+          temperature variable: # Required
+            name: MetaData/airTemperatureAt2M_D
+          critical relative humidity: 0.940  # Required
+          cloud cover parameter 1: 1.060660172  # 3*sqrt(2)/4 - Required
+          cloud cover parameter 2: 2.121320344  # 3*sqrt(2)/2 - Required
+          cloud cover parameter 3: 1.047197551  # pi/3 - Required
+          cloud cover parameter 4: 5  # Required
+          cloud cover parameter 5: 6  # Required
+          cloud cover parameter 6: 2  # Required
+          cloud cover parameter 7: 3  # Required
+          cloud cover parameter 8: 0.6666666667  # 2/3 - Required
+          total water relative humidity parameter 1: 0.5  # Required
+          total water relative humidity parameter 2: 2.0  # Required
+          total water relative humidity parameter 3: 2.0  # Required
+
+  # Case E: rh <= rh_crit, T < 0C. Only required parameters are used in
+  # the ObsFunction.
+
+  - filter: Variable Assignment
+    assignments:
+    - name: MetaData/relativeHumidityAt2M_E
+      type: float
+      value: 0.950126578538681
+    - name: MetaData/surfacePressure_E
+      type: float
+      value: 65980.0000000000
+    - name: MetaData/airTemperatureAt2M_E
+      type: float
+      value: 269.550018310547
+    - name: TestReference/diagnosedVisibility_E
+      type: float
+      value: 56860.5195
+
+  - filter: Variable Assignment
+    assignments:
+    - name: MetaData/diagnosedVisibility_E
+      type: float
+      function:
+        name: ObsFunction/VisibilityDiagnostic
+        options:
+          aerosol mass concentration: 1E-9  # Required
+          relative humidity variable:  # Required
+            name: MetaData/relativeHumidityAt2M_E
+          pressure variable:  # Required
+            name: MetaData/surfacePressure_E
+          temperature variable: # Required
+            name: MetaData/airTemperatureAt2M_E
+          critical relative humidity: 0.940  # Required
+          cloud cover parameter 1: 1.060660172  # 3*sqrt(2)/4 - Required
+          cloud cover parameter 2: 2.121320344  # 3*sqrt(2)/2 - Required
+          cloud cover parameter 3: 1.047197551  # pi/3 - Required
+          cloud cover parameter 4: 5  # Required
+          cloud cover parameter 5: 6  # Required
+          cloud cover parameter 6: 2  # Required
+          cloud cover parameter 7: 3  # Required
+          cloud cover parameter 8: 0.6666666667  # 2/3 - Required
+          total water relative humidity parameter 1: 0.5  # Required
+          total water relative humidity parameter 2: 2.0  # Required
+          total water relative humidity parameter 3: 2.0  # Required
+
+  compareVariables:
+  - test:
+      name: MetaData/diagnosedVisibility_A
+    reference:
+      name: TestReference/diagnosedVisibility_A
+    relTol: 1.0e-4
+  - test:
+      name: MetaData/diagnosedVisibility_B
+    reference:
+      name: TestReference/diagnosedVisibility_B
+    relTol: 1.0e-4
+  - test:
+      name: MetaData/diagnosedVisibility_C
+    reference:
+      name: TestReference/diagnosedVisibility_C
+    relTol: 1.0e-4
+  - test:
+      name: MetaData/diagnosedVisibility_D
+    reference:
+      name: TestReference/diagnosedVisibility_D
+    relTol: 1.0e-4
+  - test:
+      name: MetaData/diagnosedVisibility_E
+    reference:
+      name: TestReference/diagnosedVisibility_E
+    relTol: 1.0e-4
+
+# As above, but with the variables (A-E) stored in a single file - this makes
+# sure the ObsFunction can handle multiple variables
+- obs space:
+    name: Test visibility diagnostic - different values per ob
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/ufo/testinput_tier_1/visibility_diagnostic.nc4
+    simulated variables: [relativeHumidity, airTemperature, surfacePressure]
+  obs filters:
+  - filter: Variable Assignment
+    assignments:
+    - name: MetaData/diagnosedVisibility
+      type: float
+      function:
+        name: ObsFunction/VisibilityDiagnostic
+        options:
+          aerosol mass concentration: 1E-9  # Required
+          relative humidity variable:  # Required
+            name: ObsValue/relativeHumidity
+          pressure variable:  # Required
+            name: ObsValue/surfacePressure
+          temperature variable: # Required
+            name: ObsValue/airTemperature
+          critical relative humidity: 0.940  # Required
+          cloud cover parameter 1: 1.060660172  # 3*sqrt(2)/4 - Required
+          cloud cover parameter 2: 2.121320344  # 3*sqrt(2)/2 - Required
+          cloud cover parameter 3: 1.047197551  # pi/3 - Required
+          cloud cover parameter 4: 5  # Required
+          cloud cover parameter 5: 6  # Required
+          cloud cover parameter 6: 2  # Required
+          cloud cover parameter 7: 3  # Required
+          cloud cover parameter 8: 0.6666666667  # 2/3 - Required
+          total water relative humidity parameter 1: 0.5  # Required
+          total water relative humidity parameter 2: 2.0  # Required
+          total water relative humidity parameter 3: 2.0  # Required
+  compareVariables:
+    - reference:
+        name: TestReference/diagnosedVisibility
+      test:
+        name: MetaData/diagnosedVisibility
+      relTol: 1.0e-4
+
+# Just case A stored in a single file for checking that the function works with
+# MPI ranks that have no obs
+- obs space:
+    name: Test visibility diagnostic - different values per ob
+    obsdatain:
+      engine:
+        type: H5File
+        obsfile: Data/ufo/testinput_tier_1/visibility_diagnostic_1ob.nc4
+    simulated variables: [relativeHumidity, airTemperature, surfacePressure]
+  obs filters:
+  - filter: Variable Assignment
+    assignments:
+    - name: MetaData/diagnosedVisibility
+      type: float
+      function:
+        name: ObsFunction/VisibilityDiagnostic
+        options:
+          aerosol mass concentration: 1E-9  # Required
+          relative humidity variable:  # Required
+            name: ObsValue/relativeHumidity
+          pressure variable:  # Required
+            name: ObsValue/surfacePressure
+          temperature variable: # Required
+            name: ObsValue/airTemperature
+          critical relative humidity: 0.940  # Required
+          cloud cover parameter 1: 1.060660172  # 3*sqrt(2)/4 - Required
+          cloud cover parameter 2: 2.121320344  # 3*sqrt(2)/2 - Required
+          cloud cover parameter 3: 1.047197551  # pi/3 - Required
+          cloud cover parameter 4: 5  # Required
+          cloud cover parameter 5: 6  # Required
+          cloud cover parameter 6: 2  # Required
+          cloud cover parameter 7: 3  # Required
+          cloud cover parameter 8: 0.6666666667  # 2/3 - Required
+          total water relative humidity parameter 1: 0.5  # Required
+          total water relative humidity parameter 2: 2.0  # Required
+          total water relative humidity parameter 3: 2.0  # Required
+  compareVariables:
+    - reference:
+        name: TestReference/diagnosedVisibility
+      test:
+        name: MetaData/diagnosedVisibility
+      relTol: 1.0e-4
