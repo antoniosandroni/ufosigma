@@ -45,8 +45,8 @@ ObsRadianceRTTOVCPP::ObsRadianceRTTOVCPP(const ioda::ObsSpace & odb,
     "eastward_wind_at_10m",
     "northward_wind_at_10m",
     "skin_temperature_at_surface",
-    "seaice_fraction",
-    "landmask",
+    "seaice_fraction",   // this is actually var_sfc_seaicefrac
+    "landmask",   // this is actually var_sfc_landmask
     "geopotential_height_at_surface"
   };
 

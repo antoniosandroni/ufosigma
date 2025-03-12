@@ -29,6 +29,7 @@ ObsChlEuzIntegr::ObsChlEuzIntegr(const ioda::ObsSpace & odb,
                                  const Parameters_ & params)
   : ObsOperatorBase(odb), varin_()
 {
+  // Note: these strings are var_ocn_chl and var_ocn_lay_thick in ufo_variables_mod.F90
   const std::vector<std::string> vvin{"mass_concentration_of_chlorophyll_in_sea_water",
                                       "sea_water_cell_thickness"};
   varin_.reset(new oops::Variables(vvin));

@@ -178,7 +178,7 @@ void rttovcpp_interface(const GeoVaLs & geovals, const ioda::ObsSpace & odb_,
       geovals.get(u10, oops::Variable{"eastward_wind_at_10m"});
       geovals.get(v10, oops::Variable{"northward_wind_at_10m"});
       geovals.get(tskin, oops::Variable{"skin_temperature_at_surface"});  // Kelvin
-      geovals.get(landmask, oops::Variable{"landmask"});  // 1: land, 0:ocean
+      geovals.get(landmask, oops::Variable{"landmask"});  // 1: land, 0:ocean, var_sfc_landmask
       geovals.get(seaice_frac, oops::Variable{"seaice_fraction"});
 
     // 3.3 Obs metadata

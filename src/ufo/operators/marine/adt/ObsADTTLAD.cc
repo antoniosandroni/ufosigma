@@ -34,7 +34,7 @@ ObsADTTLAD::ObsADTTLAD(const ioda::ObsSpace & odb, const Parameters_ & params)
   std::vector<int> operatorVarIndices;
   getOperatorVariables(params.variables.value(), odb.assimvariables(),
     operatorVars_, operatorVarIndices);
-  requiredVars_.push_back("sea_surface_height_above_geoid");
+  requiredVars_.push_back("sea_surface_height_above_geoid");  // aka var_abs_topo
 
   // sanity check to make sure adt is the only variable
   ASSERT_MSG(
