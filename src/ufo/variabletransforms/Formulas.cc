@@ -97,7 +97,7 @@ float SatVaporPres_fromTemp(float temp_K, Formulation formulation) {
         lookup_a = (adj_Temp - Low_temp_thd + Delta_Temp) / Delta_Temp;
         lookup_i = static_cast<int>(lookup_a);
         lookup_a = lookup_a - lookup_i;
-        e_sub_s = (1.0f - lookup_a) *
+        e_sub_s = (1.0 - lookup_a) *
                   lookuptable::GoffGratchLandoltBornsteinIceWater[lookup_i] +
                   lookup_a *
                   lookuptable::GoffGratchLandoltBornsteinIceWater[lookup_i + 1];
@@ -118,7 +118,7 @@ float SatVaporPres_fromTemp(float temp_K, Formulation formulation) {
         float lookup_a = (adj_Temp - Low_temp_thd + Delta_Temp) / Delta_Temp;
         const int lookup_i = static_cast<int>(lookup_a);
         lookup_a = lookup_a - lookup_i;
-        e_sub_s = (1.0f - lookup_a) *
+        e_sub_s = (1.0 - lookup_a) *
                   lookuptable::GoffGratchLandoltBornsteinWater[lookup_i] +
                   lookup_a *
                   lookuptable::GoffGratchLandoltBornsteinWater[lookup_i + 1];
@@ -150,7 +150,7 @@ float SatVaporPres_fromTemp(float temp_K, Formulation formulation) {
       [[fallthrough]];
     default: {
       // Classical formula from Rogers and Yau (1989; Eq2.17)
-      e_sub_s = 1000.0f * 0.6112 * std::exp(17.67f * (temp_K - t0c) / (temp_K - 29.65f));
+      e_sub_s = 1000.0 * 0.6112 * std::exp(17.67f * (temp_K - t0c) / (temp_K - 29.65f));
       break;
     }
   }
@@ -259,33 +259,33 @@ float Height_To_Pressure_ICAO_atmos(float height, Formulation formulation) {
     case Formulation::ICAO: {
       float RepT_Bot, RepT_Top, ZP1, ZP2;
 
-      RepT_Bot = 1.0f / Constants::icao_temp_surface;
-      RepT_Top = 1.0f / Constants::icao_temp_isothermal_layer;
+      RepT_Bot = 1.0 / Constants::icao_temp_surface;
+      RepT_Top = 1.0 / Constants::icao_temp_isothermal_layer;
       ZP1 = Constants::g_over_rd / Constants::icao_lapse_rate_l;
       ZP2 = Constants::g_over_rd / Constants::icao_lapse_rate_u;
 
       if (height <= missingValueFloat) {
         Pressure = missingValueFloat;
-      } else if (height < -5000.0f) {
+      } else if (height < -5000.0) {
         // TODO(david simonin): The original code has this test.
         // Not sure why! Are we expecting very negative height value??
         Pressure = missingValueFloat;
       } else if (height < Constants::icao_height_l) {
         // Heights up to 11,000 geopotential heigh in meter [gpm]
         Pressure = Constants::icao_lapse_rate_l * height * RepT_Bot;
-        Pressure = std::pow((1.0f - Pressure), ZP1);
-        Pressure = 100.0f * Pressure * Constants::icao_pressure_surface;
+        Pressure = std::pow((1.0 - Pressure), ZP1);
+        Pressure = 100.0 * Pressure * Constants::icao_pressure_surface;
       } else if (height < Constants::icao_height_u) {
         // Heights between 11,000 and 20,000 geopotential heigh in meter [gpm]
         Pressure = Constants::g_over_rd * (height - Constants::icao_height_l) * RepT_Top;
         Pressure = std::log(Constants::icao_pressure_l) - Pressure;
-        Pressure = 100.0f * std::exp(Pressure);
+        Pressure = 100.0 * std::exp(Pressure);
       } else {
         // Heights above 20,000 geopotential heigh in meter [gpm]
         Pressure = Constants::icao_lapse_rate_u * RepT_Top *
                    (height - Constants::icao_height_u);
-        Pressure = 100.0f * Constants::icao_pressure_u *
-                   std::pow((1.0f - Pressure), ZP2);
+        Pressure = 100.0 * Constants::icao_pressure_u *
+                   std::pow((1.0 - Pressure), ZP2);
       }
       break;
     }

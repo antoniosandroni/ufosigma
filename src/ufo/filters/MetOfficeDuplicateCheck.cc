@@ -144,7 +144,7 @@ void MetOfficeDuplicateCheck::applyFilter(const std::vector<bool> & apply,
       if (priority[jlocSort] <= 0) continue;  // Move to next location in this band.
       // Search for duplicates in both the current band and the next one (if it is present).
       for (int jbandSearch = jband;
-           jbandSearch <= jband + 1 && jbandSearch <= numLatitudeBands; ++jbandSearch) {
+           jbandSearch <= jband + 1 && jbandSearch < numLatitudeBands; ++jbandSearch) {
         // This ensures the loop over bands can be exited correctly.
         bool nextjloc = false;
         // Indicates that this is the first location in the search band.
