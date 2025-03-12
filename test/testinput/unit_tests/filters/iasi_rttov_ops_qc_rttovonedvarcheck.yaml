@@ -516,7 +516,8 @@ observations:
     SkinTempErrorLand: 5.0
     surface emissivity:
       type: principalcomponent
-      EmisEigVecPath: ../resources/auxillary/IASI_EmisEigenVec.dat
+      group in obs space: AtlasEmiss
+      EmisEigVecPath: ../resources/auxillary/IASI_EmisEigenVec_v2.dat
     RecalculateBT: true
   passedBenchmark: 1311
   compareVariables:

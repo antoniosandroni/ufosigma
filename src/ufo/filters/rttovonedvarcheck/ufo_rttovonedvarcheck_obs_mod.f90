@@ -328,7 +328,7 @@ select case (trim(config % EmissivityType))
 
   case("principalcomponent")
     numpc = prof_index % emisspc(2) - prof_index % emisspc(1) + 1
-    call ufo_rttovonedvarcheck_obs_InitIRPCEmiss(self, config, numpc)
+    call ufo_rttovonedvarcheck_obs_InitIRPCEmiss(self, config, numpc, vars)
 
   case default
     write(message,*) "Land emissivity type not correctly defined it should be either ", &
@@ -445,7 +445,7 @@ end subroutine ufo_rttovonedvarcheck_obs_ReadFromDB
 !!
 !! \date 06/08/2020: Created
 !!
-subroutine ufo_rttovonedvarcheck_obs_InitIRPCEmiss(self, config, nemisspc)
+subroutine ufo_rttovonedvarcheck_obs_InitIRPCEmiss(self, config, nemisspc, vars)
 
 implicit none
 
@@ -453,6 +453,7 @@ implicit none
 class(ufo_rttovonedvarcheck_obs), intent(inout) :: self !< observation metadata type
 type(ufo_rttovonedvarcheck) :: config  !< main object containing configuration
 integer, intent(in) :: nemisspc
+type(oops_variables), intent(in) :: vars
 
 ! local variables
 integer :: i
@@ -514,8 +515,14 @@ if (self % pcemiss_object % initialised) then
           !END IF
         end if
 
-      else ! If no atlas present, use PCGuess.
-        self % pcemiss(:,i) = self % pcemiss_object % emis_eigen % PCGuess(1:nemisspc)
+      else ! If no atlas present, use PCGuess.        
+        if (len(trim(config % EmissGroupInObsSpace)) > 0) then
+          call ufo_rttovonedvarcheck_obs_ReadFromDB(self, config, vars, .false.)
+          call self % pcemiss_object % emistopc(self % channels, &
+                                         self % emiss(:, i), self % pcemiss(:, i))
+        else
+          self % pcemiss(:,i) = self % pcemiss_object % emis_eigen % PCGuess(1:nemisspc)
+        endif
       end if
 
       ! If over sea make sure that emissivity is done by rttov
