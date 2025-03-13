@@ -42,15 +42,13 @@ endif()
 set (UFO_CRTM_TESTFILES_PATH ${UFO_CRTM_TESTFILES_PATH} PARENT_SCOPE)
 
 # UFO test data - from ufo-data repo if found, from local directory, or from tarball (release/develop-in-future?)
-if (ufo-data_FOUND)
+if (DEFINED ENV{UFO_TESTFILES})
+  message(STATUS "Use test data from local directory $ENV{UFO_TESTFILES}")
+  # A bit of guesswork here, I don't know if folks using this option stored it in the same directory structure
+  set (ufo_data_testinput_tier_1_local "$ENV{UFO_TESTFILES}/ufo-data/testinput_tier_1")
+elseif (ufo-data_FOUND)
   message(STATUS "Use test data from ufo-data repository")
   set (ufo_data_testinput_tier_1_local "${CMAKE_SOURCE_DIR}/ufo-data/testinput_tier_1")
-# It's unclear if anyone is using the local data functionality, therefore comment it out
-# for now and add in if someone complains / remove if completely if not.
-#elseif (DEFINED ENV{UFO_TESTFILES})
-#  message(STATUS "Use test data from local directory $ENV{UFO_TESTFILES}")
-#  # A bit of guesswork here, I don't know if folks using this option stored it in the same directory structure
-#  set (ufo_data_testinput_tier_1_local "$ENV{UFO_TESTFILES}/ufo-data/testinput_tier_1")
 else()
   set (ufo_data_testinput_tier_1_local "${CMAKE_SOURCE_DIR}/test-data-release/ufo/${ufo_data_tag}/testinput_tier_1")
   if (EXISTS ${ufo_data_testinput_tier_1_local})
