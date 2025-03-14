@@ -8,6 +8,9 @@
 #ifndef UFO_PREDICTORS_CONSTANT_H_
 #define UFO_PREDICTORS_CONSTANT_H_
 
+#include <string>
+
+#include "oops/util/parameters/Parameter.h"
 #include "ufo/predictors/PredictorBase.h"
 
 namespace oops {
@@ -21,12 +24,23 @@ namespace ioda {
 namespace ufo {
 
 // -----------------------------------------------------------------------------
+class ConstantParameters: public PredictorParametersBase {
+  OOPS_CONCRETE_PARAMETERS(ConstantParameters, PredictorParametersBase);
+
+ public:
+  oops::Parameter<std::string> surface{"surface",
+                  "select the surface to use, possible values are "
+                  " 'all', 'land only', 'sea only' and 'land sea mask'",
+                  "all",
+                  this};
+};
 
 class Constant : public PredictorBase {
  public:
   /// The type of parameters accepted by the constructor of this predictor.
   /// This typedef is used by the PredictorFactory.
-  typedef EmptyPredictorParameters Parameters_;
+  /// typedef EmptyPredictorParameters Parameters_;
+  typedef ConstantParameters Parameters_;
 
   Constant(const Parameters_ &, const oops::ObsVariables &);
 
@@ -35,6 +49,8 @@ class Constant : public PredictorBase {
                const ObsDiagnostics &,
                const ObsBias &,
                ioda::ObsVector &) const override;
+ private:
+  std::string surface_;
 };
 
 // -----------------------------------------------------------------------------
