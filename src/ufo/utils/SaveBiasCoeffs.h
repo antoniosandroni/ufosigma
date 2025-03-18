@@ -20,6 +20,12 @@ ioda::ObsGroup saveBiasCoeffsWithChannels(ioda::Group &,
                                           const std::vector<int> &,
                                           const Eigen::MatrixXd &);
 
+ioda::ObsGroup saveBiasCoeffsWithRecords(ioda::Group &,
+                                         const std::vector<std::string> &,
+                                         const std::vector<std::string> &,
+                                         const std::vector<std::string> &,
+                                         const Eigen::MatrixXd &);
+
 }  // namespace ufo
 
 #endif  // UFO_UTILS_SAVEBIASCOEFFS_H_

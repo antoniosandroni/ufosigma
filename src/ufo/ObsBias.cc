@@ -24,6 +24,7 @@
 
 #include "oops/base/ObsVariables.h"
 #include "oops/base/Variables.h"
+#include "oops/mpi/mpi.h"
 #include "oops/util/IntSetParser.h"
 #include "oops/util/Logger.h"
 
@@ -37,7 +38,8 @@ namespace ufo {
 
 ObsBias::ObsBias(ioda::ObsSpace & odb, const eckit::Configuration & config)
   : numStaticPredictors_(0), numVariablePredictors_(0), byRecord_(),
-    vars_(odb.assimvariables()), rank_(odb.distribution()->rank()), commTime_(odb.commTime()) {
+    vars_(odb.assimvariables()), rank_(odb.distribution()->rank()),
+    comm_(odb.comm()), commTime_(odb.commTime()) {
   oops::Log::trace() << "ObsBias::create starting." << std::endl;
 
   ObsBiasParameters params;
@@ -123,7 +125,7 @@ ObsBias::ObsBias(const ObsBias & other, const bool copy)
     nrecs_(other.nrecs_),
     vars_(other.vars_), varIndexNoBC_(other.varIndexNoBC_),
     geovars_(other.geovars_), hdiags_(other.hdiags_), rank_(other.rank_),
-    commTime_(other.commTime_) {
+    comm_(other.comm_), commTime_(other.commTime_) {
   oops::Log::trace() << "ObsBias::copy ctor starting." << std::endl;
 
   // Initialize the biascoeffs
@@ -151,6 +153,9 @@ ObsBias & ObsBias::operator=(const ObsBias & rhs) {
     prednames_  = rhs.prednames_;
     numStaticPredictors_ = rhs.numStaticPredictors_;
     numVariablePredictors_ = rhs.numVariablePredictors_;
+    inputBiasCoeffs_ = rhs.inputBiasCoeffs_;
+    inputPredictors_ = rhs.inputPredictors_;
+    inputRecords_ = rhs.inputRecords_;
     byRecord_   = rhs.byRecord_;
     nrecs_      = rhs.nrecs_;
     vars_       = rhs.vars_;
@@ -202,6 +207,13 @@ void ObsBias::read(const eckit::Configuration & config) {
     if (obsgroup.vars.exists("stationIdentification")) {
       ioda::Variable recvar = obsgroup.vars.open("stationIdentification");
       recvar.read<std::string>(allrecords);
+    }
+
+    // If by record then store the read in data
+    if (byRecord_) {
+      inputBiasCoeffs_ = allbiascoeffs;
+      inputPredictors_ = predictors;
+      inputRecords_ = allrecords;
     }
 
     // TODO(corymartin-noaa) read in timestamp of last update
@@ -262,8 +274,22 @@ void ObsBias::read(const eckit::Configuration & config) {
 // -----------------------------------------------------------------------------
 
 void ObsBias::write(const eckit::Configuration & config) const {
+  oops::Log::trace() << "ObsBias::write start" << std::endl;
   Parameters_ params;
   params.validateAndDeserialize(config);
+
+  std::vector<std::string> globalRecordIds;
+  std::vector<double> globalBiasCoeffs;
+  if (byRecord_) {
+    // gather the records from all MPI threads
+    globalRecordIds = recIds_;
+    oops::mpi::allGatherv(comm_, globalRecordIds);
+
+    // gather the bias coefficients from all MPI threads to the zeroth thread
+    const std::vector<double> localcoeffs(
+                biascoeffs_.data(), biascoeffs_.data() + biascoeffs_.size());
+    oops::mpi::gather(comm_, localcoeffs, globalBiasCoeffs, 0);
+  }
 
   // only write files out on the task with MPI rank 0
   if (rank_ != 0 || commTime_.rank() != 0) return;
@@ -275,14 +301,65 @@ void ObsBias::write(const eckit::Configuration & config) const {
                         ioda::Engines::BackendCreateModes::Truncate_If_Exists);
 
     // put only variable bias predictors into the predictors vector
-    std::vector<std::string> predictors(prednames_.begin() + numStaticPredictors_,
-                                        prednames_.end());
+    const std::vector<std::string> predictors(prednames_.begin() + numStaticPredictors_,
+                                              prednames_.end());
+
+    // map coefficients to 2D for saving
     if (byRecord_) {
-//  todo pjn implement this in next PR
-//      Eigen::Map<const Eigen::MatrixXd> coeffs(biascoeffs_.data(),
-//        numVariablePredictors_, nrecs_ * vars_.size());
-//      saveBiasCoeffsWithRecords(group, predictors, vars_, coeffs);
-      oops::Log::warning() << "by record saving of bias ceofficient not implemented yet\n";
+      // Get global record indices and work out if there are new records
+      bool throwexception = false;
+      const std::vector<int> rec_idx = getAllStrIndices(
+                  inputRecords_, globalRecordIds.begin(), globalRecordIds.end(), throwexception);
+      const int nnewrecs = std::count_if(rec_idx.begin(), rec_idx.end(), [](int x) {
+          return x < 0; });
+
+      // Get used predictor indices
+      const std::vector<int> pred_idx = getAllStrIndices(predictors,
+                  prednames_.begin() + numStaticPredictors_, prednames_.end());
+
+      // Setup matrix for output
+      const size_t nrecs = inputRecords_.size() + nnewrecs;
+      const size_t npreds = inputPredictors_.size();
+      const size_t nvars = vars_.size();
+      Eigen::VectorXd finalcoeffs = Eigen::VectorXd::Zero(nrecs * nvars * npreds);
+      std::vector<std::string> finalrecords(nrecs);
+
+      // Loop over the matrix and populate with data from the input file
+      for (size_t jpred = 0; jpred < npreds; ++jpred) {
+        for (size_t jvar = 0; jvar < nvars; ++jvar) {
+          for (size_t jrec = 0; jrec < nrecs - nnewrecs; ++jrec) {
+            finalcoeffs[index(jrec, jvar, jpred)] = inputBiasCoeffs_[jpred](jrec, jvar);
+            if (jpred == 0 && jvar == 0) finalrecords[jrec] = inputRecords_[jrec];
+          }
+        }
+      }
+
+      // Add new records to output list and assign indices
+      std::vector<int> outrec_idx = rec_idx;
+      int newRecords = 0;
+      for (size_t jrec = 0; jrec < outrec_idx.size(); ++jrec) {
+        if (outrec_idx[jrec] == -1) {
+          // Add to the end of output
+          const size_t recindex = nrecs - nnewrecs + newRecords;
+          finalrecords[recindex] = globalRecordIds[jrec];
+          outrec_idx[jrec] = recindex;
+          newRecords += 1;
+        }
+      }
+
+      // Update coefficients with active records
+      for (size_t jpred = 0; jpred < pred_idx.size(); ++jpred) {
+        for (size_t jvar = 0; jvar < vars_.size(); ++jvar) {
+          for (size_t jrec = 0; jrec < outrec_idx.size(); ++jrec) {
+              finalcoeffs[index(outrec_idx[jrec], jvar, pred_idx[jpred])] =
+                      globalBiasCoeffs[index(jrec, jvar, jpred)];
+          }
+        }
+      }
+
+      // Convert coefficients and send off for writing
+      const Eigen::Map<const Eigen::MatrixXd> coeffs(finalcoeffs.data(), npreds, nrecs * nvars);
+      saveBiasCoeffsWithRecords(group, inputPredictors_, finalrecords, vars_.variables(), coeffs);
     } else {
       Eigen::Map<const Eigen::MatrixXd>
           coeffs(biascoeffs_.data(), numVariablePredictors_, nrecs_ * vars_.size());
@@ -295,6 +372,7 @@ void ObsBias::write(const eckit::Configuration & config) const {
                            << "will not be saved." << std::endl;
     }
   }
+  oops::Log::trace() << "ObsBias::write end" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

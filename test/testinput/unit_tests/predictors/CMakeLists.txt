@@ -129,6 +129,16 @@ ufo_add_test( NAME    test_ufo_bias_coeff_readwrite
               LABELS  unit_tests predictors
               WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../../ )
 #
+ufo_add_test( NAME    test_ufo_bias_coeff_readwrite_byrecord
+              TIER    1
+              ECBUILD
+              SOURCES ../../../mains/TestUfoObsBias.cc
+              ARGS    "${CMAKE_CURRENT_SOURCE_DIR}/bias_coeff_cov_byrecord.yaml"
+              MPI     2
+              LIBS    ufo
+              LABELS  unit_tests predictors
+              WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../../ )
+#
 ufo_add_test( NAME    test_ufo_bias_coeff_increment_readwrite
               TIER    1
               ECBUILD

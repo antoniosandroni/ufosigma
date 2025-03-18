@@ -53,4 +53,46 @@ ioda::ObsGroup saveBiasCoeffsWithChannels(ioda::Group & parent,
   return ogrp;
 }
 
+ioda::ObsGroup saveBiasCoeffsWithRecords(ioda::Group & parent,
+                                         const std::vector<std::string> & predictors,
+                                         const std::vector<std::string> & recIDs,
+                                         const std::vector<std::string> & vars,
+                                         const Eigen::MatrixXd & coeffs) {
+  // dimensions
+  ioda::NewDimensionScales_t newDims {
+      ioda::NewDimensionScale<int>("Record", recIDs.size()),
+      ioda::NewDimensionScale<int>("Variable", vars.size())
+  };
+
+  // new ObsGroup
+  ioda::ObsGroup ogrp = ioda::ObsGroup::generate(parent, newDims);
+
+  // Set up the creation parameters for the bias coefficients variable
+  ioda::VariableCreationParameters float_params;
+  float_params.chunk = true;               // allow chunking
+  float_params.compressWithGZIP();         // compress using gzip
+  const float missing_value = util::missingValue<float>();
+  float_params.setFillValue<float>(missing_value);
+
+  // Loop over predictors and create variables
+  for (size_t jpred = 0; jpred < predictors.size(); ++jpred) {
+    // create and write the bias coeffs
+    ioda::Variable biasVar = ogrp.vars.createWithScales<float>(
+                             "BiasCoefficients/"+predictors[jpred],
+                             {ogrp.vars["Record"], ogrp.vars["Variable"]}, float_params);
+    biasVar.writeWithEigenRegular(coeffs(jpred, Eigen::all));
+  }
+
+  // Save the stationIdentification
+  // and the variables
+  ioda::Variable variablesVar = ogrp.vars.createWithScales<std::string>(
+              "Variables", {ogrp.vars["Variable"]});
+  variablesVar.write(vars);
+  ioda::Variable recordVar = ogrp.vars.createWithScales<std::string>(
+              "stationIdentification", {ogrp.vars["Record"]});
+  recordVar.write(recIDs);
+
+  return ogrp;
+}
+
 }  // namespace ufo

@@ -70,6 +70,7 @@ void testObsBiasReadWrite() {
     // init ObsBias
     ObsBias ybias(odb, biasconf);
     oops::Log::test() << "Initialized obs bias: " << ybias << std::endl;
+    oops::Log::trace() << "Initialized obs bias: " << ybias << std::endl;
     // save original coefficients for comparison later
     const Eigen::VectorXd original_coeffs = ybias.data();
     // write out; assign zero; read back in; compare with original coefficients
@@ -79,11 +80,40 @@ void testObsBiasReadWrite() {
     ybias.read(biasconf_forread);
     oops::Log::test() << "Obs bias after write out; assign zero; read back in: "
                       << ybias << std::endl;
+    oops::Log::trace() << "Obs bias after write out; assign zero; read back in: "
+                       << ybias << std::endl;
     EXPECT_EQUAL((original_coeffs - ybias.data()).norm(), 0.0);
     // create ObsBias from output coefficients; compare with original coefficients
     ObsBias ybias2(odb, biasconf_forread);
     oops::Log::test() << "Obs bias initialized from the written out file: " << ybias2 << std::endl;
+    oops::Log::trace() << "Obs bias initialized from the written out file: " << ybias2 << std::endl;
     EXPECT_EQUAL((original_coeffs - ybias2.data()).norm(), 0.0);
+  }
+}
+
+void produceTestReferenceFiles() {
+  // This routine is helpful in development. To use this replace the
+  // testObsBiasReadWrite() in the private section of the class definition
+  // below with produceTestReferenceFiles()
+  eckit::LocalConfiguration conf(::test::TestEnvironment::config());
+
+  util::TimeWindow timeWindow(conf.getSubConfiguration("time window"));
+
+  std::vector<eckit::LocalConfiguration> obsconfs
+    = conf.getSubConfigurations("observations");
+
+  for (auto & oconf : obsconfs) {
+    eckit::LocalConfiguration ospconf(oconf, "obs space");
+    ioda::ObsSpace odb(ospconf, oops::mpi::world(), timeWindow, oops::mpi::myself());
+
+    // setup ObsBias parameters
+    eckit::LocalConfiguration biasconf = oconf.getSubConfiguration("obs bias");
+
+    // read in ObsBias
+    ObsBias ybias(odb, biasconf);
+
+    // write out to output file
+    ybias.write(biasconf);
   }
 }
 

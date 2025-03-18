@@ -16,6 +16,7 @@ observations:
     simulated variables: [airTemperature]
   obs bias:
     input file: Data/ufo/testinput_tier_1/aircraft_bias_20210731T18Z.nc4
+    output file: Data/aircraft_bias_20210731T18Z_test1.nc4
     bc by record: true
     variational bc:
       predictors:

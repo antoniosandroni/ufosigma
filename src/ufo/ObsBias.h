@@ -125,6 +125,12 @@ class ObsBias : public util::Printable,
   /// number of variable predictors (i.e. predictors with variable coefficients)
   std::size_t numVariablePredictors_;
 
+  /// store data from the input file when using by record
+  /// for outputting during the write procedure
+  std::vector<Eigen::ArrayXXf> inputBiasCoeffs_;
+  std::vector<std::string> inputPredictors_;
+  std::vector<std::string> inputRecords_;
+
   /// bias-correct by record?
   bool byRecord_;
 
@@ -146,6 +152,9 @@ class ObsBias : public util::Printable,
 
   /// MPI rank, used to determine whether the task should output bias coeffs to a file
   size_t rank_;
+
+  /// MPI communicator
+  const eckit::mpi::Comm & comm_;
 
   /// MPI communicator used in time decomposition for 4DEnVar and weak-constraint 4DVar
   const eckit::mpi::Comm & commTime_;
