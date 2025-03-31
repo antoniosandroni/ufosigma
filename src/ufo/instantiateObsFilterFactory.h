@@ -9,6 +9,7 @@
 #define UFO_INSTANTIATEOBSFILTERFACTORY_H_
 
 #include "ufo/filters/AcceptList.h"
+#include "ufo/filters/AverageObsToGeoValLevels.h"
 #include "ufo/filters/BackgroundCheck.h"
 #include "ufo/filters/BayesianBackgroundCheck.h"
 #include "ufo/filters/BayesianBackgroundQCFlags.h"
@@ -145,6 +146,8 @@ void instantiateObsFilterFactory() {
              ProcessAMVQIMaker("Process AMV QI");
   static FilterMaker<ProfileAverageObsToModLevels>
            ProfileAverageObsToModLevelsMaker("Average Observations To Model Levels");
+  static FilterMaker<AverageObsToGeoValLevels>
+           AverageObsToGeoValLevelsMaker("Average Observations To GeoVals Model Levels");
   static FilterMaker<ProfileBackgroundCheck>
            ProfileBackgroundCheckMaker("Profile Background Check");
   static FilterMaker<ProfileFewObsCheck>

@@ -672,6 +672,7 @@ integer, allocatable :: zeroCloudInCRTM0(:)
                                n_Channels, &
                                hofx, &
                                obss)
+      
       call ufo_crtm_active_diag(rts, &
                                 rts_K, &
                                 atm, &

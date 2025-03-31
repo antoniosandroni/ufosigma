@@ -93,6 +93,8 @@ set ( filters_files
       PerformAction.h
       ProfileAverageObsToModLevels.cc
       ProfileAverageObsToModLevels.h
+      AverageObsToGeoValLevels.cc
+      AverageObsToGeoValLevels.h
       ProfileBackgroundCheck.cc
       ProfileBackgroundCheck.h
       ProfileFewObsCheck.cc
