@@ -351,20 +351,28 @@ character(max_string) :: cloud_reff_method
    conf%Clouds(1:conf%n_Clouds,1) = str_array
 
    if (f_confOper%has("Cloud_Fraction")) then
-     call f_confOper%get_or_die("Cloud_Fraction",conf%Cloud_Fraction)
-     if ( conf%Cloud_Fraction < 0.0 .or. &
-          conf%Cloud_Fraction > 1.0 ) then
-       write(message,*) trim(ROUTINE_NAME),' error: must specify ' // &
-                        ' 0.0 <= Cloud_Fraction <= 1.0' // &
-                        ' or remove Cloud_Fraction from conf' // &
-                        ' and provide as a geoval'
-       call abor1_ftn(message)
+     if (conf%cal_cloud_frac_in_fov) then
+       message = trim(ROUTINE_NAME) // &
+           ': Cloud_Fraction input is ignored since it will be calculated within UFO.'
+       if (message_flag) CALL Display_Message(ROUTINE_NAME, TRIM(message), WARNING )
+     else
+       call f_confOper%get_or_die("Cloud_Fraction",conf%Cloud_Fraction)
+       if ( conf%Cloud_Fraction < 0.0 .or. &
+            conf%Cloud_Fraction > 1.0 ) then
+         write(message,*) trim(ROUTINE_NAME),' error: must specify ' // &
+                          ' 0.0 <= Cloud_Fraction <= 1.0' // &
+                          ' or remove Cloud_Fraction from conf' // &
+                          ' and provide as a geoval'
+         call abor1_ftn(message)
+       end if
      end if
    else
-     message = trim(ROUTINE_NAME) // &
-             ': Cloud_Fraction is not provided in conf.' // &
-             ' Will request as a geoval.'
-     if (message_flag) CALL Display_Message(ROUTINE_NAME, TRIM(message), WARNING )
+     if (.not. conf%cal_cloud_frac_in_fov .and. conf%n_Clouds > 0) then
+       message = trim(ROUTINE_NAME) // &
+               ': Cloud_Fraction is not provided in conf.' // &
+               ' Will request as a geoval.'
+       if (message_flag) CALL Display_Message(ROUTINE_NAME, TRIM(message), WARNING )
+     end if
    end if
    if (conf%cal_cloud_frac_in_fov) then
      message = trim(ROUTINE_NAME) // &
