@@ -139,8 +139,9 @@ void Gaussian_Thinning::applyFilter(const std::vector<bool> & apply,
     //  must be in a bin to accept a super-ob (the mean value of obs),
     //  and vector of means.
     isThinned = identifyThinnedObservationsMean(
-                              validObsIds, obsAccessor, splitter, globalObs, options_.minNumObsPerBin,
-                              distancesToBinCenter, priorities, mean);
+                              validObsIds, obsAccessor, splitter, globalObs,
+                              options_.minNumObsPerBin, distancesToBinCenter,
+                              priorities, mean);
     // Create a local mean vector the size of the obs space on the current MPI rank
     std::vector<float> localObs;
     obsdb_.get_db("ObsValue", varname, localObs);
