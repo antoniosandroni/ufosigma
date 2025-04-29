@@ -168,8 +168,8 @@ PoissonDiskThinning::PoissonDiskThinning(ioda::ObsSpace & obsdb,
                                          const Parameters_ &parameters,
                                          std::shared_ptr<ioda::ObsDataVector<int> > flags,
                                          std::shared_ptr<ioda::ObsDataVector<float> > obserr)
-  : FilterBase(obsdb, parameters, flags, obserr), options_(parameters)
-{
+  : FilterBase(obsdb, parameters, flags, obserr), options_(parameters) {
+  oops::Log::trace() << "PoissonDiskThinning constructor" << std::endl;
   oops::Log::debug() << "PoissonDiskThinning: config = " << options_ << std::endl;
   if (options_.sortVertical.value() != boost::none &&
       options_.minVerticalSpacing.value() == boost::none) {
@@ -208,12 +208,14 @@ PoissonDiskThinning::PoissonDiskThinning(ioda::ObsSpace & obsdb,
 }
 
 // Required for the correct destruction of options_.
-PoissonDiskThinning::~PoissonDiskThinning()
-{}
+PoissonDiskThinning::~PoissonDiskThinning() {
+  oops::Log::trace() << "PoissonDiskThinning destructor" << std::endl;
+}
 
 void PoissonDiskThinning::applyFilter(const std::vector<bool> & apply,
                                       const Variables & filtervars,
                                       std::vector<std::vector<bool>> & flagged) const {
+  oops::Log::trace() << "PoissonDiskThinning applyFilter start" << std::endl;
   ObsAccessor obsAccessor = createObsAccessor();
 
   const std::vector<size_t> validObsIds = getValidObservationIds(apply, filtervars, obsAccessor);
@@ -298,6 +300,7 @@ void PoissonDiskThinning::applyFilter(const std::vector<bool> & apply,
     }
     obsdb_.put_db("DerivedObsValue", filtervars_.variable(0).variable(), localObs);
   }
+  oops::Log::trace() << "PoissonDiskThinning applyFilter complete" << std::endl;
 }
 
 ObsAccessor PoissonDiskThinning::createObsAccessor() const {

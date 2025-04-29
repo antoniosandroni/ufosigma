@@ -45,6 +45,7 @@ Gaussian_Thinning::Gaussian_Thinning(ioda::ObsSpace & obsdb,
                                      std::shared_ptr<ioda::ObsDataVector<float> > obserr)
   : FilterBase(obsdb, params, flags, obserr), options_(params)
 {
+  oops::Log::trace() << "Gaussian_Thinning constructor" << std::endl;
   oops::Log::debug() << "Gaussian_Thinning: config = " << options_ << std::endl;
 }
 
@@ -53,6 +54,7 @@ Gaussian_Thinning::Gaussian_Thinning(ioda::ObsSpace & obsdb,
 void Gaussian_Thinning::applyFilter(const std::vector<bool> & apply,
                                     const Variables & filtervars,
                                     std::vector<std::vector<bool>> & flagged) const {
+  oops::Log::trace() << "Gaussian_Thinning applyFilter start" << std::endl;
   ObsAccessor obsAccessor = createObsAccessor();
 
   bool retainOnlyIfAllFilterVariablesAreValid =
@@ -169,6 +171,8 @@ void Gaussian_Thinning::applyFilter(const std::vector<bool> & apply,
   // Optionally reject all filter variables if any has failed QC and ob is invalid for thinning
   if (retainOnlyIfAllFilterVariablesAreValid)
     obsAccessor.flagObservationsForAnyFilterVariableFailingQC(apply, *flags_, filtervars, flagged);
+
+  oops::Log::trace() << "Gaussian_Thinning applyFilter complete" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

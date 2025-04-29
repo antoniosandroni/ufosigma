@@ -27,6 +27,7 @@ static ObsFunctionMaker<CLWRetMW> makerCLWRetMW_("CLWRetMW");
 
 CLWRetMW::CLWRetMW(const eckit::LocalConfiguration & conf)
   : invars_() {
+  oops::Log::trace() << "CLWRetMW constructor" << std::endl;
   // Initialize options
   options_.deserialize(conf);
 
@@ -114,12 +115,15 @@ CLWRetMW::CLWRetMW(const eckit::LocalConfiguration & conf)
 
 // -----------------------------------------------------------------------------
 
-CLWRetMW::~CLWRetMW() {}
+CLWRetMW::~CLWRetMW() {
+  oops::Log::trace() << "CLWRetMW destructor" << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 
 void CLWRetMW::compute(const ObsFilterData & in,
                                     ioda::ObsDataVector<float> & out) const {
+  oops::Log::trace() << "CLWRetMW compute start" << std::endl;
   // Get required parameters
   const std::vector<std::string> &vargrp = options_.varGroup.value();
 
@@ -415,6 +419,7 @@ void CLWRetMW::compute(const ObsFilterData & in,
       clw_retr_amsr2(bt18v, bt18h, bt36v, bt36h, out[igrp]);
     }
   }
+  oops::Log::trace() << "CLWRetMW compute complete" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

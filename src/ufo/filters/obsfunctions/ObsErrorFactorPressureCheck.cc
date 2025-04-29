@@ -81,6 +81,7 @@ static ObsFunctionMaker<ObsErrorFactorPressureCheck> makerSteps_("ObsErrorFactor
 
 ObsErrorFactorPressureCheck::ObsErrorFactorPressureCheck(const eckit::Configuration &config)
   : invars_() {
+  oops::Log::trace() << "ObsErrorFactorPressureCheck constructor" << std::endl;
   const float missing = util::missingValue<float>();
   // Initialize options
   options_.reset(new ObsErrorFactorPressureCheckParameters());
@@ -119,12 +120,15 @@ ObsErrorFactorPressureCheck::ObsErrorFactorPressureCheck(const eckit::Configurat
 
 // -----------------------------------------------------------------------------
 
-ObsErrorFactorPressureCheck::~ObsErrorFactorPressureCheck() {}
+ObsErrorFactorPressureCheck::~ObsErrorFactorPressureCheck() {
+  oops::Log::trace() << "ObsErrorFactorPressureCheck destructor"  << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 
 void ObsErrorFactorPressureCheck::compute(const ObsFilterData & data,
                                      ioda::ObsDataVector<float> & obserr) const {
+  oops::Log::trace() << "ObsErrorFactorPressureCheck compute start" << std::endl;
   const float missing = util::missingValue<float>();
   float temp, satVaporPres, satSpecificHumidity;
 
@@ -386,7 +390,6 @@ void ObsErrorFactorPressureCheck::compute(const ObsFilterData & data,
 
       rlow = std::max(sfcchk-dpres, 0.0f);
       rhgh = std::max(dpres-0.001f- static_cast<float>(nlevs)-1.0f, 0.0f);
-
       obserr[iv][iloc] = 1.0;
       if (inflatevars.compare("specificHumidity") == 0) {
           errorx = (adjustErr[iloc]+drpx)*sat_specific_humidity;
@@ -400,6 +403,7 @@ void ObsErrorFactorPressureCheck::compute(const ObsFilterData & data,
       if ((itype[iloc] >= 221 && itype[iloc] <= 229) && dpres < 0.0f) obserr[iv][iloc]=1.e20f;
     }  // iloc
   }  // nvars
+  oops::Log::trace() << "ObsErrorFactorPressureCheck compute complete" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

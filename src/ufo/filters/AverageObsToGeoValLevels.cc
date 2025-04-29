@@ -54,7 +54,7 @@ AverageObsToGeoValLevels::AverageObsToGeoValLevels(
 // -----------------------------------------------------------------------------
 
 AverageObsToGeoValLevels::~AverageObsToGeoValLevels() {
-  oops::Log::trace() << "AverageObsToGeoValLevels destructed" << std::endl;
+  oops::Log::trace() << "AverageObsToGeoValLevels destructor" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -62,8 +62,8 @@ AverageObsToGeoValLevels::~AverageObsToGeoValLevels() {
 void AverageObsToGeoValLevels::applyFilter(const std::vector<bool> & apply,
                                   const Variables & filtervars,
                                   std::vector<std::vector<bool>> & flagged) const {
-  oops::Log::trace() << "AverageObsToGeoValLevels priorFilter" << std::endl;
-  oops::Log::trace() << "AverageObsToGeoValLevels obserr: " << *obserr_ << std::endl;
+  oops::Log::trace() << "AverageObsToGeoValLevels applyFilter start" << std::endl;
+  oops::Log::debug() << "AverageObsToGeoValLevels obserr: " << *obserr_ << std::endl;
 
   const float missing = util::missingValue<float>();
   ioda::ObsDataVector<float> obs(obsdb_, filtervars.toOopsObsVariables(), "ObsValue");
@@ -180,6 +180,7 @@ void AverageObsToGeoValLevels::applyFilter(const std::vector<bool> & apply,
   obsdb_.put_db("MetaData", "height", height);
   obsdb_.put_db("MetaData", "actObsAvgQC", actObsAvgQC);
   oops::Log::debug() << "Total number of locations in  ObsSpace: " << obsdb_.nlocs() << std::endl;
+  oops::Log::trace() << "AverageObsToGeoValLevels applyFilter complete" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

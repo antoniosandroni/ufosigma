@@ -32,6 +32,7 @@ static ObsFunctionMaker<CloudDetectMinResidualAVHRR>
 
 CloudDetectMinResidualAVHRR::CloudDetectMinResidualAVHRR(const eckit::LocalConfiguration & conf)
   : invars_() {
+  oops::Log::trace() << "CloudDetectMinResidualAVHRR constructor start" << std::endl;
   // Check options
   options_.deserialize(conf);
 
@@ -67,17 +68,20 @@ CloudDetectMinResidualAVHRR::CloudDetectMinResidualAVHRR(const eckit::LocalConfi
   invars_ += Variable("GeoVaLs/air_pressure");
   invars_ += Variable("GeoVaLs/air_temperature");
   invars_ += Variable("GeoVaLs/tropopause_pressure");
+  oops::Log::trace() << "CloudCostFunction constructor complete" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-CloudDetectMinResidualAVHRR::~CloudDetectMinResidualAVHRR() {}
+CloudDetectMinResidualAVHRR::~CloudDetectMinResidualAVHRR() {
+  oops::Log::trace() << "CloudDetectMinResidualAVHRR destructor" << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 
 void CloudDetectMinResidualAVHRR::compute(const ObsFilterData & in,
                                   ioda::ObsDataVector<float> & out) const {
-  oops::Log::trace() << "CloudDetectMinResidualAVHRR::compute start" << std::endl;
+  oops::Log::trace() << "CloudDetectMinResidualAVHRR compute start" << std::endl;
   // Get channel use flags from options
   std::vector<int> use_flag = options_.useflagChannel.value();
   std::vector<int> use_flag_clddet = options_.useflagCloudDetect.value();
@@ -333,7 +337,7 @@ void CloudDetectMinResidualAVHRR::compute(const ObsFilterData & in,
     }
   // end of location loop
   }
-  oops::Log::trace() << "CloudDetectMinResidualAVHRR::compute done" << std::endl;
+  oops::Log::trace() << "CloudDetectMinResidualAVHRR compute complete" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

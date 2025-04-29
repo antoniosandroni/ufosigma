@@ -66,7 +66,7 @@ BackgroundCheck::BackgroundCheck(ioda::ObsSpace & obsdb, const Parameters_ & par
 // -----------------------------------------------------------------------------
 
 BackgroundCheck::~BackgroundCheck() {
-  oops::Log::trace() << "BackgroundCheck destructed" << std::endl;
+  oops::Log::trace() << "BackgroundCheck destructor" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -84,7 +84,7 @@ Variable BackgroundCheck::backgrErrVariable(const Variable &filterVariable) cons
 void BackgroundCheck::applyFilter(const std::vector<bool> & apply,
                                   const Variables & filtervars,
                                   std::vector<std::vector<bool>> & flagged) const {
-  oops::Log::trace() << "BackgroundCheck postFilter" << std::endl;
+  oops::Log::trace() << "BackgroundCheck applyFilter start" << std::endl;
   const oops::ObsVariables observed = obsdb_.obsvariables();
   const float missing = util::missingValue<float>();
   oops::Log::debug() << "BackgroundCheck obserr: " << *obserr_ << std::endl;
@@ -182,6 +182,7 @@ void BackgroundCheck::applyFilter(const std::vector<bool> & apply,
       }
     }
   }
+  oops::Log::trace() << "BackgroundCheck applyFilter complete" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

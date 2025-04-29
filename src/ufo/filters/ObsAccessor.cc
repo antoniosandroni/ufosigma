@@ -67,6 +67,7 @@ ObsAccessor::ObsAccessor(const ioda::ObsSpace &obsdb,
                          boost::optional<Variable> categoryVariable)
   : obsdb_(&obsdb), groupBy_(groupBy), categoryVariable_(categoryVariable)
 {
+  oops::Log::trace() << "ObservationAccessor constructor" << std::endl;
   // If the observations are to be grouped by a category variable, and that variable was
   // also used to divide the ObsSpace into records, change the value of `groupBy_`.
   // This is not done if the records are treated as single observations (for which
