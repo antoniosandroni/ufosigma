@@ -51,7 +51,7 @@ find_package( MPI REQUIRED COMPONENTS C CXX Fortran )
 find_package( Boost REQUIRED )
 
 # NetCDF
-find_package( NetCDF REQUIRED COMPONENTS C Fortran)
+find_package( NetCDF REQUIRED COMPONENTS C CXX Fortran)
 
 # Eigen3
 find_package( Eigen3 REQUIRED NO_MODULE HINTS
