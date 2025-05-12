@@ -52,6 +52,7 @@ BackgroundCheck::BackgroundCheck(ioda::ObsSpace & obsdb, const Parameters_ & par
   }
   ASSERT(parameters_.threshold.value() ||
          parameters_.absoluteThreshold.value() ||
+         parameters_.absoluteThresholdVector.value() ||
          parameters_.functionAbsoluteThreshold.value());
   if (parameters_.functionAbsoluteThreshold.value()) {
     ASSERT(!parameters_.threshold.value() &&
@@ -61,6 +62,8 @@ BackgroundCheck::BackgroundCheck(ioda::ObsSpace & obsdb, const Parameters_ & par
   if (parameters_.thresholdWrtBGerror.value()) {
     ASSERT(parameters_.threshold.value());
   }
+  ASSERT(!parameters_.absoluteThreshold.value() ||
+         !parameters_.absoluteThresholdVector.value());
 }
 
 // -----------------------------------------------------------------------------
@@ -126,6 +129,11 @@ void BackgroundCheck::applyFilter(const std::vector<bool> & apply,
     }
   } else {
     Variables varbias(filtervars, "ObsBiasData");
+    std::vector<float>  abs_thr_vector;
+    if (parameters_.absoluteThresholdVector.value()) {
+      abs_thr_vector =  parameters_.absoluteThresholdVector.value().get();
+      ASSERT(abs_thr_vector.size() == filtervars.nvars());
+    }
     for (size_t jv = 0; jv < filtervars.nvars(); ++jv) {
       size_t iv = observed.find(filtervars.variable(jv).variable());
 //    H(x) (including bias correction)
@@ -149,6 +157,12 @@ void BackgroundCheck::applyFilter(const std::vector<bool> & apply,
       std::vector<float> thr(obsdb_.nlocs(), std::numeric_limits<float>::max());
       if (parameters_.absoluteThreshold.value())
         abs_thr = getScalarOrFilterData(*parameters_.absoluteThreshold.value(), data_);
+//    Get the threshold from the "absolute threshold vector"
+      if (parameters_.absoluteThresholdVector.value()) {
+        for (size_t jobs = 0; jobs < obsdb_.nlocs(); ++jobs) {
+          abs_thr[jobs] = abs_thr_vector[jv];
+        }
+      }
       if (parameters_.threshold.value())
         thr = getScalarOrFilterData(*parameters_.threshold.value(), data_);
 
