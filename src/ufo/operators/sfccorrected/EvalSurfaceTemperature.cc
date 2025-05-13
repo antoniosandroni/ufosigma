@@ -48,6 +48,8 @@ void airTemperatureAt2M_WRFDA::simobs(const ufo::GeoVaLs & gv,
   // Setup parameters used throughout
   const size_t nobs = obsdb.nlocs();
   const float missing = util::missingValue<float>();
+  std::vector<float> obs_lats(nobs);
+  obsdb.get_db("MetaData", "latitude", obs_lats);
 
   // Create arrays needed
   std::vector<float> model_height_level1(nobs), model_height_surface(nobs),
@@ -58,15 +60,23 @@ void airTemperatureAt2M_WRFDA::simobs(const ufo::GeoVaLs & gv,
   const int surface_level_index = gv.nlevs(geomz_var) - 1;
   gv.getAtLevel(model_height_level1, geomz_var, surface_level_index);
   if (params_.geovarGeomZ.value().find("geopotential") != std::string::npos) {
-      oops::Log::trace()  << "ObsSfcCorrected::simulateObs do geopotential conversion profile"
-                         << std::endl;
+    oops::Log::trace()  << "ObsSfcCorrected::simulateObs_WRFDA do geopotential"
+                        << " conversion for model level 1" << std::endl;
+    for (size_t iloc = 0; iloc < nobs; ++iloc) {
+      model_height_level1[iloc] = formulas::Geopotential_to_Geometric_Height(obs_lats[iloc],
+          model_height_level1[iloc]);
+    }
   }
 
   // Get surface height.  If geopotential then convert to geometric height.
   gv.get(model_height_surface, oops::Variable(params_.geovarSfcGeomZ.value()));
   if (params_.geovarSfcGeomZ.value().find("geopotential") != std::string::npos) {
-      oops::Log::trace()  << "ObsSfcCorrected::simulateObs do geopotential conversion surface"
-                         << std::endl;
+    oops::Log::trace()  << "ObsSfcCorrected::simulateObs_WRFDA do geopotential"
+                        << " conversion for model surface level" << std::endl;
+    for (size_t iloc = 0; iloc < nobs; ++iloc) {
+      model_height_surface[iloc] = formulas::Geopotential_to_Geometric_Height(obs_lats[iloc],
+          model_height_surface[iloc]);
+    }
   }
 
   // Read other data in
