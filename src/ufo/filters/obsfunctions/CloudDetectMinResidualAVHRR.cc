@@ -183,6 +183,17 @@ void CloudDetectMinResidualAVHRR::compute(const ObsFilterData & in,
     }
   }
 
+  // Get criteria vector for cloud detection .  If not explicitly specified in the YAML, observation errors
+  // are used instead
+  std::vector<float> criteria4clddet(nchans, 0.0f);
+  if (options_.criteria4clddet.value() != boost::none) {
+    criteria4clddet = options_.criteria4clddet.value().get();
+  } else {
+    for (size_t ichan = 0; ichan < nchans; ++ichan) {
+      criteria4clddet[ichan] = obserr[ichan];
+    }
+  }
+
   // Get tropopause pressure [Pa]
   std::vector<float> tropprs(nlocs);
   in.get(Variable("GeoVaLs/tropopause_pressure"), tropprs);
@@ -304,7 +315,7 @@ void CloudDetectMinResidualAVHRR::compute(const ObsFilterData & in,
       size_t ilev;
       out[ichan][iloc] = 0;
       for (ilev = 0; ilev < lcloud; ++ilev) {
-        if (fabs(cldfrac * dbt[ichan][ilev]) > obserr[ichan]) {
+        if (fabs(cldfrac * dbt[ichan][ilev]) > criteria4clddet[ichan]) {
           out[ichan][iloc]= 1;
           varinv_use[ichan][iloc]= 0.0;
           break;
@@ -331,7 +342,7 @@ void CloudDetectMinResidualAVHRR::compute(const ObsFilterData & in,
         dts = std::min(dts_threshold, dts);
       }
       for (size_t ichan=0; ichan < nchans; ++ichan) {
-        delta = obserr[ichan];
+        delta = criteria4clddet[ichan];
         if (std::abs(dts * dbtdts[ichan][iloc]) > delta) out[ichan][iloc] = 2;
       }
     }
