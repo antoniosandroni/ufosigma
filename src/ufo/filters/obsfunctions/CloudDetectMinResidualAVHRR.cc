@@ -183,8 +183,8 @@ void CloudDetectMinResidualAVHRR::compute(const ObsFilterData & in,
     }
   }
 
-  // Get criteria vector for cloud detection .  If not explicitly specified in the YAML, observation errors
-  // are used instead
+  // Get criteria vector for cloud detection.
+  // If not explicitly specified in the YAML, observation errors are used instead.
   std::vector<float> criteria4clddet(nchans, 0.0f);
   if (options_.criteria4clddet.value() != boost::none) {
     criteria4clddet = options_.criteria4clddet.value().get();
