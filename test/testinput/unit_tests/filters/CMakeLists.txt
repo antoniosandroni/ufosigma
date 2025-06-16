@@ -79,6 +79,16 @@ ufo_add_test( NAME    test_ufo_gnssrobendmetoffice_obserror
               LABELS  filters
               WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../../ )
 #
+ufo_add_test( NAME    test_ufo_gnssrorefmetoffice_qc
+              TIER    1
+              ECBUILD
+              COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsFilters.x
+              ARGS    "${CMAKE_CURRENT_SOURCE_DIR}/gnssrorefmetoffice_qc.yaml"
+              MPI     1
+              LIBS    ufo
+              LABELS  filters
+              WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../../../ )
+#
 ufo_add_test( NAME    test_ufo_gnssrobndnbam_qc
               TIER    1
               ECBUILD

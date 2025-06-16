@@ -31,7 +31,7 @@ use gnssro_mod_transform, only: geometric2geop
 
 
 implicit none
-public             :: ufo_gnssro_refmetoffice
+public             :: ufo_gnssro_refmetoffice, RefMetOffice_ForwardModel
 private
 
   !> Fortran derived type for gnssro trajectory
@@ -185,7 +185,6 @@ subroutine ufo_gnssro_refmetoffice_simobs(self, geovals, obss, hofx, obs_diags)
                                    self % min_temp_grad, &
                                    1, &
                                    obs_height(iobs:iobs), &
-                                   obsLat(iobs), &
                                    hofx(iobs:iobs), &
                                    BAErr, &
                                    refractivity, &
@@ -263,7 +262,6 @@ SUBROUTINE RefMetOffice_ForwardModel(nlevp, &
                                      GPSRO_min_temp_grad, &
                                      nobs, &
                                      zobs, &
-                                     Latitude, &
                                      ycalc, &
                                      BAErr, &
                                      refractivity, &
@@ -280,7 +278,6 @@ LOGICAL, INTENT(IN)            :: GPSRO_vert_interp_ops  ! Option: Use ln(p) for
 REAL(kind_real), INTENT(IN)    :: GPSRO_min_temp_grad    ! The minimum temperature gradient which is used
 INTEGER, INTENT(IN)            :: nobs                   ! Number of observations in the profile
 REAL(kind_real), INTENT(IN)    :: zobs(1:nobs)           ! Geopotential height of the obs
-REAL(kind_real), INTENT(IN)    :: Latitude               ! Latitude of this profile
 REAL(kind_real), INTENT(INOUT) :: ycalc(1:nobs)          ! Model forecast of the observations
 LOGICAL, INTENT(OUT)           :: BAErr                  ! Was an error encountered during the calculation?
 REAL(kind_real), INTENT(INOUT), ALLOCATABLE :: refractivity(:)     ! Model refractivity on model/pseudo levels

@@ -5,10 +5,9 @@ time window:
 observations:
 - obs operator:
     name: GnssroRefMetOffice
-    obs options:
-      vert_interp_ops: true
-      pseudo_ops: true
-      min_temp_grad: 1.0e-6
+    vert_interp_ops: true
+    pseudo_ops: true
+    min_temp_grad: 1.0e-6
   obs space:
     name: GnssroRef
     obsdatain:
@@ -31,10 +30,9 @@ observations:
     tolerance AD: 1.0e-13
 - obs operator:
     name: GnssroRefMetOffice
-    obs options:
-      vert_interp_ops: false
-      pseudo_ops: false
-      min_temp_grad: 1.0e-6
+    vert_interp_ops: false
+    pseudo_ops: false
+    min_temp_grad: 1.0e-6
   obs space:
     name: GnssroRef
     obsdatain:

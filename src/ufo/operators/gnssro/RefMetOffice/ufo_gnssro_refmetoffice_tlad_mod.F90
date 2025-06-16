@@ -40,6 +40,7 @@ public :: ufo_gnssro_refmetoffice_tlad_settraj
 public :: ufo_gnssro_refmetoffice_simobs_tl
 public :: ufo_gnssro_refmetoffice_simobs_ad
 public :: ufo_gnssro_refmetoffice_tlad_delete
+public :: jacobian_interface
 
 integer, parameter :: max_string=800
 

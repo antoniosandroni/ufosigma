@@ -391,6 +391,9 @@ endif( ${rttov_FOUND} )
 add_subdirectory( gnssroonedvarcheck )
 list( APPEND filters_files ${gnssroonedvarcheck_src_files} )
 
+add_subdirectory( refractivityonedvarcheck )
+list( APPEND filters_files ${refractivityonedvarcheck_src_files} )
+
 PREPEND( _p_filters_files       "filters"       ${filters_files} )
 
 set ( filters_src_files
