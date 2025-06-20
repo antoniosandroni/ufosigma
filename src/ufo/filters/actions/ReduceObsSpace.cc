@@ -34,7 +34,7 @@ void ReduceObsSpace::apply(const Variables &,
                            ioda::ObsDataVector<float> &) const {
   if (filterdata.getGeoVaLs() != NULL) {
     throw eckit::NotImplemented("Action 'reduce obs space' not implemented for prior or post "
-                                "filters yet");
+                                "filters yet", Here());
   }
   oops::Log::trace() << "ReduceObsSpace apply start" << std::endl;
   const size_t nvars = flagged.size();
