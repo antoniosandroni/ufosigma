@@ -248,7 +248,7 @@ if( crtm_FOUND )
                   TIER    1
                   ECBUILD
                   COMMAND ${CMAKE_BINARY_DIR}/bin/test_ObsFilters.x
-                  ARGS    "${CRTM_CMAKE_TESTINPUT}/unit_tests/predictors/ssmis_f17_gfs_backgroundcheck_bc.yaml"
+                  ARGS    "${CMAKE_CURRENT_SOURCE_DIR}/ssmis_f17_gfs_backgroundcheck_bc.yaml"
                   MPI     1
                   LIBS    ufo
                   LABELS  crtm unit_tests predictors
