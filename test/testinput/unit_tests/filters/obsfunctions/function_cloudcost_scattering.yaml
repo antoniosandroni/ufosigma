@@ -43,8 +43,8 @@ observations:
         options:
           cost channels list: 18, 19, 20
           background emissivity channels: 1, 2, 3, 16, 17
-          RMatrix: ../resources/rmatrix/rttov/atovs_metopb_rmatrix_test.nc4
-          BMatrix: ../resources/bmatrix/rttov/atovs_bmatrix_70_test.dat
+          RMatrix: Data/ufo/testinput_tier_1/resources/rmatrix/rttov/atovs_metopb_rmatrix_test.nc4
+          BMatrix: Data/ufo/testinput_tier_1/resources/bmatrix/rttov/atovs_bmatrix_70_test.dat
           background fields:
           - air_temperature
           - water_vapor_mixing_ratio_wrt_moist_air

@@ -58,8 +58,8 @@ observations:
         Sat_ID: *sat_id
         Instrument_Name: *inst_name
         CoefficientPath: Data/
-    BMatrix: ../resources/bmatrix/rttov/atms_bmatrix_70_test.dat
-    RMatrix: ../resources/rmatrix/rttov/atms_noaa_20_rmatrix_test.nc4
+    BMatrix: Data/ufo/testinput_tier_1/resources/bmatrix/rttov/atms_bmatrix_70_test.dat
+    RMatrix: Data/ufo/testinput_tier_1/resources/rmatrix/rttov/atms_noaa_20_rmatrix_test.nc4
     filter variables:
     - name: brightnessTemperature
       channels: *ops_channels
@@ -125,8 +125,8 @@ observations:
         Sat_ID: *sat_id
         Instrument_Name: *inst_name
         CoefficientPath: Data/
-    BMatrix: ../resources/bmatrix/rttov/atms_bmatrix_70_test.dat
-    RMatrix: ../resources/rmatrix/rttov/atms_noaa_20_rmatrix_test.nc4
+    BMatrix: Data/ufo/testinput_tier_1/resources/bmatrix/rttov/atms_bmatrix_70_test.dat
+    RMatrix: Data/ufo/testinput_tier_1/resources/rmatrix/rttov/atms_noaa_20_rmatrix_test.nc4
     filter variables:
     - name: brightnessTemperature
       channels: *ops_channels
@@ -200,8 +200,8 @@ observations:
         Sat_ID: *sat_id
         Instrument_Name: *inst_name
         CoefficientPath: Data/
-    BMatrix: ../resources/bmatrix/rttov/atms_bmatrix_70_test.dat
-    RMatrix: ../resources/rmatrix/rttov/atms_noaa_20_rmatrix_test.nc4
+    BMatrix: Data/ufo/testinput_tier_1/resources/bmatrix/rttov/atms_bmatrix_70_test.dat
+    RMatrix: Data/ufo/testinput_tier_1/resources/rmatrix/rttov/atms_noaa_20_rmatrix_test.nc4
     filter variables:
     - name: brightnessTemperature
       channels: *ops_channels
@@ -260,8 +260,8 @@ observations:
         Sat_ID: *sat_id
         Instrument_Name: *inst_name
         CoefficientPath: Data/
-    BMatrix: ../resources/bmatrix/rttov/atms_bmatrix_70_test.dat
-    RMatrix: ../resources/rmatrix/rttov/atms_noaa_20_rmatrix_test.nc4
+    BMatrix: Data/ufo/testinput_tier_1/resources/bmatrix/rttov/atms_bmatrix_70_test.dat
+    RMatrix: Data/ufo/testinput_tier_1/resources/rmatrix/rttov/atms_noaa_20_rmatrix_test.nc4
     filter variables:
     - name: brightnessTemperature
       channels: *ops_channels
@@ -322,8 +322,8 @@ observations:
         Sat_ID: *sat_id
         Instrument_Name: *inst_name
         CoefficientPath: Data/
-    BMatrix: ../resources/bmatrix/rttov/atms_bmatrix_70_test.dat
-    RMatrix: ../resources/rmatrix/rttov/atms_noaa_20_rmatrix_test.nc4
+    BMatrix: Data/ufo/testinput_tier_1/resources/bmatrix/rttov/atms_bmatrix_70_test.dat
+    RMatrix: Data/ufo/testinput_tier_1/resources/rmatrix/rttov/atms_noaa_20_rmatrix_test.nc4
     filter variables:
     - name: brightnessTemperature
       channels: *ops_channels
@@ -354,8 +354,8 @@ observations:
         Sat_ID: *sat_id
         Instrument_Name: *inst_name
         CoefficientPath: Data/
-    BMatrix: ../resources/bmatrix/rttov/atms_bmatrix_70_test.dat
-    RMatrix: ../resources/rmatrix/rttov/atms_noaa_20_rmatrix_test.nc4
+    BMatrix: Data/ufo/testinput_tier_1/resources/bmatrix/rttov/atms_bmatrix_70_test.dat
+    RMatrix: Data/ufo/testinput_tier_1/resources/rmatrix/rttov/atms_noaa_20_rmatrix_test.nc4
     filter variables:
     - name: brightnessTemperature
       channels: *ops_channels
@@ -445,8 +445,8 @@ observations:
         Sat_ID: *sat_id
         Instrument_Name: *inst_name
         CoefficientPath: Data/
-    BMatrix: ../resources/bmatrix/rttov/atovs_bmatrix_70_test.dat
-    RMatrix: ../resources/rmatrix/rttov/atms_noaa_20_rmatrix_test.nc4
+    BMatrix: Data/ufo/testinput_tier_1/resources/bmatrix/rttov/atovs_bmatrix_70_test.dat
+    RMatrix: Data/ufo/testinput_tier_1/resources/rmatrix/rttov/atms_noaa_20_rmatrix_test.nc4
     filter variables:
     - name: brightnessTemperature
       channels: *ops_channels

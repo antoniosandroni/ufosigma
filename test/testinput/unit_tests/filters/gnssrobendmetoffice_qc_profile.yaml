@@ -111,7 +111,7 @@ observations:
           dispersion measure: fractional standard deviation
           normalization variable: ObsValue/bendingAngle
           minimum value: 3.0E-6
-          file: ../resources/rmatrix/gnssro/gnssro_ba_rmatrix_latitude.nc4
+          file: Data/ufo/testinput_tier_1/resources/rmatrix/gnssro/gnssro_ba_rmatrix_latitude.nc4
           interpolation:
           - name: MetaData/satelliteAndCenter
             method: exact
@@ -135,7 +135,7 @@ observations:
     n_iteration_test: 20
     OB_test: 2.5
     y_test: 5
-    bmatrix_filename: ../resources/bmatrix/gnssro/gnssro_bmatrix.txt
+    bmatrix_filename: Data/ufo/testinput_tier_1/resources/bmatrix/gnssro/gnssro_bmatrix.txt
     filter variables:
     - name: bendingAngle
       channels: *all_levels

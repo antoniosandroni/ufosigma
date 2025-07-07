@@ -90,8 +90,8 @@ observations:
     - name: ObsFunction/CloudCostFunction
       options:
         cost channels list: 18, 20, 22
-        RMatrix: ../resources/rmatrix/rttov/atms_noaa_20_rmatrix_test.nc4
-        BMatrix: ../resources/bmatrix/rttov/atms_bmatrix_70_test.dat
+        RMatrix: Data/ufo/testinput_tier_1/resources/rmatrix/rttov/atms_noaa_20_rmatrix_test.nc4
+        BMatrix: Data/ufo/testinput_tier_1/resources/bmatrix/rttov/atms_bmatrix_70_test.dat
         background fields:
         - air_temperature
         - water_vapor_mixing_ratio_wrt_moist_air
@@ -160,8 +160,8 @@ observations:
     - name: ObsFunction/CloudCostFunction
       options:
         cost channels list: 18, 20, 22
-        RMatrix: ../resources/rmatrix/rttov/atms_noaa_20_rmatrix_test.nc4
-        BMatrix: ../resources/bmatrix/rttov/atms_bmatrix_70_test.dat
+        RMatrix: Data/ufo/testinput_tier_1/resources/rmatrix/rttov/atms_noaa_20_rmatrix_test.nc4
+        BMatrix: Data/ufo/testinput_tier_1/resources/bmatrix/rttov/atms_bmatrix_70_test.dat
         background fields:
         - air_temperature
         - water_vapor_mixing_ratio_wrt_moist_air

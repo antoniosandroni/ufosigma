@@ -39,7 +39,7 @@ observations:
     - name: atmosphericRefractivity
     errmodel: MetOffice
     err_variable: latitude
-    rmatrix_filename: ../resources/rmatrix/gnssro/gnssro_ref_rmatrix_latitude.nl
+    rmatrix_filename: Data/ufo/testinput_tier_1/resources/rmatrix/gnssro/gnssro_ref_rmatrix_latitude.nl
   - filter: Refractivity 1DVar Check
     defer to post: true
     vert_interp_ops: true
@@ -52,8 +52,8 @@ observations:
     n_iteration_test: 20
     OB_test: 1
     y_test: 5
-    bmatrix_filename: ../resources/bmatrix/gnssro/gnssro_bmatrix.txt
-    rmatrix_filename: ../resources/rmatrix/gnssro/gnssro_ref_rmatrix_latitude.nl
+    bmatrix_filename: Data/ufo/testinput_tier_1/resources/bmatrix/gnssro/gnssro_bmatrix.txt
+    rmatrix_filename: Data/ufo/testinput_tier_1/resources/rmatrix/gnssro/gnssro_ref_rmatrix_latitude.nl
     filter variables:
     - name: atmosphericRefractivity
   passedBenchmark: 172

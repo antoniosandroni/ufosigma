@@ -93,8 +93,8 @@ observations:
         Instrument_Name: *inst_name
         QtSplitRain: *qtsplitrain
         CoefficientPath: Data/
-    BMatrix: ../resources/bmatrix/rttov/atms_bmatrix_70_test.dat   #using atms to ignore emiss for now
-    RMatrix: ../resources/rmatrix/rttov/atovs_metopb_rmatrix_test.nc4
+    BMatrix: Data/ufo/testinput_tier_1/resources/bmatrix/rttov/atms_bmatrix_70_test.dat   #using atms to ignore emiss for now
+    RMatrix: Data/ufo/testinput_tier_1/resources/rmatrix/rttov/atovs_metopb_rmatrix_test.nc4
     filter variables:
     - name: brightnessTemperature
       channels: *all_channels

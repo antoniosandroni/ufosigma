@@ -137,8 +137,8 @@ observations:
         Instrument_Name: *instrument_id
         CoefficientPath: *coefpath
         RTTOV_clw_data: false
-    BMatrix: ../resources/bmatrix/rttov/iasi_bmatrix_70_test.dat
-    RMatrix: ../resources/rmatrix/rttov/iasi_metopb_rmatrix_test.nc4
+    BMatrix: Data/ufo/testinput_tier_1/resources/bmatrix/rttov/iasi_bmatrix_70_test.dat
+    RMatrix: Data/ufo/testinput_tier_1/resources/rmatrix/rttov/iasi_metopb_rmatrix_test.nc4
     filter variables:
     - name: brightnessTemperature
       channels: *1dvarchannels
@@ -162,7 +162,7 @@ observations:
     SkinTempErrorLand: 5.0
     surface emissivity:
       type: principalcomponent
-      EmisEigVecPath: ../resources/auxillary/IASI_EmisEigenVec.dat
+      EmisEigVecPath: Data/ufo/testinput_tier_1/resources/auxillary/IASI_EmisEigenVec.dat
     RecalculateBT: true
   passedBenchmark: 477
   compareVariables:
@@ -244,8 +244,8 @@ observations:
         Instrument_Name: *instrument_id
         CoefficientPath: *coefpath
         RTTOV_clw_data: false
-    BMatrix: ../resources/bmatrix/rttov/iasi_bmatrix_70_test.dat
-    RMatrix: ../resources/rmatrix/rttov/iasi_metopb_rmatrix_test.nc4
+    BMatrix: Data/ufo/testinput_tier_1/resources/bmatrix/rttov/iasi_bmatrix_70_test.dat
+    RMatrix: Data/ufo/testinput_tier_1/resources/rmatrix/rttov/iasi_metopb_rmatrix_test.nc4
     filter variables:
     - name: brightnessTemperature
       channels: *1dvarchannels
@@ -269,7 +269,7 @@ observations:
     SkinTempErrorLand: 5.0
     surface emissivity:
       type: principalcomponent
-      EmisEigVecPath: ../resources/auxillary/IASI_EmisEigenVec.dat
+      EmisEigVecPath: Data/ufo/testinput_tier_1/resources/auxillary/IASI_EmisEigenVec.dat
     RecalculateBT: true
   compareVariables:
     - reference:
@@ -349,8 +349,8 @@ observations:
         Instrument_Name: *instrument_id
         CoefficientPath: *coefpath
         RTTOV_clw_data: false
-    BMatrix: ../resources/bmatrix/rttov/iasi_bmatrix_70_test.dat
-    RMatrix: ../resources/rmatrix/rttov/iasi_metopb_rmatrix_test.nc4
+    BMatrix: Data/ufo/testinput_tier_1/resources/bmatrix/rttov/iasi_bmatrix_70_test.dat
+    RMatrix: Data/ufo/testinput_tier_1/resources/rmatrix/rttov/iasi_metopb_rmatrix_test.nc4
     filter variables:
     - name: brightnessTemperature
       channels: *1dvarchannels
@@ -375,7 +375,7 @@ observations:
     SkinTempErrorLand: 5.0
     surface emissivity:
       type: principalcomponent
-      EmisEigVecPath: ../resources/auxillary/IASI_EmisEigenVec.dat
+      EmisEigVecPath: Data/ufo/testinput_tier_1/resources/auxillary/IASI_EmisEigenVec.dat
     RecalculateBT: true
   passedBenchmark: 470
   compareVariables:
@@ -416,8 +416,8 @@ observations:
         CoefficientPath: *coefpath
         RTTOV_clw_data: false
         UseSurfaceEmissivityAtlas: false
-    BMatrix: ../resources/bmatrix/rttov/iasi_bmatrix_70_test.dat
-    RMatrix: ../resources/rmatrix/rttov/iasi_metopb_rmatrix_test.nc4
+    BMatrix: Data/ufo/testinput_tier_1/resources/bmatrix/rttov/iasi_bmatrix_70_test.dat
+    RMatrix: Data/ufo/testinput_tier_1/resources/rmatrix/rttov/iasi_metopb_rmatrix_test.nc4
     filter variables:
     - name: brightnessTemperature
       channels: *1dvarchannels
@@ -442,7 +442,7 @@ observations:
     SkinTempErrorLand: 5.0
     surface emissivity:
       type: principalcomponent
-      EmisEigVecPath: ../resources/auxillary/IASI_EmisEigenVec.dat
+      EmisEigVecPath: Data/ufo/testinput_tier_1/resources/auxillary/IASI_EmisEigenVec.dat
     RecalculateBT: true
   expectExceptionWithMessage: You have requested the initial skin temperature from the ObsSpace but the array MetaData/skinTemperature is not present => aborting.
 # Test the hyperspectral IR with surface emissivity read from the CAMEL atlas
@@ -490,8 +490,8 @@ observations:
         Instrument_Name: *instrument_id
         CoefficientPath: *coefpath
         RTTOV_clw_data: false
-    BMatrix: ../resources/bmatrix/rttov/iasi_bmatrix_70_test.dat
-    RMatrix: ../resources/rmatrix/rttov/iasi_metopb_rmatrix_test.nc4
+    BMatrix: Data/ufo/testinput_tier_1/resources/bmatrix/rttov/iasi_bmatrix_70_test.dat
+    RMatrix: Data/ufo/testinput_tier_1/resources/rmatrix/rttov/iasi_metopb_rmatrix_test.nc4
     filter variables:
     - name: brightnessTemperature
       channels: *1dvarchannels
@@ -516,7 +516,7 @@ observations:
     surface emissivity:
       type: principalcomponent
       group in obs space: AtlasEmiss
-      EmisEigVecPath: ../resources/auxillary/IASI_EmisEigenVec_v2.dat
+      EmisEigVecPath: Data/ufo/testinput_tier_1/resources/auxillary/IASI_EmisEigenVec_v2.dat
     RecalculateBT: true
   passedBenchmark: 1311
   compareVariables:

@@ -36,7 +36,7 @@ observations:
     - name: bendingAngle
     errmodel: MetOffice
     err_variable: latitude
-    rmatrix_filename: ../resources/rmatrix/gnssro/gnssro_ba_rmatrix_latitude.nl
+    rmatrix_filename: Data/ufo/testinput_tier_1/resources/rmatrix/gnssro/gnssro_ba_rmatrix_latitude.nl
     use profile: true
     allow extrapolation: true
     verbose output: true
@@ -81,7 +81,7 @@ observations:
     - name: bendingAngle
     errmodel: MetOffice
     err_variable: average_temperature
-    rmatrix_filename: ../resources/rmatrix/gnssro/gnssro_ba_rmatrix_avtemp.nl
+    rmatrix_filename: Data/ufo/testinput_tier_1/resources/rmatrix/gnssro/gnssro_ba_rmatrix_avtemp.nl
     use profile: true
     allow extrapolation: true
     verbose output: true
@@ -147,7 +147,7 @@ observations:
           dispersion measure: fractional standard deviation
           normalization variable: ObsValue/bendingAngle
           minimum value: 3.0E-6
-          file: ../resources/rmatrix/gnssro/gnssro_ba_rmatrix_latitude.nc4
+          file: Data/ufo/testinput_tier_1/resources/rmatrix/gnssro/gnssro_ba_rmatrix_latitude.nc4
           interpolation:
           - name: MetaData/satelliteAndCenter
             method: nearest
@@ -229,7 +229,7 @@ observations:
           dispersion measure: fractional standard deviation
           normalization variable: ObsValue/bendingAngle
           minimum value: 3.0E-6
-          file: ../resources/rmatrix/gnssro/gnssro_ba_rmatrix_latitude.nc4
+          file: Data/ufo/testinput_tier_1/resources/rmatrix/gnssro/gnssro_ba_rmatrix_latitude.nc4
           channels: *all_levels
           interpolation:
           - name: MetaData/satelliteAndCenter

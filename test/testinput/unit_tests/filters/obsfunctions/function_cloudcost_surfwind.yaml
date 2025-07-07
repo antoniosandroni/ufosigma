@@ -38,8 +38,8 @@ observations:
         name: ObsFunction/CloudCostFunction
         options:
           cost channels list: 10, 12, 13
-          RMatrix: ../resources/rmatrix/rttov/gmihigh_gpm_rmatrix_test.nc4
-          BMatrix: ../resources/bmatrix/rttov/gmihigh_bmatrix_70_test.dat
+          RMatrix: Data/ufo/testinput_tier_1/resources/rmatrix/rttov/gmihigh_gpm_rmatrix_test.nc4
+          BMatrix: Data/ufo/testinput_tier_1/resources/bmatrix/rttov/gmihigh_bmatrix_70_test.dat
           background fields:
           - air_temperature
           - water_vapor_mixing_ratio_wrt_moist_air
