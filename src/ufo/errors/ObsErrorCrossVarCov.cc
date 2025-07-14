@@ -28,17 +28,19 @@ ReconditionMethodParameterTraitsHelper::namedValues[];
 
 // -----------------------------------------------------------------------------
 
-ObsErrorCrossVarCov::ObsErrorCrossVarCov(const Parameters_ & options,
+ObsErrorCrossVarCov::ObsErrorCrossVarCov(const eckit::Configuration & crossVarConf,
                                          ioda::ObsSpace & obspace,
                                          const eckit::mpi::Comm &timeComm)
   : ObsErrorBase(timeComm),
     stddev_(obspace, "ObsError"), vars_(obspace.assimvariables()),
     varcorrelations_(Eigen::MatrixXd::Identity(stddev_.nvars(), stddev_.nvars()))
 {
+  // deserialize configuration into ObsErrorCrossVarCovParameters
+  params_.validateAndDeserialize(crossVarConf);
   // Open and read error correlations from the hdf5 file
   ioda::Engines::BackendNames  backendName = ioda::Engines::BackendNames::Hdf5File;
   ioda::Engines::BackendCreationParameters backendParams;
-  backendParams.fileName = options.inputFile;
+  backendParams.fileName = params_.inputFile;
   backendParams.action   = ioda::Engines::BackendFileActions::Open;
   backendParams.openMode = ioda::Engines::BackendOpenModes::Read_Only;
 
@@ -68,7 +70,7 @@ ObsErrorCrossVarCov::ObsErrorCrossVarCov(const Parameters_ & options,
     allvarcorrelations = stddevinv * allvarcovariances * stddevinv;
   } else {
     oops::Log::error() << "One of obserror_correlations or obserror_covariances has to "
-                       << "be specified in the input file " << options.inputFile.value()
+                       << "be specified in the input file " << params_.inputFile.value()
                        << std::endl;
     throw eckit::BadParameter("One of obserror_correlations or obserror_covariances has "
                               "to be specified in the input file.");
@@ -88,7 +90,7 @@ ObsErrorCrossVarCov::ObsErrorCrossVarCov(const Parameters_ & options,
       // Print into to the trace log
       oops::Log::trace() << "ObsErrorCrossVarCov: Obs error correlations not provided for "
                          << "variable " << vars_[ivar] << " in "
-                         << options.inputFile.value() << ", correlations set to zero.\n";
+                         << params_.inputFile.value() << ", correlations set to zero.\n";
     } else {
       for (size_t jvar = 0; jvar < var_idx.size(); ++jvar) {
         if (var_idx[jvar] >= 0) {
@@ -102,19 +104,19 @@ ObsErrorCrossVarCov::ObsErrorCrossVarCov(const Parameters_ & options,
   if (count_noErrCorrect > 0) {
     oops::Log::warning() << "ObsErrorCrossVarCov: Obs error correlations not provided for "
                          << count_noErrCorrect << " of " << count_ttl_vars
-                         << " channels/variables in file: " << options.inputFile.value()
+                         << " channels/variables in file: " << params_.inputFile.value()
                          << ". To see which channels, turn on OOPS_TRACE\n" << std::endl;
   }
 
   // Checking valid reconditioning options if reconditioning specified.
-  if (options.reconditioning.value() != boost::none) {
-    ufo::ReconditionMethod recon_method = options.reconditioning.value()->ReconMethod.value();
+  if (params_.reconditioning.value() != boost::none) {
+    ufo::ReconditionMethod recon_method = params_.reconditioning.value()->ReconMethod.value();
     size_t nvalid_options = 0;
     switch (recon_method) {
       case ufo::ReconditionMethod::MINIMUMEIGENVALUE:
-        nvalid_options += static_cast<int>(options.reconditioning.value()
+        nvalid_options += static_cast<int>(params_.reconditioning.value()
                                       ->kFrac.value() != boost::none);
-        nvalid_options += static_cast<int>(options.reconditioning.value()
+        nvalid_options += static_cast<int>(params_.reconditioning.value()
                                       ->Threshold.value() != boost::none);
         if (nvalid_options == 0) {
           throw eckit::BadParameter("No viable reconditioning metric"
@@ -125,9 +127,9 @@ ObsErrorCrossVarCov::ObsErrorCrossVarCov(const Parameters_ & options,
         }
         break;
       case ufo::ReconditionMethod::RIDGEREGRESSION:
-        nvalid_options += static_cast<int>(options.reconditioning.value()
+        nvalid_options += static_cast<int>(params_.reconditioning.value()
                                            ->kFrac.value() != boost::none);
-        nvalid_options += static_cast<int>(options.reconditioning.value()
+        nvalid_options += static_cast<int>(params_.reconditioning.value()
                                            ->Shift.value() != boost::none);
         if (nvalid_options == 0) {
           throw eckit::BadParameter("No viable reconditioning metric"

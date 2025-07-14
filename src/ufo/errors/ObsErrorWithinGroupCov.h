@@ -29,9 +29,12 @@ namespace ufo {
 
 /// \brief Parameters for obs errors with correlations between obs in one group
 ///        set by obs space.obsgrouping
-class ObsErrorWithinGroupCovParameters : public oops::ObsErrorParametersBase {
-  OOPS_CONCRETE_PARAMETERS(ObsErrorWithinGroupCovParameters, ObsErrorParametersBase)
+class ObsErrorWithinGroupCovParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(ObsErrorWithinGroupCovParameters, Parameters)
  public:
+  /// \brief Name of the covariance model.
+  oops::Parameter<std::string> model{"covariance model", "diagonal", this};
+
   oops::RequiredParameter<std::string> var{"correlation variable name",
         "Group/Name obs variable that correlations should be computed for (note: "
         "this variable should be the same variable as obs space is grouped on", this};
@@ -57,7 +60,7 @@ class ObsErrorWithinGroupCov : public oops::interface::ObsErrorBase<ObsTraits> {
   typedef ObsErrorWithinGroupCovParameters Parameters_;
 
   /// Initialize observation errors
-  ObsErrorWithinGroupCov(const Parameters_ &, ioda::ObsSpace &,
+  ObsErrorWithinGroupCov(const eckit::Configuration &, ioda::ObsSpace &,
                         const eckit::mpi::Comm &timeComm);
 
   /// Update obs error standard deviations to be equal to \p stddev
@@ -109,6 +112,8 @@ class ObsErrorWithinGroupCov : public oops::interface::ObsErrorBase<ObsTraits> {
   /// Each element holds a lower-triangle of the correlation matrix for all locations
   /// within one group
   std::vector<Eigen::MatrixXd> correlations_;
+  /// ObsError configuration as oops::Paramters
+  Parameters_ params_;
 };
 
 // -----------------------------------------------------------------------------

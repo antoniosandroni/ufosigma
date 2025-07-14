@@ -16,11 +16,13 @@ namespace ufo {
 
 // -----------------------------------------------------------------------------
 
-ObsErrorDiagonal::ObsErrorDiagonal(const Parameters_ & options, ioda::ObsSpace & obsgeom,
+ObsErrorDiagonal::ObsErrorDiagonal(const eckit::Configuration & obsErrConf,
+                                   ioda::ObsSpace & obsgeom,
                                    const eckit::mpi::Comm &timeComm)
   : ObsErrorBase(timeComm),
-    stddev_(obsgeom, "ObsError"), inverseVariance_(obsgeom), options_(options)
+    stddev_(obsgeom, "ObsError"), inverseVariance_(obsgeom)
 {
+  options_.validateAndDeserialize(obsErrConf);
   inverseVariance_ = stddev_;
   inverseVariance_ *= stddev_;
   inverseVariance_.invert();
@@ -55,7 +57,7 @@ void ObsErrorDiagonal::inverseMultiply(ioda::ObsVector & dy) const {
 void ObsErrorDiagonal::randomize(ioda::ObsVector & dy) const {
   dy.random();
   dy *= stddev_;
-  dy *= options_.pert;
+  dy *= options_.zeroMeanPerturbations;
 }
 
 // -----------------------------------------------------------------------------

@@ -34,14 +34,15 @@ double gc99(const double & distnorm) {
   return gc99value;
 }
 
-ObsErrorWithinGroupCov::ObsErrorWithinGroupCov(const Parameters_ & params,
+ObsErrorWithinGroupCov::ObsErrorWithinGroupCov(const eckit::Configuration & obsErrGrpConf,
                                              ioda::ObsSpace & obspace,
                                              const eckit::mpi::Comm &timeComm)
   : ObsErrorBase(timeComm), obspace_(obspace), coord_(obspace.nlocs()),
     stddev_(obspace, "ObsError")
 {
+  params_.validateAndDeserialize(obsErrGrpConf);
   correlations_.reserve(obspace.nrecs());
-  obspace.get_db("MetaData", params.var, coord_);
+  obspace.get_db("MetaData", params_.var, coord_);
   for (auto irec = obspace.recidx_begin(); irec != obspace.recidx_end(); ++irec) {
     std::vector<size_t> rec_idx = obspace.recidx_vector(irec);
     size_t rec_nobs = rec_idx.size();
@@ -50,7 +51,7 @@ ObsErrorWithinGroupCov::ObsErrorWithinGroupCov(const Parameters_ & params,
     for (size_t iloc = 0; iloc < rec_nobs; ++iloc) {
       for (size_t jloc = iloc+1; jloc < rec_nobs; ++jloc) {
          corr(jloc, iloc) = gc99(std::abs(coord_[rec_idx[iloc]]-coord_[rec_idx[jloc]]) /
-                                 params.lscale.value());
+                                 params_.lscale.value());
       }
     }
     correlations_.push_back(corr);

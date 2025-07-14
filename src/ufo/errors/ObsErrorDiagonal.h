@@ -14,6 +14,8 @@
 #include "ioda/ObsVector.h"
 
 #include "oops/interface/ObsErrorBase.h"
+#include "oops/util/parameters/NumericConstraints.h"
+#include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 
@@ -26,24 +28,32 @@ namespace ioda {
 namespace ufo {
 
 /// \brief Parameters for diagonal obs errors
-class ObsErrorDiagonalParameters : public oops::ObsErrorParametersBase {
-  OOPS_CONCRETE_PARAMETERS(ObsErrorDiagonalParameters, ObsErrorParametersBase)
+class ObsErrorDiagonalParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(ObsErrorDiagonalParameters, Parameters)
  public:
+  /// \brief Name of the covariance model.
+  oops::Parameter<std::string> model{"covariance model", "diagonal", this};
   /// perturbation amplitude multiplier
   oops::Parameter<double> pert{"random amplitude", 1.0, this};
+  oops::Parameter<bool> zeroMeanPerturbations{"zero-mean perturbations", false, this};
+  /// 1-based ensemble member index.
+  /// Used (and required) only if `zero-mean perturbations` is set to true.
+  oops::OptionalParameter<int> member{"member", this, {oops::minConstraint(1)}};
+  /// Number of ensemble members.
+  /// Used (and required) only if `zero-mean perturbations` is set to true.
+  oops::OptionalParameter<int> numberOfMembers{"number of members", this, {oops::minConstraint(1)}};
 };
 
 // -----------------------------------------------------------------------------
 /// \brief Diagonal observation error covariance matrix.
 class ObsErrorDiagonal : public oops::interface::ObsErrorBase<ObsTraits> {
  public:
-  /// The type of parameters passed to the constructor.
-  /// This typedef is used by the ObsErrorFactory.
+  /// The type of parameters for this class.
   typedef ObsErrorDiagonalParameters Parameters_;
 
   static const std::string classname() {return "ufo::ObsErrorDiagonal";}
 
-  ObsErrorDiagonal(const Parameters_ &, ioda::ObsSpace &,
+  ObsErrorDiagonal(const eckit::Configuration &, ioda::ObsSpace &,
                    const eckit::mpi::Comm &timeComm);
 
 /// Update after obs errors potentially changed

@@ -59,8 +59,8 @@ void testNoReconditioning() {
     const eckit::LocalConfiguration obsSpaceConf(conf[jj], "obs space");
     ioda::ObsSpace obsspace(obsSpaceConf, oops::mpi::myself(), timeWindow, oops::mpi::myself());
 
-    ObsErrorCrossVarCov R(Params, obsspace, oops::mpi::myself());
-    ObsErrorCrossVarCov RRecon(Params, obsspace, oops::mpi::myself());
+    ObsErrorCrossVarCov R(rconf, obsspace, oops::mpi::myself());
+    ObsErrorCrossVarCov RRecon(rconf, obsspace, oops::mpi::myself());
     oops::Log::info() << "Corr before:\n" << R << std::endl;
 
     ioda::ObsVector mask(obsspace, "ObsError");
@@ -97,7 +97,7 @@ void compareKnownOutput() {
     Params.validateAndDeserialize(rconf);
     TestParams.validateAndDeserialize(testconf);
 
-    ObsErrorCrossVarCov R(Params, obsspace, oops::mpi::myself());
+    ObsErrorCrossVarCov R(rconf, obsspace, oops::mpi::myself());
     ioda::ObsVector mask(obsspace, "ObsError");
     ioda::ObsVector sample(obsspace, "ObsValue");
     std::vector<double> refVec = TestParams.refVec.value().value();
@@ -136,7 +136,7 @@ void testNoValidOptionSelected() {
     Params.validateAndDeserialize(rconf);
 
     const std::string msg = conf[jj].getString("expectExceptionWithMessage");
-    EXPECT_THROWS_MSG(ObsErrorCrossVarCov R(Params, obsspace, oops::mpi::myself()), msg.c_str());
+    EXPECT_THROWS_MSG(ObsErrorCrossVarCov R(rconf, obsspace, oops::mpi::myself()), msg.c_str());
   }
 }
 

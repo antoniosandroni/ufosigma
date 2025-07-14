@@ -56,8 +56,8 @@ struct ParameterTraits<ufo::ReconditionMethod> :
 
 namespace ufo {
 /// \brief Parameters for Recondition method
-class ReconditionParameters : public oops::ObsErrorParametersBase {
-    OOPS_CONCRETE_PARAMETERS(ReconditionParameters, ObsErrorParametersBase)
+class ReconditionParameters : public oops::Parameters {
+    OOPS_CONCRETE_PARAMETERS(ReconditionParameters, Parameters)
  public:
   /// Method of reconditioning, either Ridge regression or minimum eigenvalue
   oops::Parameter<ReconditionMethod> ReconMethod{"recondition method",
@@ -76,9 +76,11 @@ class ReconditionParameters : public oops::ObsErrorParametersBase {
 };
 
 /// \brief Parameters for obs errors with cross-variable correlations
-class ObsErrorCrossVarCovParameters : public oops::ObsErrorParametersBase {
-  OOPS_CONCRETE_PARAMETERS(ObsErrorCrossVarCovParameters, ObsErrorParametersBase)
+class ObsErrorCrossVarCovParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(ObsErrorCrossVarCovParameters, Parameters)
  public:
+  oops::OptionalParameter<std::string> covariance{"covariance model",
+                                                  "cross variable covariances", this};
   /// Input file containing correlations or covariances. If covariances are
   /// specified, they will be converted to correlations.
   oops::RequiredParameter<std::string> inputFile{"input file", this};
@@ -98,12 +100,11 @@ class ObsErrorCrossVarCovParameters : public oops::ObsErrorParametersBase {
 ///          number, in order to speed up convergence of minimisation.
 class ObsErrorCrossVarCov : public oops::interface::ObsErrorBase<ObsTraits> {
  public:
-  /// The type of parameters passed to the constructor.
-  /// This typedef is used by the ObsErrorFactory.
+  /// The type of parameters for this class.
   typedef ObsErrorCrossVarCovParameters Parameters_;
 
   /// Initialize observation errors
-  ObsErrorCrossVarCov(const Parameters_ &, ioda::ObsSpace &,
+  ObsErrorCrossVarCov(const eckit::Configuration &, ioda::ObsSpace &,
                       const eckit::mpi::Comm &timeComm);
 
   /// Update obs error standard deviations to be equal to \p stddev
@@ -148,6 +149,8 @@ class ObsErrorCrossVarCov : public oops::interface::ObsErrorBase<ObsTraits> {
   const oops::ObsVariables vars_;
   /// Correlations between variables
   Eigen::MatrixXd varcorrelations_;
+  /// Configuration as a Parameters_
+  Parameters_ params_;
 };
 
 // -----------------------------------------------------------------------------
