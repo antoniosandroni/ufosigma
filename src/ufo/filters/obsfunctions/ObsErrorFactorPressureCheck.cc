@@ -329,67 +329,69 @@ void ObsErrorFactorPressureCheck::compute(const ObsFilterData & data,
         }
 
        // logprsl[0] at surface
-        ASSERT(logprsl[0] > logprsl[nlevs-1]);
-        iflag = -1;    // in decreasing order
-        if (iflag_print_negone) {
-          iflag_print_negone = false;
-        }
-        dpres = grdcrd1(logobspres, logprsl, nlevs, iflag);
-        sfcchk = grdcrd1(logsfcpres, logprsl, nlevs, iflag);
+        drpx = 0.0f;
+        if (airtemp_prof[0] != missing) {
+          ASSERT(logprsl[0] > logprsl[nlevs-1]);
+          iflag = -1;    // in decreasing order
+          if (iflag_print_negone) {
+            iflag_print_negone = false;
+          }
+          dpres = grdcrd1(logobspres, logprsl, nlevs, iflag);
+          sfcchk = grdcrd1(logsfcpres, logprsl, nlevs, iflag);
 
         // Apply this drpx correction only to surface or surface_ship data
-        if ((itype[iloc] > 179 && itype[iloc] <= 190) ||
-            (itype[iloc] >= 192 && itype[iloc] < 199)) {
-          if (inflatevars.compare("airTemperature") == 0 ||
-            inflatevars.compare("virtualTemperature") == 0) {
-            drpx = abs(1.0f-pow(model_pressure_sfc[iloc]/obs_pressure[iloc],
-                 ufo::Constants::rd_over_cp))*ufo::Constants::t0c;
-            if (abs(dpres) > 4.0f) {
-              drpx = 1.0e10f;
-            }
-          } else {
-            drpx = abs(1.0f-(obs_pressure[iloc]/model_pressure_sfc[iloc])) * 10.0;
-          }
-        } else {
-          drpx = 0.0f;
-        }
-
-        if (inflatevars.compare("specificHumidity") == 0) {
-            if ((itype[iloc] > 179 && itype[iloc] < 186) ||
-                (itype[iloc] == 199)) dpres = 1.0;
-
-            if (options_->requestQSat.value()) {
-       // Use geovals
-              gvals->getAtLocation(qs_profile,
-                  oops::Variable{"saturation_water_vapor_mixing_ratio_wrt_moist_air"}, iloc);
-              std::reverse(qs_profile.begin(), qs_profile.end());
-
+          if ((itype[iloc] > 179 && itype[iloc] <= 190) ||
+              (itype[iloc] >= 192 && itype[iloc] < 199)) {
+            if (inflatevars.compare("airTemperature") == 0 ||
+              inflatevars.compare("virtualTemperature") == 0) {
+              drpx = abs(1.0f-pow(model_pressure_sfc[iloc]/obs_pressure[iloc],
+                   ufo::Constants::rd_over_cp))*ufo::Constants::t0c;
+              if (abs(dpres) > 4.0f) {
+                drpx = 1.0e10f;
+              }
             } else {
-       //
-       // Calculate saturated vapor pressure (at iloc, k=0 at surface)
-       //
-              for (size_t k = 0 ; k < nlevs ; ++k) {
-                temp = airtemp_prof[k];
-                satVaporPres = formulas::SatVaporPres_fromTemp(temp, formulation);
+              drpx = abs(1.0f-(obs_pressure[iloc]/model_pressure_sfc[iloc])) * 10.0;
+            }
+          }
+
+          if (inflatevars.compare("specificHumidity") == 0) {
+              if ((itype[iloc] > 179 && itype[iloc] < 186) ||
+                  (itype[iloc] == 199)) dpres = 1.0;
+
+              if (options_->requestQSat.value()) {
+              // Use geovals
+                gvals->getAtLocation(qs_profile,
+                    oops::Variable{"saturation_water_vapor_mixing_ratio_wrt_moist_air"}, iloc);
+                std::reverse(qs_profile.begin(), qs_profile.end());
+
+              } else {
+             //
+             // Calculate saturated vapor pressure (at iloc, k=0 at surface)
+             //
+                for (size_t k = 0 ; k < nlevs ; ++k) {
+                  temp = airtemp_prof[k];
+                  satVaporPres = formulas::SatVaporPres_fromTemp(temp, formulation);
 
 // Convert saturated vapor pressure to saturation specific humidity
-                satSpecificHumidity = Constants::epsilon * satVaporPres / obs_pressure[iloc];
-                qs_profile[k] = satSpecificHumidity;
+                  satSpecificHumidity = Constants::epsilon * satVaporPres / obs_pressure[iloc];
+                  qs_profile[k] = satSpecificHumidity;
+                }
               }
-            }
 
-            ufo::PiecewiseLinearInterpolation vert_interp_model(logprsl_double, qs_profile);
+              ufo::PiecewiseLinearInterpolation vert_interp_model(logprsl_double, qs_profile);
 
-            if ((itype[iloc] >= 180) && (itype[iloc] <= 184)) {
-                sat_specific_humidity = qs_profile[0];
-            } else {
-                sat_specific_humidity = vert_interp_model(logobspres);
-            }
-        }
+              if ((itype[iloc] >= 180) && (itype[iloc] <= 184)) {
+                  sat_specific_humidity = qs_profile[0];
+              } else {
+                  sat_specific_humidity = vert_interp_model(logobspres);
+              }
+          }
+        }  // airtemp missing
       }  // reported pressure conditional statement bracket
 
       rlow = std::max(sfcchk-dpres, 0.0f);
       rhgh = std::max(dpres-0.001f- static_cast<float>(nlevs)-1.0f, 0.0f);
+
       obserr[iv][iloc] = 1.0;
       if (inflatevars.compare("specificHumidity") == 0) {
           errorx = (adjustErr[iloc]+drpx)*sat_specific_humidity;
