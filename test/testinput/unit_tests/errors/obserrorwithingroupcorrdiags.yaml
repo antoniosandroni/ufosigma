@@ -15,7 +15,7 @@ obs space:
   simulated variables: [airTemperature]
 obs error:
   covariance model: within group covariances
-  correlation variable name: pressure
+  correlation variable names: [pressure]
   correlation lengthscale: 15000.
 obs error diagnostics:
   output filename: Data/sondes_obserrorcorr_diags.nc4

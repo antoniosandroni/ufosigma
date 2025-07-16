@@ -15,10 +15,17 @@
 #include "ioda/Layout.h"
 #include "ioda/ObsGroup.h"
 
+#include "oops/util/missingValues.h"
+
+#include "ufo/utils/GeometryCalculations.h"
 #include "ufo/utils/IodaGroupIndices.h"
 
 namespace ufo {
 
+namespace {
+
+// -----------------------------------------------------------------------------
+// Correlation functions
 // -----------------------------------------------------------------------------
 double gc99(const double & distnorm) {
   // computes Gaspari-Cohn 99 localization
@@ -34,15 +41,52 @@ double gc99(const double & distnorm) {
   return gc99value;
 }
 
+// -----------------------------------------------------------------------------
+// Distance functions - base class and linear distance
+// -----------------------------------------------------------------------------
+double distance_linear(double loc1, double loc2) {
+  return std::abs(loc1 - loc2);
+}
+
+double distance_haversine(double lat1, double lon1, double lat2, double lon2) {
+  return ufo::haversine(lat1, lon1, lat2, lon2);  // Distance in meters
+}
+
+// -----------------------------------------------------------------------------
+// Coordinate constructor function dependent on distance function
+// -----------------------------------------------------------------------------
+ioda::ObsDataVector<float> coord_constructor(const ObsErrorWithinGroupCovParameters & params,
+                                             ioda::ObsSpace & obspace) {
+  // Check the distance function will work and create the data vector for coordinates
+  std::vector<std::string> vars;
+  switch (params.distanceFunction.value()) {
+    case DistanceFunctions::LINEAR:
+      if (!params.var.value().has_value()) {
+        throw eckit::BadParameter("ObsErrorWithinGroupCov: 'var' parameter must be set for "
+                                  "linear distance function", Here());
+      }
+      vars = params.var.value().get();
+      assert(vars.size() == 1);
+      return ioda::ObsDataVector<float>(obspace, oops::ObsVariables(vars), "MetaData");
+    case DistanceFunctions::HAVERSINE:
+      vars = {"latitude", "longitude"};
+      oops::ObsVariables variables(vars);
+      return ioda::ObsDataVector<float>(obspace, variables, "MetaData");
+  }
+}
+
+}  // anonymous namespace
+
 ObsErrorWithinGroupCov::ObsErrorWithinGroupCov(const eckit::Configuration & obsErrGrpConf,
                                              ioda::ObsSpace & obspace,
                                              const eckit::mpi::Comm &timeComm)
-  : ObsErrorBase(timeComm), obspace_(obspace), coord_(obspace.nlocs()),
+  : ObsErrorBase(timeComm), params_(oops::validateAndDeserialize<Parameters_>(obsErrGrpConf)),
+    obspace_(obspace), coord_(coord_constructor(params_, obspace)),
     stddev_(obspace, "ObsError")
 {
-  params_.validateAndDeserialize(obsErrGrpConf);
   correlations_.reserve(obspace.nrecs());
-  obspace.get_db("MetaData", params_.var, coord_);
+  double missing_double = util::missingValue<double>();
+
   for (auto irec = obspace.recidx_begin(); irec != obspace.recidx_end(); ++irec) {
     std::vector<size_t> rec_idx = obspace.recidx_vector(irec);
     size_t rec_nobs = rec_idx.size();
@@ -50,8 +94,26 @@ ObsErrorWithinGroupCov::ObsErrorWithinGroupCov(const eckit::Configuration & obsE
     // Only lower triangle is needed
     for (size_t iloc = 0; iloc < rec_nobs; ++iloc) {
       for (size_t jloc = iloc+1; jloc < rec_nobs; ++jloc) {
-         corr(jloc, iloc) = gc99(std::abs(coord_[rec_idx[iloc]]-coord_[rec_idx[jloc]]) /
-                                 params_.lscale.value());
+         // Compute the distance between the two locations
+        double distance = missing_double;
+        switch (params_.distanceFunction.value()) {
+          case DistanceFunctions::LINEAR: {
+            double val1 = coord_[0][rec_idx[iloc]];
+            double val2 = coord_[0][rec_idx[jloc]];
+            distance = distance_linear(val1, val2);
+            break;
+          }
+          case DistanceFunctions::HAVERSINE: {
+            double lat1 = coord_["latitude"][rec_idx[iloc]];
+            double lon1 = coord_["longitude"][rec_idx[iloc]];
+            double lat2 = coord_["latitude"][rec_idx[jloc]];
+            double lon2 = coord_["longitude"][rec_idx[jloc]];
+            distance = distance_haversine(lat1, lon1, lat2, lon2);  // in meters
+            break;
+          }
+        }
+        // Compute correlation value
+        corr(jloc, iloc) = gc99(distance / params_.lscale.value());
       }
     }
     correlations_.push_back(corr);
@@ -210,14 +272,16 @@ void ObsErrorWithinGroupCov::saveCorrelations(const std::string & filename,
     ioda::NewDimensionScales_t dims {ioda::NewDimensionScale<int>("nlocs", rec_nlocs)};
     ioda::ObsGroup ogrp = ioda::ObsGroup::generate(group, dims);
 
-    // save the coordinate used for correlation computation
-    ioda::Variable coordVar = ogrp.vars.createWithScales<float>(
-                              "correlationCoordinate", {ogrp.vars["nlocs"]});
-    std::vector<float> recCoord(rec_nlocs);
-    for (size_t jloc = 0; jloc < rec_nlocs; ++jloc) {
-      recCoord[jloc] = coord_[rec_idx[jloc]];
+    // save the coordinates used for correlation computation
+    for (size_t ivar=0; ivar < coord_.nvars(); ++ivar) {
+      ioda::Variable coordVar = ogrp.vars.createWithScales<float>(
+                                coord_.varnames()[ivar], {ogrp.vars["nlocs"]});
+      std::vector<float> recCoord(rec_nlocs);
+      for (size_t jloc = 0; jloc < rec_nlocs; ++jloc) {
+        recCoord[jloc] = coord_[ivar][rec_idx[jloc]];
+      }
+      coordVar.write(recCoord);
     }
-    coordVar.write(recCoord);
 
     // Set up the creation parameters for the correlation matrix
     ioda::VariableCreationParameters float_params;

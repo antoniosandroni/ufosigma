@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "ioda/ObsDataVector.h"
 #include "ioda/ObsVector.h"
 
 #include "oops/interface/ObsErrorBase.h"
@@ -27,19 +28,50 @@ namespace ioda {
 
 namespace ufo {
 
+enum class DistanceFunctions {
+      LINEAR,
+      HAVERSINE
+};
+
+struct DistanceFunctionsParameterTraitsHelper {
+  typedef DistanceFunctions EnumType;
+  static constexpr char enumTypeName[] = "DistanceFunctions";
+  static constexpr util::NamedEnumerator<DistanceFunctions> namedValues[] = {
+    { DistanceFunctions::LINEAR, "linear" },
+    { DistanceFunctions::HAVERSINE, "haversine" }
+  };
+};
+
+}  // namespace ufo
+
+namespace oops {
+
+template <>
+struct ParameterTraits<ufo::DistanceFunctions> :
+    public EnumParameterTraits<ufo::DistanceFunctionsParameterTraitsHelper>
+{};
+
+}  // namespace oops
+
+namespace ufo {
+
 /// \brief Parameters for obs errors with correlations between obs in one group
 ///        set by obs space.obsgrouping
 class ObsErrorWithinGroupCovParameters : public oops::Parameters {
   OOPS_CONCRETE_PARAMETERS(ObsErrorWithinGroupCovParameters, Parameters)
  public:
-  /// \brief Name of the covariance model.
-  oops::Parameter<std::string> model{"covariance model", "diagonal", this};
-
-  oops::RequiredParameter<std::string> var{"correlation variable name",
+  oops::Parameter<std::string> model{"covariance model",
+        "String specifying the name of the covariance model",
+        "within group covariances", this};
+  oops::OptionalParameter<std::vector<std::string>> var{"correlation variable names",
         "Group/Name obs variable that correlations should be computed for (note: "
         "this variable should be the same variable as obs space is grouped on", this};
   oops::RequiredParameter<double> lscale{"correlation lengthscale",
         "Gaspari-Cohn correlation lengthscale", this};
+  oops::Parameter<DistanceFunctions> distanceFunction{"distance function",
+        "Distance function to use for correlation computations. "
+        "Currently only 'linear' and 'haversine' are supported",
+        DistanceFunctions::LINEAR, this};
 };
 
 // -----------------------------------------------------------------------------
@@ -104,16 +136,17 @@ class ObsErrorWithinGroupCov : public oops::interface::ObsErrorBase<ObsTraits> {
   void print(std::ostream &) const override;
   /// Multiply only by correlations (diagnostics)
   void multiplyCorrelations(ioda::ObsVector & y) const;
+  /// ObsError configuration as oops::Paramters
+  Parameters_ params_;
+  /// ObsSpace reference
   const ioda::ObsSpace & obspace_;
   /// Coordinate used for correlation computations
-  std::vector<double> coord_;
+  ioda::ObsDataVector<float> coord_;
   /// Observation error standard deviations
   ioda::ObsVector stddev_;
   /// Each element holds a lower-triangle of the correlation matrix for all locations
   /// within one group
   std::vector<Eigen::MatrixXd> correlations_;
-  /// ObsError configuration as oops::Paramters
-  Parameters_ params_;
 };
 
 // -----------------------------------------------------------------------------
