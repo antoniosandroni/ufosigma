@@ -938,7 +938,7 @@ character(kind=c_char, len=1), intent(in) :: c_var(lvar+1)
 integer(c_int), intent(in) :: c_nloc
 integer(c_int), intent(in) :: c_indx(c_nloc)
 integer(c_int), intent(in) :: c_nlev
-real(c_double), intent(in) :: c_vals(c_nloc, c_nlev)
+real(c_double), intent(in) :: c_vals(c_nlev, c_nloc)
 logical(c_bool), intent(in) :: c_levelsTopDown
 
 type(ufo_geovals), pointer :: geovals
@@ -964,7 +964,7 @@ character(kind=c_char, len=1), intent(in) :: c_var(lvar+1)
 integer(c_int), intent(in) :: c_nloc
 integer(c_int), intent(in) :: c_indx(c_nloc)
 integer(c_int), intent(in) :: c_nlev
-real(c_double), intent(inout) :: c_vals(c_nloc, c_nlev)
+real(c_double), intent(inout) :: c_vals(c_nlev, c_nloc)
 logical(c_bool), intent(in) :: c_levelsTopDown
 
 type(ufo_geovals), pointer :: geovals

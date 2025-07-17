@@ -1935,7 +1935,7 @@ character(len=*), intent(in) :: varname
 integer(c_int), intent(in) :: c_nprofiles
 integer(c_int), intent(in) :: c_indx(c_nprofiles)
 integer(c_int), intent(in) :: c_nlev
-real(c_double), intent(in) :: c_vals(c_nprofiles, c_nlev)
+real(c_double), intent(in) :: c_vals(c_nlev, c_nprofiles)
 logical(c_bool), intent(in) :: levels_top_down
 
 type(ufo_geoval), pointer :: geoval
@@ -1953,18 +1953,19 @@ if (levels_top_down) then
   lbgn=1
   linc=1
 else
-  lbgn=geoval%nval
+  lbgn=c_nlev
   linc=-1
 endif
 
-ilev = lbgn
-do jlev=1, c_nlev
-  do jprofile=1, c_nprofiles
-    iprofile = c_indx(jprofile) + 1
-    if (iprofile<1 .or. iprofile> geoval%nprofiles) call abor1_ftn("ufo_geovals_fill: error iprofile")
-    geoval%vals(ilev,iprofile) = c_vals(jprofile,jlev)
+do jprofile=1, c_nprofiles
+  iprofile = c_indx(jprofile) + 1
+  if (iprofile<1 .or. iprofile>geoval%nprofiles) call abor1_ftn("ufo_geovals_fill: error iprofile")
+
+  ilev = lbgn
+  do jlev=1, c_nlev
+    geoval%vals(ilev,iprofile) = c_vals(jlev,jprofile)
+    ilev = ilev + linc
   enddo
-  ilev = ilev + linc
 enddo
 
 end subroutine ufo_geovals_fill
@@ -1978,7 +1979,7 @@ character(len=*), intent(in) :: varname
 integer(c_int), intent(in) :: c_nprofiles
 integer(c_int), intent(in) :: c_indx(c_nprofiles)
 integer(c_int), intent(in) :: c_nlev
-real(c_double), intent(inout) :: c_vals(c_nprofiles, c_nlev)
+real(c_double), intent(inout) :: c_vals(c_nlev, c_nprofiles)
 logical(c_bool), intent(in) :: levels_top_down
 
 type(ufo_geoval), pointer :: geoval
@@ -1996,18 +1997,19 @@ if (levels_top_down) then
   lbgn=1
   linc=1
 else
-  lbgn=geoval%nval
+  lbgn=c_nlev
   linc=-1
 endif
 
-ilev = lbgn
-do jlev = 1, geoval%nval
-  do jprofile=1, c_nprofiles
-    iprofile = c_indx(jprofile) + 1
-    if (iprofile<1 .or. iprofile>geoval%nprofiles) call abor1_ftn("ufo_geovals_fillad: error iprofile")
-    c_vals(jprofile, jlev) = geoval%vals(ilev,iprofile)
+do jprofile=1, c_nprofiles
+  iprofile = c_indx(jprofile) + 1
+  if (iprofile<1 .or. iprofile>geoval%nprofiles) call abor1_ftn("ufo_geovals_fillad: error iprofile")
+
+  ilev = lbgn
+  do jlev=1, c_nlev
+    c_vals(jlev,jprofile) = geoval%vals(ilev,iprofile)
+    ilev = ilev + linc
   enddo
-  ilev = ilev + linc
 enddo
 
 end subroutine ufo_geovals_fillad

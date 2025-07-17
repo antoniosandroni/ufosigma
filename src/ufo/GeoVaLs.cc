@@ -741,7 +741,7 @@ void GeoVaLs::fill(const oops::Variable &var, const ConstVectorRef<size_t> &indx
                    const ConstMatrixRef<double> &vals, const bool levelsTopDown) {
   oops::Log::trace() << "GeoVaLs::fill starting" << std::endl;
   const size_t npts = indx.size();
-  const size_t nlev = vals.cols();
+  const size_t nlev = vals.rows();
   std::vector<int> findx(indx.size());
   for (Eigen::Index jj = 0; jj < indx.size(); ++jj) findx[jj] = indx[jj];
 
@@ -755,7 +755,7 @@ void GeoVaLs::fillAD(const oops::Variable &var, const ConstVectorRef<size_t> &in
                      MatrixRef<double> vals, const bool levelsTopDown) const {
   oops::Log::trace() << "GeoVaLs::fillAD starting" << std::endl;
   const size_t npts = indx.size();
-  const size_t nlev = vals.cols();
+  const size_t nlev = vals.rows();
   std::vector<int> findx(indx.size());
   for (Eigen::Index jj = 0; jj < indx.size(); ++jj) findx[jj] = indx[jj];
 
