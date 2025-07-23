@@ -19,6 +19,7 @@
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 
+#include "ufo/errors/ObsErrorParametersBase.h"
 #include "ufo/ObsTraits.h"
 
 namespace ioda {
@@ -28,11 +29,9 @@ namespace ioda {
 namespace ufo {
 
 /// \brief Parameters for diagonal obs errors
-class ObsErrorDiagonalParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(ObsErrorDiagonalParameters, Parameters)
+class ObsErrorDiagonalParameters : public ObsErrorParametersBase {
+  OOPS_CONCRETE_PARAMETERS(ObsErrorDiagonalParameters, ObsErrorParametersBase)
  public:
-  /// \brief Name of the covariance model.
-  oops::Parameter<std::string> model{"covariance model", "diagonal", this};
   /// perturbation amplitude multiplier
   oops::Parameter<double> pert{"random amplitude", 1.0, this};
   oops::Parameter<bool> zeroMeanPerturbations{"zero-mean perturbations", false, this};

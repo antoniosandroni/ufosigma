@@ -21,6 +21,7 @@
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameters.h"
 
+#include "ufo/errors/ObsErrorParametersBase.h"
 #include "ufo/ObsTraits.h"
 
 namespace ioda {
@@ -76,11 +77,9 @@ class ReconditionParameters : public oops::Parameters {
 };
 
 /// \brief Parameters for obs errors with cross-variable correlations
-class ObsErrorCrossVarCovParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(ObsErrorCrossVarCovParameters, Parameters)
+class ObsErrorCrossVarCovParameters : public ObsErrorParametersBase {
+  OOPS_CONCRETE_PARAMETERS(ObsErrorCrossVarCovParameters, ObsErrorParametersBase)
  public:
-  oops::OptionalParameter<std::string> covariance{"covariance model",
-                                                  "cross variable covariances", this};
   /// Input file containing correlations or covariances. If covariances are
   /// specified, they will be converted to correlations.
   oops::RequiredParameter<std::string> inputFile{"input file", this};

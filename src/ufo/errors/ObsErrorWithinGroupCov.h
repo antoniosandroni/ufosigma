@@ -20,6 +20,7 @@
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
 
+#include "ufo/errors/ObsErrorParametersBase.h"
 #include "ufo/ObsTraits.h"
 
 namespace ioda {
@@ -57,12 +58,9 @@ namespace ufo {
 
 /// \brief Parameters for obs errors with correlations between obs in one group
 ///        set by obs space.obsgrouping
-class ObsErrorWithinGroupCovParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(ObsErrorWithinGroupCovParameters, Parameters)
+class ObsErrorWithinGroupCovParameters : public ObsErrorParametersBase {
+  OOPS_CONCRETE_PARAMETERS(ObsErrorWithinGroupCovParameters, ObsErrorParametersBase)
  public:
-  oops::Parameter<std::string> model{"covariance model",
-        "String specifying the name of the covariance model",
-        "within group covariances", this};
   oops::OptionalParameter<std::vector<std::string>> var{"correlation variable names",
         "Group/Name obs variable that correlations should be computed for (note: "
         "this variable should be the same variable as obs space is grouped on", this};
